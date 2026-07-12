@@ -1,0 +1,786 @@
+# Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
+
+วันที่เขียน: 2026-07-07  
+ผู้ใช้ต้องการ: ให้ Claude รับงานต่อจาก Codex โดยเข้าใจ framing ล่าสุดของ CervicalAI / CerviCo-Pilot แบบละเอียด โดยเฉพาะการส่ง **Samsung Solve for Tomorrow 2026** และ **WSEEC**  
+สถานะเอกสารนี้: ใช้เป็นไฟล์เริ่มอ่านก่อนทำงานต่อ
+
+## 0A. Web brand update (2026-07-11)
+
+เว็บใช้ชื่อหน้าบ้านภาษาอังกฤษ **Anong** แล้ว โดยยังเก็บ **CerviCo-Pilot** เป็นชื่อเทคนิค/งานวิจัย ห้าม replace ชื่อ CerviCo-Pilot ทั้ง repository เพราะ model card, metrics, full paper และหลักฐานเดิมต้องอ้างชื่อเดียวกัน เมื่อต้องเชื่อมสองบริบทให้เขียน **Anong · CerviCo-Pilot**
+
+ทิศทางสีล่าสุดคือ pastel clinical: ชมพูกุหลาบ + เหลืองเนย + ครีม ไม่ใช่ navy/plum brief เดิม ก่อนแก้ UI ให้อ่าน:
+
+- `PRODUCT.md`
+- `IMPECCABLE_BRIEF.md`
+- `docs/ANONG_WEB_REBRAND_2026.md`
+- `docs/ANONG_ENGLISH_UI_MIGRATION_2026.md`
+
+รอบนี้แก้ navbar/mobile menu ให้ใช้ Lucide icons ชุดเดียว อัปเดต home/About/Ask/footer/browser/PWA/export report branding เพิ่ม contrast ของ semantic colors และตรวจ Chromium ทั้ง desktop/mobile แล้ว การเปลี่ยนแปลงนี้เป็น visual/naming rebrand เท่านั้น ไม่เพิ่ม clinical evidence หรือ validation claim ใหม่
+
+Update รอบถัดมาในวันที่ 2026-07-11: product UI ถูกย้ายเป็น **English-only** ครบทุก 15 routes รวม dynamic states, metadata, PWA, report export และ accessibility labels แล้ว เอกสารดาวน์โหลดภาษาไทยยังคงภาษาต้นฉบับและไม่ถือเป็น UI
+
+Update วันที่ 2026-07-12: ปรับ information architecture ให้กระชับขึ้น โดย primary navigation เหลือ 7 รายการเท่านั้น: Overview, Analyze, Case Gallery, Clinical Workflow, Performance, Evidence และ About ส่วนหน้ารองยังอยู่ครบแต่เข้าผ่านบริบทที่เหมาะสม: Reports จาก Workflow, History จาก Analyze และ Demo/Deployment/Knowledge/Ask/Model Card จาก Evidence ห้ามนำทั้ง 15 routes กลับไปใส่ navbar โดยไม่มีเหตุผลด้าน workflow ชัดเจน อ่านรายละเอียดและผล QA ที่ `docs/ANONG_INFORMATION_ARCHITECTURE_2026.md`
+
+Update เพิ่มเติมวันที่ 2026-07-12: แก้ `server/predictor.py` ให้เพิ่ม project root ใน `sys.path` ก่อน import `ml.*` เพราะเดิม Uvicorn ที่เริ่มจากโฟลเดอร์ `server/` โหลด model ได้ แต่ advanced XAI/MC Dropout หล่นไป fallback แบบเงียบ ๆ ตอนนี้ response มี `heatmap_source` และทดสอบจริงแล้วว่าได้ `advanced_gradcam`, Score-CAM, Eigen-CAM, Layer-CAM, uncertainty overlay, top-k patches และ `advanced_mc` หน้า Analyze เพิ่ม Download reviewed HTML กับ Print/Save PDF หลัง confirm/edit แล้ว แต่ไฟล์ยังเป็น research prototype report ไม่ใช่ regulated medical report อ่าน `docs/MODEL_XAI_REPORT_E2E_2026.md` ก่อนแก้ inference/report ต่อ
+
+Update รอบ hardening ล่าสุดวันที่ 2026-07-12: แก้บัค activation 0.0% แบบครบ pipeline แล้ว CAM ที่ flat/NaN/non-finite จะไม่ถูกแสดงเป็น XAI, model mode ห้ามใช้ heuristic spotlight fallback, Grad-CAM ที่เสียเลือก Grad-CAM++/Layer-CAM/Score-CAM ได้เฉพาะ map ที่ผ่าน diagnostics และต้องรายงาน provenance ตรงวิธี หน้า Analyze แสดงภาพแบบ uncropped ขนาดเท่ากัน มี XAI abstention, quality pass/warning/fail แบบ `single_cell_crop_herlev_v1`, file validation และ release gates ฝั่ง backend รายงานเปลี่ยนเป็น deterministic template นอกจากนี้ paper เปลี่ยน KOIL recall จาก 0.0000 เป็น N/A เพราะ support=0 และเตรียม GitHub Pages/Docker/Render deployment แล้ว อ่าน `docs/ANALYZE_HARDENING_AND_DEPLOYMENT_2026.md`
+
+## 0. Update ล่าสุดจาก Codex (2026-07-07)
+
+ผู้ใช้สั่งให้ "ทำให้โปรเจกต์ดูแข็งแรงขึ้นก่อน" และยังไม่ต้องทำเอกสารของเวทีใดเวทีหนึ่ง
+ดังนั้น Codex เพิ่ม project-hardening layer แล้ว โดยต้องอ่านไฟล์เหล่านี้ก่อนเริ่มทำงานต่อ:
+
+- `docs/PROJECT_HARDENING_STATUS.md`
+- `docs/CLAIMS_LEDGER.md`
+- `docs/VALIDATION_ROADMAP.md`
+- `docs/RISK_REGISTER.md`
+- `docs/DATASET_MODEL_CARD.md`
+- `docs/THINPREP_HPV_FRAMING.md`
+- `docs/THAI_THINPREP_DATA_PROTOCOL.md`
+- `docs/UNCERTAINTY_AND_ABSTENTION_POLICY.md`
+- `docs/PATIENT_REPORT_SAFETY_SPEC.md`
+- `docs/READER_STUDY_PROTOCOL.md`
+- `docs/ERROR_ANALYSIS_PLAN.md`
+- `docs/CALIBRATION_EXPERIMENT_REPORT.md`
+- `docs/ERROR_ANALYSIS_REPORT_HERLEV.md`
+- `docs/HERLEV_ERROR_CASE_GALLERY.md`
+- `docs/PROJECT_READINESS_SCORECARD.md`
+- `docs/LEGACY_ARTIFACT_AUDIT.md`
+- `docs/BROWSER_ACCESSIBILITY_VERIFICATION.md`
+- `docs/THAI_DATA_INTAKE_CHECKLIST.md`
+- `docs/EXTERNAL_EVIDENCE_REVIEW_2026.md`
+- `docs/SOURCE_CITATION_LEDGER.md`
+- `docs/JUDGE_QA_BANK.md`
+- `docs/SUBMISSION_MASTER.md`
+- `docs/FAILURE_MODE_AND_HUMAN_FACTORS.md`
+- `docs/INTENDED_USE_STATEMENT.md`
+- `docs/WEB_DEMO_RUNBOOK.md`
+- `docs/PITCH_SCRIPT_1_3_5MIN.md`
+- `docs/POSTER_CONTENT_WSEEC.md`
+- `docs/SFT_WSEEC_SUBMISSION_PACKAGE.md`
+- `docs/SERVER_SIDE_AUDIT_ROADMAP.md`
+- `docs/BOOKLET_BUILD_NOTES.md`
+- `docs/FORMAL_REPORT_BUILD_NOTES.md`
+- `docs/FORMAL_REFERENCES_BIBLIOGRAPHY.md`
+- `docs/FORMAL_REPORT_FINAL_POLISH_CHECKLIST.md`
+- `docs/WEB_DEPLOY_READY_CHECKLIST.md`
+- `docs/WEB_QA_REPORT_2026_07_07.md`
+- `docs/WEB_PRODUCTION_HARDENING_REPORT.md`
+- `docs/wseec_2026/WSEEC_2026_FORMAT_AUDIT.md`
+- `docs/wseec_2026/WSEEC_2026_SUBMISSION_CHECKLIST.md`
+
+การเปลี่ยนแปลงหลัก:
+
+- README ถูกอัปเดตให้มี `Current Truth (2026-07-06)` อยู่ด้านบน
+- `CLAUDE.md` ถูกอัปเดตให้บังคับอ่าน hardening docs และใช้ wording ใหม่
+- `HONEST_STATUS.md` ถูกเพิ่ม section ล่าสุดเรื่อง 5-class + safety triage + HPV morphology risk
+- `web-react/src/lib/data.ts` ลด wording เสี่ยง เช่น "พบลักษณะเซลล์มะเร็งชัดเจน" และ "สัญญาณ HPV"
+- เพิ่ม `tools/audit_claims.py` สำหรับตรวจคำเคลมเสี่ยงก่อน publish/generate เอกสารใหม่
+- เพิ่ม protocol docs ชุดใหม่สำหรับ Thai ThinPrep data, uncertainty/abstention, patient report safety, reader study, และ error analysis
+- เพิ่ม calibration experiment จริง (`ml/scripts/calibrate_temperature.py`) และรายงาน `docs/CALIBRATION_EXPERIMENT_REPORT.md`
+- เพิ่ม `docs/ERROR_ANALYSIS_REPORT_HERLEV.md` จาก confusion matrix จริง
+- เพิ่ม `docs/HERLEV_ERROR_CASE_GALLERY.md` และ `web-react/public/samples/error_cases.json` จาก sample artifacts เพื่อเป็น engineering review gallery ไม่ใช่ pathologist review
+- เพิ่ม `docs/PROJECT_READINESS_SCORECARD.md` เพื่อดู readiness แบบ done/partial/missing
+- เพิ่ม `docs/LEGACY_ARTIFACT_AUDIT.md` และ patch `report/make_full_report.py` ให้ wording HPV ปลอดภัยขึ้น
+- อัปเดตหน้า Analyze ให้มี HPV-related morphology risk panel แยก และ block patient report เมื่อ uncertainty สูง
+- เพิ่ม localStorage audit trail ในหน้า Analyze สำหรับ confirm/edit/reject พร้อม export JSON
+- เพิ่ม `docs/BROWSER_ACCESSIBILITY_VERIFICATION.md` และ `docs/THAI_DATA_INTAKE_CHECKLIST.md`
+- เพิ่ม `docs/EXTERNAL_EVIDENCE_REVIEW_2026.md` และ `docs/SOURCE_CITATION_LEDGER.md`
+  เพื่อผูก framing กับ WHO/CDC/FDA/CONSORT-AI/DECIDE-AI และกันการใช้ตัวเลขไทยที่ยังไม่ได้ pin primary source
+- อัปเดตเว็บตามไอเดียจาก DentScanAI: เพิ่ม `/history`, `/ask`, workflow cards
+  บนหน้าแรก, sample filter ใน `/analyze`, และแยก audit trail เป็น shared util
+- ทำชุด 1-8 ต่อ: sidebar app shell, dashboard หน้าแรก, `/gallery`,
+  `/workflow`, `/reports`, `docs/JUDGE_QA_BANK.md`, `docs/SUBMISSION_MASTER.md`,
+  และ `docs/FAILURE_MODE_AND_HUMAN_FACTORS.md`
+- รอบ 2026-07-07 เป็น web/docs completion + verification ไม่ใช่ clinical claim
+  ใหม่ ยังต้องถือว่าเป็น Phase 1 Herlev-only research prototype
+- เพิ่ม submission-readiness layer: intended use, demo runbook, pitch scripts,
+  WSEEC poster content, SFT/WSEEC package map, และ server-side audit roadmap
+- เพิ่มรูปเล่ม DOCX ฉบับสมบูรณ์ `docs/CerviCo_Pilot_Complete_Report_2026.docx`
+  พร้อมตาราง กราฟ รูป cytology/Grad-CAM และภาคผนวก โดย build จาก
+  `tools/build_full_booklet.py`
+- เพิ่มรูปเล่มรายงานวิจัยไทยฉบับทางการ
+  `docs/CerviCo_Pilot_Formal_Research_Report_2026_Polished.docx` โดย build จาก
+  `tools/build_formal_research_report.py` โครงสร้างเป็นปก, หน้าอนุมัติ,
+  บทคัดย่อไทย/อังกฤษ, บทที่ 1-5, เอกสารอ้างอิง และภาคผนวก เหมาะกว่าเล่ม
+  booklet สำหรับการส่งงานจริงจัง/รูปเล่มวิจัย
+- รอบ polish ล่าสุดปรับบทคัดย่อไทย/อังกฤษ, บทนำ/ปัญหาวิจัย/คำถามวิจัย,
+  เพิ่ม bibliography จริงใน `docs/FORMAL_REFERENCES_BIBLIOGRAPHY.md` และเพิ่ม
+  checklist ตรวจ Word/PDF ก่อนส่งใน `docs/FORMAL_REPORT_FINAL_POLISH_CHECKLIST.md`
+- รอบ web hardening ล่าสุดเปลี่ยน package metadata เป็น `cervico-pilot-web`,
+  เพิ่ม `/research-report` สำหรับ evidence/download package, เพิ่ม `/demo`
+  สำหรับสคริปต์เดโมกรรมการ, เพิ่ม mock server audit API (`/api/audit`),
+  เพิ่ม report export/copy controls และเพิ่ม deploy/QA docs
+- รอบ production-hardening demo ล่าสุดเพิ่ม SQLite hash-chain audit
+  (`artifacts/web_demo_audit.sqlite3`), `/api/ready`, `/api/metrics`,
+  `/api/report/export/html`, และหน้า `/deployment` สำหรับอธิบาย readiness
+  กับ production gaps อย่างซื่อสัตย์
+- เพิ่ม WSEEC 2026 full paper ภาษาอังกฤษตาม Guidebook และ FORMAT FULL PAPER
+  จริง: `docs/wseec_2026/CerviCo_Pilot_WSEEC_2026_Full_Paper.docx` และ `.pdf`
+  โดยคุม 12 หน้าหลัก + references, Arial 12, single spacing, A4,
+  margins 4/3/3/3 cm และมี format audit/checklist แยก
+- ฉบับที่ควรใช้ส่งล่าสุดคือ
+  `docs/wseec_2026/CerviCo_Pilot_WSEEC_2026_Full_Paper_Polished.docx`
+  และ `.pdf`; Word/PDF ตรงกัน 12 หน้า ปรับ cover, running header/page number,
+  chapter hierarchy, ตาราง, figure panels และ render QA แล้ว
+
+Claude ควรถือว่าเอกสาร hardening เหล่านี้เป็น source of truth ระดับเดียวกับ canonical JSON metrics
+และควรอัปเดต handoff นี้ทุกครั้งถ้ามีการเปลี่ยน core framing, metrics, validation status หรือ claim policy
+
+คำสั่งตรวจ claim:
+
+```powershell
+python tools\audit_claims.py
+```
+
+Calibration result ล่าสุด:
+
+- fitted temperature: **0.7941**
+- held-out multiclass ECE: **0.0669 -> 0.0387**
+- held-out binary ECE: **0.0907 -> 0.0738**
+- held-out binary Brier: **0.0710 -> 0.0670**
+- threshold 0.5 confusion after scaling remains **TP 101 / TN 26 / FP 10 / FN 0**
+
+ห้ามแปลผลว่า "fully calibrated"; ให้พูดว่า post-hoc temperature scaling improved calibration on held-out Herlev, external Thai validation still required.
+
+---
+
+---
+
+## 1. สรุปสั้นที่สุดก่อนเริ่ม
+
+โปรเจกต์นี้ไม่ควรถูกขายเป็นแค่ "AI classifier" หรือ "normal/abnormal triage"
+แต่ควรถูกวางเป็น:
+
+> **ระบบปัญญาประดิษฐ์เพื่อคัดกรองความผิดปกติของเซลล์ปากมดลูก และการประเมินความเสี่ยงเชื้อ HPV จากภาพถ่าย ThinPrep**
+
+English:
+
+> **Development of an AI System for Cervical Cell Abnormality Screening and HPV Risk Assessment from ThinPrep Images**
+
+ชื่อสำรอง/ชื่อเวทีสั้น:
+
+> **An Explainable Deep Learning System for Cervical Cytology Screening with Uncertainty-Aware, Clinician-in-the-Loop Triage**
+
+แกนความคิดล่าสุดของผู้ใช้:
+
+- ต้องการส่ง Solve for Tomorrow 2026 และ WSEEC
+- เชื่อว่า **5-class output ดีแล้ว** และไม่ควรถูกลดเหลือ binary classifier
+- จุดมุ่งหมายใหญ่คือ "Almost no one should die of cervical cancer"
+- AI ต้องช่วยคัดกรองเร็วขึ้น อธิบายได้ และช่วยลดคนไข้หลุด follow-up
+- ต้องพูดเรื่อง ThinPrep และ HPV ให้ละเอียด แต่ห้ามเคลมเกินว่า "AI ตรวจพบเชื้อ HPV"
+
+ประโยคสำคัญ:
+
+> **5-class Bethesda-style grading คือ product output หลัก ส่วน binary normal/abnormal triage คือ safety layer**
+
+---
+
+## 2. ตำแหน่งของโปรเจกต์ตอนนี้
+
+โปรเจกต์อยู่ที่:
+
+`C:\Users\LENOVO LEGION5\Desktop\claude work space\Projects\Project_CervicalAI`
+
+ไฟล์ที่ควรอ่านก่อนทำต่อ:
+
+1. `CLAUDE.md`
+2. `HONEST_STATUS.md`
+3. `REPRODUCIBILITY_REAL.md`
+4. `BENCHMARKS.md`
+5. `FINAL_SUBMISSION_PACKAGE.md`
+6. `docs/SFT_WSEEC_STRATEGY.md`
+7. `docs/THINPREP_HPV_FRAMING.md`
+8. `docs/SIRIRAJ_MIT_STRATEGY.md`
+9. `docs/CURVES_CALIBRATION.md`
+10. `models/test_metrics.json`
+11. `models/triage_metrics.json`
+12. `models/cv_results.json`
+13. `docs/EXTERNAL_EVIDENCE_REVIEW_2026.md`
+14. `docs/SOURCE_CITATION_LEDGER.md`
+15. `docs/INTENDED_USE_STATEMENT.md`
+16. `docs/WEB_DEMO_RUNBOOK.md`
+17. `docs/PITCH_SCRIPT_1_3_5MIN.md`
+18. `docs/POSTER_CONTENT_WSEEC.md`
+19. `docs/SFT_WSEEC_SUBMISSION_PACKAGE.md`
+20. `docs/SERVER_SIDE_AUDIT_ROADMAP.md`
+21. `docs/BOOKLET_BUILD_NOTES.md`
+22. `docs/CerviCo_Pilot_Complete_Report_2026.docx`
+
+ห้าม fabricate metrics เอง ให้ใช้ JSON canonical เท่านั้น
+
+---
+
+## 3. Framing ที่ถูกต้องสำหรับเวที
+
+### 3.1 Samsung Solve for Tomorrow 2026
+
+Solve for Tomorrow ควรขายเป็น social-impact + design-thinking + responsible-AI project
+
+แกนเรื่อง:
+
+1. ปัญหาไม่ใช่แค่ "ตรวจพบหรือไม่พบ"
+2. ปัญหาคือ screening coverage ลดลง และคนที่ได้ผลผิดปกติจำนวนมากไม่กลับมาติดตาม
+3. CerviCo-Pilot ช่วยเปลี่ยนภาพ cytology ให้เป็นผลคัดกรองที่เข้าใจง่าย อธิบายได้ และส่งต่อได้เร็ว
+4. ระบบ offline ได้ เหมาะกับคลินิก/โรงพยาบาลชุมชน/พื้นที่ทรัพยากรจำกัด
+5. มี human-in-the-loop: AI ไม่ปล่อยผลเอง ต้องมีแพทย์/บุคลากรยืนยัน
+
+Samsung SFT ควรเน้น:
+
+- Empathize: ผู้หญิงจำนวนมากไม่กลับมาติดตามหลังผลผิดปกติ
+- Define: ช่องว่างคือ follow-up gap ไม่ใช่แค่ model accuracy
+- Ideate: AI + Grad-CAM + uncertainty + report ที่คนไข้เข้าใจได้
+- Prototype: เว็บ offline ที่ upload ภาพแล้วเห็น Bethesda grade, heatmap, uncertainty, report
+- Test/Next step: Thai ThinPrep retrospective data + reader study + calibration
+
+ประโยค pitch:
+
+> CerviCo-Pilot is not trying to replace cytologists. It is trying to make sure abnormal slides are noticed, explained, and followed up before a preventable cancer becomes a late diagnosis.
+
+### 3.2 WSEEC
+
+WSEEC ควรขายเป็น science/engineering project ที่ซื่อสัตย์กับหลักฐาน
+
+แกนเรื่อง:
+
+1. Problem: cervical cancer screening and follow-up gap
+2. Dataset: real Herlev images, mapped to Bethesda-style 5-class
+3. Method: EfficientNet-B0 transfer learning
+4. Explainability: Grad-CAM
+5. Uncertainty: Monte Carlo Dropout
+6. Evaluation: held-out test, bootstrap CI, 5-fold CV, ROC, reliability/ECE
+7. Result: 5-class performance ยัง moderate แต่ binary safety triage แข็งแรง
+8. Limitation: no Thai data yet, no clinical validation, KOIL not learned in Phase 1
+
+WSEEC ต้องไม่หลบข้อจำกัด เพราะความซื่อสัตย์เป็นจุดแข็ง:
+
+> The five-class model is not yet a final diagnosis model. It is an early Bethesda grading assistant. For safety, the system also collapses predictions into a triage layer, where sensitivity is prioritized over specificity.
+
+---
+
+## 4. ทำไม 5-class ถึงควรเก็บไว้
+
+ผู้ใช้ย้ำว่าการแยก 5 class เป็นสิ่งที่ดี และควรรักษา framing นี้ไว้
+
+เหตุผล:
+
+1. **ตรงกับชื่อโครงงาน**
+   - ชื่อคือการคัดกรองความผิดปกติของเซลล์ปากมดลูก
+   - ถ้าเหลือแค่ normal/abnormal จะดูเป็น classifier ตื้น ๆ
+   - Bethesda-style 5-class ทำให้ระบบดูเหมือน workflow ทาง cytology มากกว่า
+
+2. **เชื่อมกับ HPV risk ได้ดีกว่า**
+   - HPV risk จากภาพไม่ได้มาจาก "ตรวจเชื้อ" แต่มาจาก morphology
+   - LSIL / KOIL / abnormal cytology เป็นช่องทางอธิบาย HPV-related visual risk
+   - ถ้าเหลือ binary จะอธิบายเรื่อง HPV ได้ยากกว่า
+
+3. **กรรมการเห็น technical depth**
+   - 5-class classification ยากกว่า binary
+   - มี per-class recall, QWK, confusion, limitation ให้พูดเชิงวิทยาศาสตร์
+   - เหมาะกับ WSEEC มากกว่า binary-only pitch
+
+4. **binary triage ยังใช้ได้ แต่เป็น safety layer**
+   - ใช้เพื่อพูดเรื่องไม่พลาดเคสผิดปกติ
+   - ไม่ควรกลายเป็น identity หลักของโปรเจกต์
+
+สรุป:
+
+> 5-class = clinical detail / product identity  
+> binary triage = safety argument / screening safeguard
+
+---
+
+## 5. ThinPrep + HPV: ต้องพูดอย่างไร
+
+ชื่อผู้ใช้ต้องการคือ:
+
+> การพัฒนาระบบปัญญาประดิษฐ์เพื่อคัดกรองความผิดปกติของเซลล์ปากมดลูก และการประเมินความเสี่ยงเชื้อ HPV จากภาพถ่าย ThinPrep
+
+สิ่งที่ต้องระวังมาก:
+
+> AI จากภาพ cytology **ไม่ใช่ HPV DNA/RNA test**
+
+ดังนั้นห้ามพูดว่า:
+
+- AI detects HPV
+- AI diagnoses HPV infection
+- AI replaces HPV DNA test
+- AI confirms HPV status
+
+ให้พูดว่า:
+
+- HPV-related morphology risk assessment
+- image-based HPV risk assessment
+- visual risk patterns associated with HPV-related cell changes
+- ประเมินความเสี่ยงที่สัมพันธ์กับ HPV จากลักษณะทางเซลล์วิทยา
+- ไม่ใช่การตรวจหาเชื้อ HPV DNA/RNA โดยตรง
+
+คำตอบกรรมการ:
+
+> ระบบนี้ไม่ได้ตรวจหาเชื้อ HPV โดยตรง เพราะการยืนยัน HPV ต้องใช้ HPV DNA/RNA test แต่ภาพ ThinPrep สามารถแสดงความผิดปกติของเซลล์ที่สัมพันธ์กับ HPV ได้ เช่น koilocytic atypia หรือ low-grade squamous lesion ดังนั้นระบบจึงประเมินความเสี่ยงที่สัมพันธ์กับ HPV จาก morphology ของเซลล์ และส่งต่อให้แพทย์ยืนยันเสมอ
+
+ทำไม ThinPrep สำคัญ:
+
+- เป็น liquid-based cytology workflow
+- ให้ภาพ/ชั้นเซลล์ที่ standardized กว่า conventional smear หลายกรณี
+- เชื่อมกับ lab workflow ได้จริง
+- เป็น input ที่สมเหตุสมผลสำหรับ AI มากกว่าภาพมือถือทั่วไป
+- เหมาะกับ narrative เรื่อง screening workflow
+
+---
+
+## 6. Metrics จริงที่ใช้ได้
+
+ใช้ตัวเลขจาก canonical JSON เท่านั้น:
+
+- `models/test_metrics.json`
+- `models/triage_metrics.json`
+- `models/cv_results.json`
+
+### 6.1 Model ปัจจุบัน
+
+จาก `tools/inspect_checkpoints.py`:
+
+- Checkpoint: `best_cervical.pt`
+- Architecture: EfficientNet-B0
+- Current real checkpoint ไม่ใช่ polluted EfficientNet-B3 0.99
+- 5-class model, Herlev-based
+
+### 6.2 Held-out 5-class metrics
+
+จาก `models/test_metrics.json`:
+
+- Accuracy: **0.6934**
+- Macro F1: **0.5545**
+- Macro recall: **0.5584**
+- recall_hsil_scc: **0.75**
+- Macro AUROC: **0.7311**
+- ECE ในไฟล์นี้เป็น **0.0** แต่ห้ามเคลมว่า calibrated เพราะตัวนี้ไม่ใช่ calibration proof
+
+Per-class recall:
+
+- NILM: **0.7222**
+- LSIL: **0.6122**
+- HSIL: **0.8667**
+- SCC: **0.5909**
+- KOIL: **0.0**
+
+Per-class F1:
+
+- NILM: **0.8125**
+- LSIL: **0.75**
+- HSIL: **0.5909**
+- SCC: **0.6190**
+- KOIL: **0.0**
+
+### 6.3 Held-out binary triage metrics
+
+จาก `models/triage_metrics.json`:
+
+- Test n: **137**
+- Sensitivity: **1.0**
+- Specificity: **0.7222**
+- PPV: **0.9099**
+- NPV: **1.0**
+- Accuracy: **0.927**
+- Balanced accuracy: **0.8611**
+- F1: **0.9528**
+- AUROC: **0.964**
+- AUPRC: **0.9856**
+- MCC: **0.8107**
+- Confusion: **TP 101 / TN 26 / FP 10 / FN 0**
+- High-risk catch HSIL+SCC: **1.0**
+
+### 6.4 5-fold CV metrics
+
+จาก `models/cv_results.json`:
+
+- 5-fold n: **917**
+- 5-class accuracy: **0.6904 +/- 0.0618**
+- 5-class recall_hsil_scc: **0.6859 +/- 0.0553**
+- 5-class macro F1: **0.5482 +/- 0.0475**
+- 5-class macro AUROC: **0.7271 +/- 0.0249**
+- QWK: **0.6981 +/- 0.0866**
+- Binary triage sensitivity: **0.9867 +/- 0.0086**
+- Binary triage specificity: **0.6910 +/- 0.1151**
+- Binary triage AUROC: **0.9435 +/- 0.0448**
+- Binary triage AUPRC: **0.9756 +/- 0.0217**
+
+### 6.5 Headline order ที่ควรใช้
+
+เวลาทำ pitch หรือ paper ให้เรียงแบบนี้:
+
+1. Product output: Bethesda-style 5-class screening
+2. Safety layer: 5-fold binary sensitivity **0.987 +/- 0.009**
+3. Held-out discrimination: binary AUROC **0.964**
+4. Held-out safety: high-risk catch **1.0**
+5. Confusion: **TP 101 / TN 26 / FP 10 / FN 0**
+6. Honest 5-class performance: accuracy **0.6934**
+7. QWK: **0.687 held-out**, **0.698 +/- 0.087 CV**
+8. HSIL recall: **0.8667**
+9. SCC recall: **0.5909**
+
+---
+
+## 7. Claims ที่พูดได้ / ห้ามพูด
+
+### พูดได้
+
+- Screening assistance
+- Bethesda grading support
+- HPV-related morphology risk assessment
+- Explainable AI
+- Grad-CAM heatmap
+- Uncertainty-aware triage
+- Clinician-in-the-loop
+- Offline prototype
+- Phase 1 evidence on public real images
+- Thai ThinPrep validation is the next step
+
+### ห้ามพูด
+
+- AI diagnoses cervical cancer
+- AI detects HPV infection
+- AI replaces HPV DNA/RNA testing
+- Ready for clinical use
+- Validated in Thailand
+- KOIL detection works
+- No one will die because of this system
+- Fully calibrated model
+- 99% 5-class accuracy
+
+เหตุผล:
+
+- โปรเจกต์ยังเป็น Phase 1 POC
+- Dataset ยังไม่ใช่ Thai ThinPrep clinical validation
+- KOIL class ยังไม่ learned ใน Phase 1 เพราะ Herlev ไม่มี true KOIL samples
+- มีผล binary triage ดี แต่ 5-class accuracy ยัง moderate
+
+---
+
+## 8. Abstract เวอร์ชันที่ควรใช้
+
+### English
+
+Almost no one should die of cervical cancer. Caught early on a Pap or ThinPrep
+slide, abnormal cells are nearly always stopped in time. Yet Thailand is moving
+in the wrong direction: screening coverage has fallen from 77.5% to 53.9%, and
+roughly 41% of women with abnormal results never return for care.
+
+CerviCo-Pilot was built to close that follow-up gap. A user uploads a ThinPrep
+or Pap cytology image; the system grades cervical cell abnormality on a
+Bethesda-style scale, estimates HPV-related visual risk from cytologic
+morphology, overlays a Grad-CAM heatmap over the regions it examined, and
+estimates uncertainty with Monte Carlo Dropout. When the model is unsure, it
+hands the case back to a clinician instead of forcing a prediction. It supports
+the clinician; it never pretends to be one.
+
+We trained EfficientNet-B0 on 917 real Herlev images and evaluated it using
+held-out testing, bootstrap confidence intervals, and 5-fold cross-validation.
+Binary screening sensitivity reached 0.987 +/- 0.009 across 5 folds, and
+held-out binary AUROC reached 0.964 with no high-risk case missed in the
+held-out triage test. The system runs offline, making it suitable for
+low-resource screening workflows.
+
+### Thai
+
+มะเร็งปากมดลูกเป็นโรคที่ป้องกันการเสียชีวิตได้มาก หากตรวจพบความผิดปกติของเซลล์ตั้งแต่ระยะเริ่มต้นจากภาพ Pap smear หรือ ThinPrep แต่ประเทศไทยกำลังเผชิญปัญหาสำคัญสองด้าน คืออัตราการเข้ารับการคัดกรองลดลงจาก 77.5% เหลือ 53.9% และผู้หญิงที่ได้รับผลผิดปกติประมาณ 41% ไม่กลับมาติดตามผลต่อ
+
+CerviCo-Pilot ถูกออกแบบมาเพื่อช่วยลดช่องว่างหลังการคัดกรอง ระบบรับภาพ ThinPrep หรือ Pap cytology แล้วจำแนกระดับความผิดปกติของเซลล์ตาม Bethesda scale พร้อมประเมินความเสี่ยงที่สัมพันธ์กับ HPV จากลักษณะทางเซลล์วิทยา ไม่ใช่การตรวจหาเชื้อ HPV DNA/RNA โดยตรง ระบบแสดง Grad-CAM heatmap เพื่อบอกว่าปัญญาประดิษฐ์พิจารณาบริเวณใดของภาพ เมื่อโมเดลไม่มั่นใจ ระบบจะ flag ให้แพทย์ตรวจทานแทนการปล่อยผลอัตโนมัติ และรายงานสำหรับผู้ป่วยจะออกได้หลังการยืนยันโดยบุคลากรทางการแพทย์เท่านั้น
+
+เราใช้ EfficientNet-B0 ฝึกบนภาพจริงจากชุดข้อมูล Herlev จำนวน 917 ภาพ และประเมินด้วย held-out test, bootstrap confidence intervals และ 5-fold cross-validation ผลการคัดกรองแบบปกติ/ผิดปกติให้ sensitivity เฉลี่ย 0.987 +/- 0.009 และ AUROC 0.964 บน held-out test โดยไม่พลาดเคสเสี่ยงสูงในการทดสอบ triage ระบบสามารถทำงานแบบ offline จึงเหมาะกับการสาธิต workflow สำหรับโรงพยาบาลชุมชนหรือพื้นที่ทรัพยากรจำกัด
+
+---
+
+## 9. สิ่งที่ Codex แก้ไปแล้ว
+
+### 9.1 เอกสารหลัก
+
+แก้/เพิ่มแล้ว:
+
+- `REPRODUCIBILITY_REAL.md`
+- `HONEST_STATUS.md`
+- `BENCHMARKS.md`
+- `FINAL_SUBMISSION_PACKAGE.md`
+- `docs/SIRIRAJ_MIT_STRATEGY.md`
+- `docs/SFT_WSEEC_STRATEGY.md`
+- `docs/THINPREP_HPV_FRAMING.md`
+- `docs/CURVES_CALIBRATION.md`
+
+สาระที่แก้:
+
+- เลิกใช้ framing แบบโมเดล 0.99 ที่ไม่น่าเชื่อถือ
+- ยืนยัน checkpoint ปัจจุบันเป็น EfficientNet-B0
+- วาง 5-class เป็น product output
+- วาง binary triage เป็น safety layer
+- เพิ่ม ThinPrep + HPV morphology risk wording
+- เพิ่มคำเตือนว่าไม่ใช่ HPV DNA/RNA test
+- เพิ่มเอกสารสำหรับ SFT/WSEEC โดยเฉพาะ
+
+### 9.2 โค้ด/เว็บ
+
+แก้/เพิ่มแล้ว:
+
+- `ml/scripts/gen_curves.py`
+- `web-react/public/samples/curves.json`
+- `web-react/src/pages/Performance.tsx`
+- `web-react/src/lib/data.ts`
+- `web-react/src/pages/About.tsx`
+- `web-react/src/pages/Analyze.tsx`
+- `server/app.py`
+- `server/predictor.py`
+- `tools/inspect_checkpoints.py`
+
+สาระที่แก้:
+
+- สร้าง ROC/reliability curve จาก canonical eval path
+- หน้า Performance แสดง AUROC/ECE/Brier และ calibration note
+- หน้า About/Analyze ปรับเป็น ThinPrep/Pap + 5-class + HPV morphology risk
+- API health เพิ่ม scope ว่า prototype/validated scope
+- predictor ระบุว่า LLM-style explanation/SAM/contour เป็น prototype ไม่ใช่ clinical validation
+- inspect checkpoint แสดง expected honest target ไม่ใช่ตัวเลขเกินจริง
+
+### 9.3 Verification ที่รันแล้ว
+
+ผ่านแล้ว:
+
+```powershell
+python ml\scripts\gen_curves.py
+python -m py_compile ml\scripts\gen_curves.py server\app.py server\predictor.py tools\inspect_checkpoints.py
+python tools\inspect_checkpoints.py
+npm.cmd run build
+```
+
+ผล `gen_curves.py`:
+
+- n = 137
+- roc_auc = 0.963971
+- ece = 0.090679
+- brier = 0.071015
+- confusion = TP 101 / TN 26 / FP 10 / FN 0
+
+ผล `npm.cmd run build` ล่าสุด:
+
+- ผ่าน
+- build ไปที่ `web-dist`
+- JS ประมาณ 288.60 kB
+
+---
+
+## 10. สิ่งที่ควรให้ Claude ทำต่อ
+
+### งาน A: ทำ submission package สำหรับ Samsung SFT
+
+ควรสร้าง:
+
+1. One-page Thai proposal
+2. 3-minute Thai pitch script
+3. 1-minute elevator pitch
+4. Problem-solution-impact diagram
+5. Thai patient journey storyboard
+6. Demo script
+7. Q&A defense sheet
+
+โทน:
+
+- Human-centered
+- ไม่ technical จนเกินไป
+- เน้นผู้หญิงที่ผลผิดปกติแล้วหายจากระบบ
+- เน้น offline + human-in-the-loop + report ภาษาไทย
+
+### งาน B: ทำ WSEEC paper / presentation
+
+ควรสร้าง:
+
+1. English abstract
+2. Introduction
+3. Methodology
+4. Dataset and preprocessing
+5. Evaluation protocol
+6. Results
+7. Discussion
+8. Limitations
+9. Future work
+10. References
+
+โทน:
+
+- Scientific honesty
+- ใช้ metrics จริงเท่านั้น
+- ไม่ซ่อน 5-class accuracy moderate
+- อธิบายว่าทำไม screening safety layer จึงสำคัญ
+
+### งาน C: ปรับ pitch deck
+
+ควรตรวจไฟล์:
+
+- `PITCH_DECK.md`
+- `PITCH_SCRIPT.md`
+- `pitch/make_pitch_pptx.py`
+
+เป้าหมาย:
+
+- เปลี่ยน title เป็น ThinPrep + HPV risk title
+- ใส่ 5-class as main output
+- ใส่ binary triage as safety layer
+- ใส่ "not HPV DNA/RNA test"
+- ใส่ Grad-CAM + uncertainty + clinician sign-off
+
+### งาน D: ปรับ report generator
+
+ควรตรวจไฟล์:
+
+- `report/make_wseec_paper.py`
+- `report/make_cervical_doc.py`
+- `report/make_report.py`
+
+เป้าหมาย:
+
+- sync wording ล่าสุด
+- sync metrics จริง
+- เพิ่ม ThinPrep/HPV caveat
+- ห้ามให้ docx พูดว่า HPV detected
+
+### งาน E: เพิ่ม UX mock/flow ในเว็บ
+
+ถ้าจะทำต่อใน frontend:
+
+- เพิ่ม "HPV-related morphology risk" panel
+- แยก "Bethesda grade" กับ "HPV risk note"
+- เพิ่ม disclaimer ใกล้ผล HPV risk
+- แสดงว่า report ปล่อยได้หลัง clinician sign-off เท่านั้น
+
+สำคัญ:
+
+- ถ้าทำ frontend ต้องรัน `npm.cmd run build` หลังแก้
+
+### งาน F: เตรียม Q&A
+
+คำถามกรรมการที่ต้องเตรียม:
+
+1. ทำไมไม่ใช้ ChatGPT/Claude/Gemini?
+2. AI จากภาพตรวจ HPV ได้อย่างไร?
+3. ถ้า 5-class accuracy แค่ 0.69 ทำไมยังน่าเชื่อถือ?
+4. ทำไมไม่ใช้ binary classifier อย่างเดียว?
+5. ใช้จริงในโรงพยาบาลได้หรือยัง?
+6. ถ้า Grad-CAM ชี้ผิดจะทำอย่างไร?
+7. ถ้า model ไม่มั่นใจจะเกิดอะไรขึ้น?
+8. ข้อมูลไทยอยู่ไหน?
+9. มี bias/domain shift ไหม?
+10. ทำไม offline สำคัญ?
+
+คำตอบแกน:
+
+- ไม่ใช้ general chatbot เพราะงานนี้ต้องอ่านภาพ cytology ด้วย model ที่ train/evaluate เฉพาะ task, มี deterministic evaluation, heatmap, uncertainty, audit trail และ offline deployment
+- HPV risk คือ morphology risk ไม่ใช่ DNA/RNA detection
+- 5-class ยังเป็น grading assistant; safety layer sensitivity สูงใช้ป้องกัน miss
+- ยังไม่ clinical use; Phase 2 ต้อง Thai ThinPrep + reader study + calibration
+
+---
+
+## 11. คำตอบเรื่อง "ทำไมไม่ใช้ ChatGPT/Claude/Gemini"
+
+ควรตอบประมาณนี้:
+
+> ChatGPT, Claude, หรือ Gemini เป็น general-purpose assistants ที่ช่วยอธิบายหรือเขียนรายงานได้ แต่ไม่ใช่ระบบคัดกรอง cytology ที่ถูก train และประเมินด้วย protocol เฉพาะงานนี้ CerviCo-Pilot ต่างออกไปเพราะมีโมเดล vision เฉพาะ cervical cytology, มีการวัด sensitivity/AUROC/QWK บน held-out และ 5-fold CV, มี Grad-CAM เพื่อให้แพทย์ตรวจสอบจุดที่โมเดลดู, มี Monte Carlo Dropout เพื่อ flag ความไม่แน่นอน, ทำงาน offline ได้ และบังคับ clinician sign-off ก่อนออกผลผู้ป่วย ดังนั้นมันไม่ใช่ chatbot มาตอบแทนแพทย์ แต่เป็น workflow tool สำหรับคัดกรองและติดตามผล
+
+เวอร์ชันสั้น:
+
+> General chatbots answer questions; CerviCo-Pilot is an evaluated, offline, image-based screening workflow with explainability, uncertainty, and clinician sign-off.
+
+---
+
+## 12. ความเสี่ยงของ project และวิธีพูด
+
+### Risk 1: 5-class accuracy moderate
+
+พูดตรง ๆ:
+
+> 5-class grading is still an early assistant, not a final diagnostic model. The safety layer is designed to reduce missed abnormal/high-risk cases.
+
+### Risk 2: No Thai validation yet
+
+พูดตรง ๆ:
+
+> Current evidence is Phase 1 on public real cytology images. Thai ThinPrep validation and reader study are the next step.
+
+### Risk 3: HPV claim อาจถูกตีว่าเกินจริง
+
+พูดตรง ๆ:
+
+> It is HPV-related morphology risk assessment, not HPV infection detection.
+
+### Risk 4: KOIL recall = 0
+
+พูดตรง ๆ:
+
+> Herlev does not contain true KOIL samples in the current Phase 1 training/evaluation, so KOIL is Phase 2 target, not a validated current capability.
+
+### Risk 5: Specificity around 0.69-0.72
+
+พูดตรง ๆ:
+
+> In screening, some over-referral is acceptable if the priority is not missing abnormal cases. Clinician sign-off prevents unsafe automation.
+
+---
+
+## 13. Suggested file names Claude may create next
+
+ถ้าทำเอกสารต่อ แนะนำสร้าง:
+
+- `docs/SAMSUNG_SFT_2026_SUBMISSION_DRAFT.md`
+- `docs/SAMSUNG_SFT_2026_PITCH_SCRIPT_TH.md`
+- `docs/WSEEC_2026_FULL_PAPER_DRAFT.md`
+- `docs/WSEEC_2026_PRESENTATION_SCRIPT.md`
+- `docs/HPV_THINPREP_EXPLAINER_FOR_JUDGES.md`
+
+ทำแล้ว ไม่ต้องสร้างซ้ำ:
+
+- `docs/JUDGE_QA_BANK.md`
+- `docs/SUBMISSION_MASTER.md`
+- `docs/FAILURE_MODE_AND_HUMAN_FACTORS.md`
+
+ถ้าทำ slide/deck:
+
+- `pitch/SFT_2026_DECK.md`
+- `pitch/WSEEC_2026_DECK.md`
+
+---
+
+## 14. Commands ที่ใช้ได้
+
+จาก project root:
+
+```powershell
+cd "C:\Users\LENOVO LEGION5\Desktop\claude work space\Projects\Project_CervicalAI"
+python tools\inspect_checkpoints.py
+python ml\scripts\gen_curves.py
+python -m py_compile ml\scripts\gen_curves.py server\app.py server\predictor.py tools\inspect_checkpoints.py
+```
+
+Frontend:
+
+```powershell
+cd "C:\Users\LENOVO LEGION5\Desktop\claude work space\Projects\Project_CervicalAI\web-react"
+npm.cmd run build
+```
+
+อย่าใช้ `npm run build` ใน PowerShell ถ้าติด execution policy ให้ใช้ `npm.cmd run build`
+
+---
+
+## 15. Final guidance for Claude
+
+อย่าทำให้ project ดูเกินจริง จุดแข็งของ CerviCo-Pilot คือมันจริงใจและรับผิดชอบ:
+
+- มี 5-class output ที่เป็น clinical-style product
+- มี safety triage layer ที่เน้นไม่พลาด abnormal/high-risk cases
+- มี Grad-CAM ให้แพทย์ท้าทาย reasoning ได้
+- มี MC Dropout เพื่อยอมรับความไม่แน่นอน
+- มี clinician sign-off เพื่อไม่ปล่อยผลอัตโนมัติ
+- มี offline deployment story
+- มี limitation ชัดเจนและ plan สำหรับ Thai ThinPrep validation
+
+ข้อความสุดท้ายที่ควรยึด:
+
+> CerviCo-Pilot is not a diagnosis machine. It is a cervical screening co-pilot: it reads ThinPrep/Pap cytology images, suggests a Bethesda-style grade, estimates HPV-related visual risk, explains where it looked, flags uncertainty, and keeps the clinician in control.

@@ -1,0 +1,12 @@
+{
+  "acc": 0.6934,
+  "macro_f1": 0.5545,
+  "macro_rec": 0.5584,
+  "recall_hsil_scc": 0.75,
+  "auc_macro": 0.7311,
+  "ece": 0.0,
+  "per_class_f1": [0.8125, 0.75, 0.5909, 0.619, 0.0],
+  "per_class_rec": [0.7222, 0.6122, 0.8667, 0.5909, 0.0],
+  "_source": "best_cervical.pt re-evaluated on real Herlev held-out test (n=137), TTA. Matches shipped model. See models/triage_metrics.json for binary-triage view.",
+  "_note": "ece shown 0.0 = not properly calibrated yet; do not claim well-calibrated. KOIL support=0 (Herlev has no koilocyte)."
+}

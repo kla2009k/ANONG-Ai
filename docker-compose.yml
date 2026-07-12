@@ -1,0 +1,12 @@
+services:
+  anong:
+    build: .
+    ports:
+      - "8003:8003"
+    environment:
+      ANONG_ALLOWED_ORIGINS: "http://localhost:8003,http://localhost:4174,http://localhost:5173"
+    volumes:
+      - anong_artifacts:/app/artifacts
+
+volumes:
+  anong_artifacts:

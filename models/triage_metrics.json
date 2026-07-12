@@ -1,0 +1,110 @@
+{
+  "n_test": 137,
+  "tta": true,
+  "threshold_abnormal": 0.5,
+  "n_boot": 2000,
+  "arch": "efficientnet_b0",
+  "five_class": {
+    "accuracy": 0.6934,
+    "balanced_accuracy": 0.698,
+    "macro_f1": 0.5545,
+    "recall_hsil_scc": 0.75,
+    "auc_macro": 0.7311,
+    "mcc": 0.6167,
+    "quadratic_weighted_kappa": 0.687,
+    "per_class": {
+      "NILM": {
+        "support": 36,
+        "recall": 0.7222,
+        "precision": 0.9286,
+        "f1": 0.8125
+      },
+      "LSIL": {
+        "support": 49,
+        "recall": 0.6122,
+        "precision": 0.9677,
+        "f1": 0.75
+      },
+      "HSIL": {
+        "support": 30,
+        "recall": 0.8667,
+        "precision": 0.4483,
+        "f1": 0.5909
+      },
+      "SCC": {
+        "support": 22,
+        "recall": 0.5909,
+        "precision": 0.65,
+        "f1": 0.619
+      },
+      "KOIL": {
+        "support": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      }
+    },
+    "ci95": {
+      "accuracy": [
+        0.6131,
+        0.7666
+      ],
+      "qwk": [
+        0.561,
+        0.7974
+      ],
+      "balanced_accuracy": [
+        0.614,
+        0.7729
+      ]
+    }
+  },
+  "binary_triage": {
+    "definition": "NILM=normal(neg); LSIL/HSIL/SCC/KOIL=abnormal(pos)",
+    "sensitivity_recall": 1.0,
+    "specificity": 0.7222,
+    "ppv_precision": 0.9099,
+    "npv": 1.0,
+    "accuracy": 0.927,
+    "balanced_accuracy": 0.8611,
+    "f1": 0.9528,
+    "auroc": 0.964,
+    "auprc": 0.9856,
+    "mcc": 0.8107,
+    "youden_j": 0.7222,
+    "confusion": {
+      "TP": 101,
+      "TN": 26,
+      "FP": 10,
+      "FN": 0
+    },
+    "ci95": {
+      "sensitivity": [
+        1.0,
+        1.0
+      ],
+      "specificity": [
+        0.5714,
+        0.8621
+      ],
+      "accuracy": [
+        0.8759,
+        0.9708
+      ],
+      "auroc": [
+        0.9249,
+        0.991
+      ],
+      "auprc": [
+        0.9686,
+        0.9972
+      ],
+      "mcc": [
+        0.7045,
+        0.9092
+      ]
+    }
+  },
+  "high_risk_catch_rate_HSIL_SCC": 1.0,
+  "note": "binary = triage view ของโมเดล 5-class เดียวกัน. CI = bootstrap percentile 95pct, n_boot=2000. honest."
+}

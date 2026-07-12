@@ -1,0 +1,46 @@
+{
+  "format_source": [
+    "docs/wseec_2026/references/Guidebook_WSEEC_2026.pdf",
+    "docs/wseec_2026/references/FORMAT_FULL_PAPER.pdf"
+  ],
+  "requirements": {
+    "language": "English",
+    "paper_size": "A4",
+    "font": "Arial 12 pt",
+    "line_spacing": "single",
+    "margins_cm": {
+      "left": 4,
+      "right": 3,
+      "top": 3,
+      "bottom": 3
+    },
+    "main_page_limit": 12,
+    "references_excluded": true,
+    "abstract_max_words": 350,
+    "keywords_required": "4-6"
+  },
+  "outputs": {
+    "docx": "C:\\Users\\LENOVO LEGION5\\Desktop\\claude work space\\Projects\\Project_CervicalAI\\docs\\wseec_2026\\CerviCo_Pilot_WSEEC_2026_Full_Paper.docx",
+    "pdf": "C:\\Users\\LENOVO LEGION5\\Desktop\\claude work space\\Projects\\Project_CervicalAI\\docs\\wseec_2026\\CerviCo_Pilot_WSEEC_2026_Full_Paper.pdf",
+    "pdf_pages_total": 13,
+    "planned_main_pages": 12,
+    "reference_start_page": 13,
+    "docx_paragraphs": 137,
+    "docx_tables": 16,
+    "docx_figures": 5,
+    "abstract_words": 215,
+    "keywords": 6
+  },
+  "checks": {
+    "abstract_under_350": true,
+    "keywords_4_to_6": true,
+    "pdf_has_references_after_main_pages": true,
+    "docx_exists": true,
+    "pdf_exists": true
+  },
+  "placeholders_to_replace": [
+    "AUTHOR 1-6",
+    "INSTITUTION LOGO",
+    "INSTITUTION NAME"
+  ]
+}

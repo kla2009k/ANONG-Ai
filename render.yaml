@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: anong-ai
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/ready
+    envVars:
+      - key: PORT
+        value: 8003
+      - key: ANONG_ALLOWED_ORIGINS
+        value: https://kla2009k.github.io

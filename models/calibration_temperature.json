@@ -1,0 +1,70 @@
+{
+  "checkpoint": "models\\best_cervical.pt",
+  "validation_split": "data\\processed\\split_val.csv",
+  "test_split": "data\\processed\\split_test.csv",
+  "classes": [
+    "NILM",
+    "LSIL",
+    "HSIL",
+    "SCC",
+    "KOIL"
+  ],
+  "temperature": 0.7941029667854309,
+  "validation_before": {
+    "temperature": 1.0,
+    "nll": 0.796539,
+    "ece_multiclass_10bin": 0.068175,
+    "ece_binary_10bin": 0.100888,
+    "brier_binary": 0.086672,
+    "auroc_binary": 0.961496,
+    "confusion_threshold_0_5": {
+      "TP": 100,
+      "TN": 20,
+      "FP": 16,
+      "FN": 1
+    }
+  },
+  "validation_after": {
+    "temperature": 0.794103,
+    "nll": 0.779949,
+    "ece_multiclass_10bin": 0.067365,
+    "ece_binary_10bin": 0.069811,
+    "brier_binary": 0.086766,
+    "auroc_binary": 0.959846,
+    "confusion_threshold_0_5": {
+      "TP": 100,
+      "TN": 20,
+      "FP": 16,
+      "FN": 1
+    }
+  },
+  "test_before": {
+    "temperature": 1.0,
+    "nll": 0.793973,
+    "ece_multiclass_10bin": 0.066853,
+    "ece_binary_10bin": 0.090679,
+    "brier_binary": 0.071015,
+    "auroc_binary": 0.963971,
+    "confusion_threshold_0_5": {
+      "TP": 101,
+      "TN": 26,
+      "FP": 10,
+      "FN": 0
+    }
+  },
+  "test_after": {
+    "temperature": 0.794103,
+    "nll": 0.776199,
+    "ece_multiclass_10bin": 0.03867,
+    "ece_binary_10bin": 0.073787,
+    "brier_binary": 0.066994,
+    "auroc_binary": 0.963421,
+    "confusion_threshold_0_5": {
+      "TP": 101,
+      "TN": 26,
+      "FP": 10,
+      "FN": 0
+    }
+  },
+  "note": "Post-hoc scalar temperature scaling. Does not change checkpoint weights or prove external clinical calibration."
+}

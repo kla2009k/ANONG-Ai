@@ -1,0 +1,9 @@
+fastapi==0.135.1
+uvicorn[standard]==0.41.0
+torch==2.11.0
+torchvision==0.26.0
+opencv-python-headless==4.10.0.84
+numpy==2.4.6
+Pillow==12.2.0
+pydantic==2.12.5
+grad-cam==1.5.5

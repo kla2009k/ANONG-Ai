@@ -1,0 +1,146 @@
+[
+  {
+    "id": "s00_NILM",
+    "image": "samples/s00_NILM.jpg",
+    "gradcam": "samples/s00_NILM_cam.jpg",
+    "true_label": "NILM",
+    "predicted_label": "NILM",
+    "correct": true,
+    "confidence": 0.621,
+    "uncertainty": {
+      "entropy": 0.989,
+      "std": 0.026,
+      "level": "med",
+      "flag": false
+    },
+    "error_bucket": "correct_reference_sample",
+    "engineering_review_note": "Reference sample for UI/demo; still requires clinician sign-off.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s01_NILM",
+    "image": "samples/s01_NILM.jpg",
+    "gradcam": "samples/s01_NILM_cam.jpg",
+    "true_label": "NILM",
+    "predicted_label": "NILM",
+    "correct": true,
+    "confidence": 0.837,
+    "uncertainty": {
+      "entropy": 0.697,
+      "std": 0.029,
+      "level": "med",
+      "flag": false
+    },
+    "error_bucket": "correct_reference_sample",
+    "engineering_review_note": "Reference sample for UI/demo; still requires clinician sign-off.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s02_LSIL",
+    "image": "samples/s02_LSIL.jpg",
+    "gradcam": "samples/s02_LSIL_cam.jpg",
+    "true_label": "LSIL",
+    "predicted_label": "LSIL",
+    "correct": true,
+    "confidence": 0.592,
+    "uncertainty": {
+      "entropy": 0.867,
+      "std": 0.033,
+      "level": "med",
+      "flag": false
+    },
+    "error_bucket": "correct_reference_sample",
+    "engineering_review_note": "Reference sample for UI/demo; still requires clinician sign-off.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s03_LSIL",
+    "image": "samples/s03_LSIL.jpg",
+    "gradcam": "samples/s03_LSIL_cam.jpg",
+    "true_label": "LSIL",
+    "predicted_label": "HSIL",
+    "correct": false,
+    "confidence": 0.484,
+    "uncertainty": {
+      "entropy": 0.876,
+      "std": 0.037,
+      "level": "med",
+      "flag": false
+    },
+    "error_bucket": "severity_overcall",
+    "engineering_review_note": "Likely conservative severity over-call; clinician review should resolve final grade.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s04_HSIL",
+    "image": "samples/s04_HSIL.jpg",
+    "gradcam": "samples/s04_HSIL_cam.jpg",
+    "true_label": "HSIL",
+    "predicted_label": "SCC",
+    "correct": false,
+    "confidence": 0.568,
+    "uncertainty": {
+      "entropy": 1.174,
+      "std": 0.031,
+      "level": "high",
+      "flag": true
+    },
+    "error_bucket": "class_boundary_confusion",
+    "engineering_review_note": "Boundary confusion; use for error-analysis review.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s05_HSIL",
+    "image": "samples/s05_HSIL.jpg",
+    "gradcam": "samples/s05_HSIL_cam.jpg",
+    "true_label": "HSIL",
+    "predicted_label": "HSIL",
+    "correct": true,
+    "confidence": 0.653,
+    "uncertainty": {
+      "entropy": 0.846,
+      "std": 0.039,
+      "level": "med",
+      "flag": false
+    },
+    "error_bucket": "correct_reference_sample",
+    "engineering_review_note": "Reference sample for UI/demo; still requires clinician sign-off.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s06_SCC",
+    "image": "samples/s06_SCC.jpg",
+    "gradcam": "samples/s06_SCC_cam.jpg",
+    "true_label": "SCC",
+    "predicted_label": "HSIL",
+    "correct": false,
+    "confidence": 0.855,
+    "uncertainty": {
+      "entropy": 0.444,
+      "std": 0.024,
+      "level": "low",
+      "flag": false
+    },
+    "error_bucket": "high_risk_grade_confusion",
+    "engineering_review_note": "HSIL/SCC boundary confusion; still abnormal/high-risk for triage.",
+    "expert_review_status": "not_pathologist_reviewed"
+  },
+  {
+    "id": "s07_SCC",
+    "image": "samples/s07_SCC.jpg",
+    "gradcam": "samples/s07_SCC_cam.jpg",
+    "true_label": "SCC",
+    "predicted_label": "LSIL",
+    "correct": false,
+    "confidence": 0.512,
+    "uncertainty": {
+      "entropy": 1.077,
+      "std": 0.036,
+      "level": "high",
+      "flag": true
+    },
+    "error_bucket": "high_risk_undercall",
+    "engineering_review_note": "High-risk under-call. Prioritize for manual review and threshold policy.",
+    "expert_review_status": "not_pathologist_reviewed"
+  }
+]

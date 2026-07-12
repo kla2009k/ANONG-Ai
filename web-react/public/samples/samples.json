@@ -1,0 +1,178 @@
+[
+  {
+    "id": "s00_NILM",
+    "file": "samples/s00_NILM.jpg",
+    "cam": "samples/s00_NILM_cam.jpg",
+    "true_label": "NILM",
+    "top": "NILM",
+    "correct": true,
+    "conf": 0.621,
+    "probs": {
+      "NILM": 0.621,
+      "LSIL": 0.176,
+      "HSIL": 0.033,
+      "SCC": 0.03,
+      "KOIL": 0.14
+    },
+    "uncertainty": {
+      "entropy": 0.989,
+      "std": 0.026,
+      "level": "med",
+      "flag": false
+    }
+  },
+  {
+    "id": "s01_NILM",
+    "file": "samples/s01_NILM.jpg",
+    "cam": "samples/s01_NILM_cam.jpg",
+    "true_label": "NILM",
+    "top": "NILM",
+    "correct": true,
+    "conf": 0.837,
+    "probs": {
+      "NILM": 0.837,
+      "LSIL": 0.05,
+      "HSIL": 0.009,
+      "SCC": 0.017,
+      "KOIL": 0.087
+    },
+    "uncertainty": {
+      "entropy": 0.697,
+      "std": 0.029,
+      "level": "med",
+      "flag": false
+    }
+  },
+  {
+    "id": "s02_LSIL",
+    "file": "samples/s02_LSIL.jpg",
+    "cam": "samples/s02_LSIL_cam.jpg",
+    "true_label": "LSIL",
+    "top": "LSIL",
+    "correct": true,
+    "conf": 0.592,
+    "probs": {
+      "NILM": 0.017,
+      "LSIL": 0.592,
+      "HSIL": 0.295,
+      "SCC": 0.085,
+      "KOIL": 0.012
+    },
+    "uncertainty": {
+      "entropy": 0.867,
+      "std": 0.033,
+      "level": "med",
+      "flag": false
+    }
+  },
+  {
+    "id": "s03_LSIL",
+    "file": "samples/s03_LSIL.jpg",
+    "cam": "samples/s03_LSIL_cam.jpg",
+    "true_label": "LSIL",
+    "top": "HSIL",
+    "correct": false,
+    "conf": 0.484,
+    "probs": {
+      "NILM": 0.011,
+      "LSIL": 0.468,
+      "HSIL": 0.484,
+      "SCC": 0.031,
+      "KOIL": 0.006
+    },
+    "uncertainty": {
+      "entropy": 0.876,
+      "std": 0.037,
+      "level": "med",
+      "flag": false
+    }
+  },
+  {
+    "id": "s04_HSIL",
+    "file": "samples/s04_HSIL.jpg",
+    "cam": "samples/s04_HSIL_cam.jpg",
+    "true_label": "HSIL",
+    "top": "SCC",
+    "correct": false,
+    "conf": 0.568,
+    "probs": {
+      "NILM": 0.046,
+      "LSIL": 0.151,
+      "HSIL": 0.222,
+      "SCC": 0.568,
+      "KOIL": 0.012
+    },
+    "uncertainty": {
+      "entropy": 1.174,
+      "std": 0.031,
+      "level": "high",
+      "flag": true
+    }
+  },
+  {
+    "id": "s05_HSIL",
+    "file": "samples/s05_HSIL.jpg",
+    "cam": "samples/s05_HSIL_cam.jpg",
+    "true_label": "HSIL",
+    "top": "HSIL",
+    "correct": true,
+    "conf": 0.653,
+    "probs": {
+      "NILM": 0.044,
+      "LSIL": 0.275,
+      "HSIL": 0.653,
+      "SCC": 0.021,
+      "KOIL": 0.007
+    },
+    "uncertainty": {
+      "entropy": 0.846,
+      "std": 0.039,
+      "level": "med",
+      "flag": false
+    }
+  },
+  {
+    "id": "s06_SCC",
+    "file": "samples/s06_SCC.jpg",
+    "cam": "samples/s06_SCC_cam.jpg",
+    "true_label": "SCC",
+    "top": "HSIL",
+    "correct": false,
+    "conf": 0.855,
+    "probs": {
+      "NILM": 0.031,
+      "LSIL": 0.004,
+      "HSIL": 0.855,
+      "SCC": 0.109,
+      "KOIL": 0.001
+    },
+    "uncertainty": {
+      "entropy": 0.444,
+      "std": 0.024,
+      "level": "low",
+      "flag": false
+    }
+  },
+  {
+    "id": "s07_SCC",
+    "file": "samples/s07_SCC.jpg",
+    "cam": "samples/s07_SCC_cam.jpg",
+    "true_label": "SCC",
+    "top": "LSIL",
+    "correct": false,
+    "conf": 0.512,
+    "probs": {
+      "NILM": 0.017,
+      "LSIL": 0.512,
+      "HSIL": 0.298,
+      "SCC": 0.165,
+      "KOIL": 0.008
+    },
+    "uncertainty": {
+      "entropy": 1.077,
+      "std": 0.036,
+      "level": "high",
+      "flag": true
+    }
+  }
+]

@@ -1,0 +1,58 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Python / runtime output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+logs/
+artifacts/
+temp_*
+*_out.txt
+
+# Training data and generated experiments
+data/raw/
+data/processed/
+data/cache/
+_archive/
+notebooks/.ipynb_checkpoints/
+ml/benchmarks/
+ml/data/
+ml/factory_logs/
+ml/ml/
+ml/models/
+ml/scripts/variants/
+ml/*_results*.json
+ml/*.err
+ml/*.txt
+models/xai_*/
+models/quality_*/
+models/*.pth
+models/*.pt
+!models/best_cervical.pt
+
+# Frontend dependencies and build output
+node_modules/
+web-react/node_modules/
+web-react/tsconfig.tsbuildinfo
+web-dist/
+web/
+pages-preview/
+pages-build/
+
+# Generated packages and QA renders
+*.zip
+docs/**/qa_renders*/
+docs/**/reference_renders/
+docs/**/references/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
