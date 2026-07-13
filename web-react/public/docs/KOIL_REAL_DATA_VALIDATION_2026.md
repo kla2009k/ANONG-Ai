@@ -142,7 +142,7 @@ Supported wording:
   source-cluster bootstrap resamples."
 - "The model detects morphology consistent with SIPaKMeD's Koilocytotic class."
 
-Prohibited wording:
+Claims to avoid:
 
 - "The model detects HPV infection or genotype."
 - "The KOIL result is validated on ThinPrep or Thai clinical data."
