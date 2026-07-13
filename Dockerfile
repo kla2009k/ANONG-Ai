@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY server/ server/
 COPY ml/ ml/
 COPY models/best_cervical.pt models/best_cervical.pt
+COPY models/koil_sipakmed/best_koil_model.pt models/koil_sipakmed/best_koil_model.pt
 COPY --from=web-build /build/web-dist web-dist/
 RUN mkdir -p artifacts
 EXPOSE 8003

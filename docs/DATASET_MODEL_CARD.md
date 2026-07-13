@@ -1,5 +1,13 @@
 # Dataset and Model Card
 
+> **KOIL endpoint update (2026-07-13):** The historical Herlev checkpoint has
+> zero true KOIL support, so KOIL is excluded from the deployed grade output.
+> A separate EfficientNet-B0 KOIL morphology model is internally validated on
+> 4,049 official SIPaKMeD conventional Pap-smear cells using source-cluster-
+> disjoint splits. Locked-test sensitivity is 0.9624, specificity 0.9764, and
+> AUROC 0.9912. See `KOIL_REAL_DATA_VALIDATION_2026.md`. This is not ThinPrep
+> validation and not HPV DNA/RNA detection.
+
 Last updated: 2026-07-06
 
 ## Model
@@ -9,7 +17,8 @@ Architecture: EfficientNet-B0
 Task: cervical cytology image screening  
 Outputs:
 
-- Bethesda-style 5-class grade: NILM / LSIL / HSIL / SCC / KOIL placeholder
+- Bethesda-style four-class grade: NILM / LSIL / HSIL / SCC
+- independent KOIL morphology assessment from the SIPaKMeD endpoint
 - binary safety triage: normal vs abnormal
 - HPV-related morphology risk note
 - Grad-CAM heatmap
@@ -57,7 +66,7 @@ Current facts:
 | LSIL | Low-grade squamous intraepithelial lesion | Supported |
 | HSIL | High-grade squamous intraepithelial lesion | Supported |
 | SCC | Squamous cell carcinoma | Supported but recall imperfect |
-| KOIL | Koilocyte / HPV-effect morphology | Placeholder; not learned in Phase 1 |
+| KOIL | Koilocyte / HPV-effect morphology | Separate SIPaKMeD endpoint; not a Bethesda grade |
 
 Binary safety triage:
 
@@ -68,11 +77,11 @@ Binary safety triage:
 
 Held-out test:
 
-- 5-class accuracy: 0.6934
-- 5-class QWK: 0.687
+- supported-grade four-class accuracy: 0.6934
+- supported-grade four-class QWK: 0.687
 - HSIL recall: 0.8667
 - SCC recall: 0.5909
-- KOIL recall: N/A (not estimable because support is 0)
+- historical Herlev KOIL recall: N/A (not estimable because support is 0)
 - binary sensitivity: 1.0
 - binary specificity: 0.7222
 - binary AUROC: 0.964
@@ -80,7 +89,7 @@ Held-out test:
 
 5-fold CV:
 
-- 5-class accuracy: 0.6904 +/- 0.0618
+- supported-grade four-class accuracy: 0.6904 +/- 0.0618
 - QWK: 0.6981 +/- 0.0866
 - binary sensitivity: 0.9867 +/- 0.0086
 - binary AUROC: 0.9435 +/- 0.0448
@@ -90,7 +99,7 @@ Held-out test:
 - Small public dataset.
 - No Thai ThinPrep validation.
 - No paired HPV endpoint.
-- KOIL not validated.
+- KOIL is internally validated on SIPaKMeD conventional Pap-smear crops, but not externally validated on ThinPrep or paired to HPV assays.
 - SCC recall remains imperfect.
 - Calibration tuning incomplete.
 - Grad-CAM is an explanation aid, not proof of correct reasoning.

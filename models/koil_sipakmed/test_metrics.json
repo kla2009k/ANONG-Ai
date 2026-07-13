@@ -1,0 +1,315 @@
+{
+  "dataset": "SIPaKMeD",
+  "endpoint": "koilocytosis morphology one-vs-rest",
+  "domain": "conventional Pap-smear single-cell crops; not ThinPrep and not HPV DNA/RNA",
+  "split_unit": "original source cluster",
+  "classes": [
+    "Superficial-Intermediate",
+    "Parabasal",
+    "Koilocytotic",
+    "Dyskeratotic",
+    "Metaplastic"
+  ],
+  "seed": 20260713,
+  "counts": {
+    "train": 2785,
+    "val": 623,
+    "test": 641
+  },
+  "validation_threshold_selection": {
+    "threshold": 0.3366755545139313,
+    "validation_sensitivity": 0.9663865546218487,
+    "validation_specificity": 0.9603174603174603,
+    "minimum_sensitivity_target": 0.95
+  },
+  "temperature_scaling": {
+    "temperature": 0.8381257057189941,
+    "fit_split": "validation",
+    "test_used_for_fit": false
+  },
+  "test_multiclass": {
+    "accuracy": 0.9750390015600624,
+    "macro_f1": 0.9752980640349715,
+    "per_class_recall": {
+      "Superficial-Intermediate": 1.0,
+      "Parabasal": 1.0,
+      "Koilocytotic": 0.9548872180451128,
+      "Dyskeratotic": 0.9393939393939394,
+      "Metaplastic": 0.9821428571428571
+    },
+    "confusion_matrix": [
+      [
+        130,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        134,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        127,
+        2,
+        2
+      ],
+      [
+        0,
+        0,
+        8,
+        124,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        110
+      ]
+    ]
+  },
+  "test_koil": {
+    "support_positive": 133,
+    "support_negative": 508,
+    "tp": 128,
+    "tn": 496,
+    "fp": 12,
+    "fn": 5,
+    "sensitivity": 0.9624060150375939,
+    "specificity": 0.9763779527559056,
+    "precision": 0.9142857142857143,
+    "f1": 0.9377289377289377,
+    "auroc": 0.9912083358001302,
+    "auprc": 0.980958398702833,
+    "brier_score": 0.019024554746706928,
+    "ece_10_bin": 0.01338473316311092,
+    "threshold": 0.3366755545139313
+  },
+  "cluster_bootstrap_95_ci": {
+    "sensitivity": {
+      "lower_95": 0.9166520979020979,
+      "upper_95": 0.9921275221456693,
+      "bootstrap_samples": 2000
+    },
+    "specificity": {
+      "lower_95": 0.9583333333333334,
+      "upper_95": 0.9915970790832056,
+      "bootstrap_samples": 2000
+    },
+    "precision": {
+      "lower_95": 0.8290570175438597,
+      "upper_95": 0.9701547816473189,
+      "bootstrap_samples": 2000
+    },
+    "f1": {
+      "lower_95": 0.8811173408089708,
+      "upper_95": 0.9705906303889634,
+      "bootstrap_samples": 2000
+    },
+    "auroc": {
+      "lower_95": 0.9785567931063607,
+      "upper_95": 0.9984363611025179,
+      "bootstrap_samples": 2000
+    },
+    "auprc": {
+      "lower_95": 0.9505941825896748,
+      "upper_95": 0.9950570365606918,
+      "bootstrap_samples": 2000
+    },
+    "brier_score": {
+      "lower_95": 0.009305999367179678,
+      "upper_95": 0.03000237249934599,
+      "bootstrap_samples": 2000
+    },
+    "ece_10_bin": {
+      "lower_95": 0.0075793176515327534,
+      "upper_95": 0.028351001130949453,
+      "bootstrap_samples": 2000
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6269895901157784,
+      "val_macro_f1": 0.9477362991628894,
+      "val_koil_recall": 0.8571428571428571,
+      "selection_score": 0.9024395781528732,
+      "seconds": 60.985175132751465
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.35210366497347984,
+      "val_macro_f1": 0.9313506250019022,
+      "val_koil_recall": 0.8991596638655462,
+      "selection_score": 0.9152551444337242,
+      "seconds": 36.19443345069885
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.3123380946941821,
+      "val_macro_f1": 0.9403676803598013,
+      "val_koil_recall": 0.8739495798319328,
+      "selection_score": 0.9071586300958671,
+      "seconds": 35.82142663002014
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.2753313676673163,
+      "val_macro_f1": 0.9447561760001489,
+      "val_koil_recall": 0.8991596638655462,
+      "selection_score": 0.9219579199328476,
+      "seconds": 35.32229685783386
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.25865566340982377,
+      "val_macro_f1": 0.9562981169837459,
+      "val_koil_recall": 0.8823529411764706,
+      "selection_score": 0.9193255290801082,
+      "seconds": 33.61621952056885
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.2529223809336417,
+      "val_macro_f1": 0.9567071325079082,
+      "val_koil_recall": 0.9411764705882353,
+      "selection_score": 0.9489418015480717,
+      "seconds": 35.02959132194519
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.231983983409683,
+      "val_macro_f1": 0.9649609861264136,
+      "val_koil_recall": 0.8823529411764706,
+      "selection_score": 0.923656963651442,
+      "seconds": 34.93762826919556
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2242134124201119,
+      "val_macro_f1": 0.9618900793889896,
+      "val_koil_recall": 0.9327731092436975,
+      "selection_score": 0.9473315943163436,
+      "seconds": 35.68295216560364
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.22430675551964094,
+      "val_macro_f1": 0.9636493906709622,
+      "val_koil_recall": 0.9411764705882353,
+      "selection_score": 0.9524129306295988,
+      "seconds": 35.95012450218201
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.2092746611343466,
+      "val_macro_f1": 0.9585206289569213,
+      "val_koil_recall": 0.9159663865546218,
+      "selection_score": 0.9372435077557715,
+      "seconds": 35.90054750442505
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.20428536944158202,
+      "val_macro_f1": 0.9649899461477055,
+      "val_koil_recall": 0.9243697478991597,
+      "selection_score": 0.9446798470234326,
+      "seconds": 35.39217400550842
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.19242451940019425,
+      "val_macro_f1": 0.9632017003722371,
+      "val_koil_recall": 0.9495798319327731,
+      "selection_score": 0.9563907661525051,
+      "seconds": 35.29229426383972
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.18661393502884321,
+      "val_macro_f1": 0.9596255709991242,
+      "val_koil_recall": 0.8823529411764706,
+      "selection_score": 0.9209892560877974,
+      "seconds": 34.84605431556702
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.190375712401563,
+      "val_macro_f1": 0.9627971508935126,
+      "val_koil_recall": 0.9159663865546218,
+      "selection_score": 0.9393817687240672,
+      "seconds": 28.500465869903564
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.19029781976764892,
+      "val_macro_f1": 0.9651086039040202,
+      "val_koil_recall": 0.9495798319327731,
+      "selection_score": 0.9573442179183966,
+      "seconds": 27.57192063331604
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.17822500593572374,
+      "val_macro_f1": 0.9614672755576457,
+      "val_koil_recall": 0.9159663865546218,
+      "selection_score": 0.9387168310561338,
+      "seconds": 33.73875570297241
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.1836176137307816,
+      "val_macro_f1": 0.9552540042404345,
+      "val_koil_recall": 0.9159663865546218,
+      "selection_score": 0.9356101953975282,
+      "seconds": 35.74197697639465
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.1750149973419025,
+      "val_macro_f1": 0.9612860850993583,
+      "val_koil_recall": 0.8907563025210085,
+      "selection_score": 0.9260211938101834,
+      "seconds": 34.31641721725464
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.17579462198637547,
+      "val_macro_f1": 0.9597570076965267,
+      "val_koil_recall": 0.8907563025210085,
+      "selection_score": 0.9252566551087675,
+      "seconds": 33.356412172317505
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.1706806377191732,
+      "val_macro_f1": 0.9648429282445052,
+      "val_koil_recall": 0.907563025210084,
+      "selection_score": 0.9362029767272946,
+      "seconds": 31.39872980117798
+    },
+    {
+      "epoch": 21,
+      "train_loss": 0.17252448422690483,
+      "val_macro_f1": 0.9615928424413195,
+      "val_koil_recall": 0.907563025210084,
+      "selection_score": 0.9345779338257018,
+      "seconds": 28.248914003372192
+    },
+    {
+      "epoch": 22,
+      "train_loss": 0.17277866026229446,
+      "val_macro_f1": 0.9616846390109479,
+      "val_koil_recall": 0.9327731092436975,
+      "selection_score": 0.9472288741273227,
+      "seconds": 27.579865217208862
+    }
+  ]
+}

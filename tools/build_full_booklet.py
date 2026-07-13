@@ -395,7 +395,7 @@ def make_charts():
     # Workflow diagram
     fig, ax = plt.subplots(figsize=(9, 4.6), dpi=180)
     ax.axis("off")
-    steps = ["Image", "5-class\nBethesda", "HPV morphology\nrisk", "Grad-CAM +\nuncertainty", "Clinician\nsign-off", "Report +\nfollow-up"]
+    steps = ["Image", "4-class\ngrade", "KOIL morphology\nendpoint", "Class-specific XAI\n+ uncertainty", "Clinician\nsign-off", "Report +\nfollow-up"]
     xs = np.linspace(0.08, 0.92, len(steps))
     for i, (xpos, step) in enumerate(zip(xs, steps)):
         rect = plt.Rectangle((xpos - 0.065, 0.43), 0.13, 0.23, facecolor="#EEF7FA", edgecolor="#0E7490", linewidth=1.5)

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Info, LoaderCircle, ShieldCheck, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { XaiReviewPanel, type XaiState } from "@/components/XaiReviewPanel";
-import { CLASS_KEYS, classInfo, analyzeReal, type Sample } from "@/lib/data";
+import { GRADE_CLASS_KEYS, classInfo, analyzeReal, type Sample } from "@/lib/data";
 import { downloadAudit, loadAudit, saveAudit, type AuditEntry, type SignStatus } from "@/lib/audit";
 
 const BASE = import.meta.env.BASE_URL;
@@ -11,7 +11,14 @@ interface Result {
   resultKey: string;
   top: string; probs: Record<string, number>; conf: number;
   uncertainty: { level: string; entropy?: number };
-  koil?: boolean; trueLabel?: string; correct?: boolean;
+  koil?: boolean;
+  koilAssessment?: {
+    status: string; positive: boolean; probability: number; threshold?: number | null;
+    decision_margin?: number | null; mode: string; training_domain?: string | null;
+    domain_warning?: string; hpv_test: boolean;
+  };
+  koilCam?: string; koilXaiOk?: boolean;
+  trueLabel?: string; correct?: boolean;
   image: string; cam?: string; camSource?: string;
   activationMap?: string; activationCoverage?: number; activationThreshold?: number;
   quality?: {
@@ -26,9 +33,9 @@ function confidenceLabel(level: string) {
   return level === "low" ? "High" : level === "high" ? "Low — human review required" : "Moderate";
 }
 function hpvRisk(top: string, koil?: boolean) {
-  if (koil || top === "KOIL") return {
+  if (koil) return {
     level: "Consider confirmatory HPV testing",
-    detail: "Koilocyte or HPV-effect morphology is suspected, but KOIL is not validated in the Phase 1 model.",
+    detail: "The independent model detected koilocytotic morphology. This does not establish HPV infection.",
     tone: "var(--koil)",
   };
   if (top === "LSIL") return {
@@ -71,10 +78,13 @@ export default function Analyze() {
 
   function pickSample(s: Sample) {
     setErr("");
+    const gradeMass = GRADE_CLASS_KEYS.reduce((sum, key) => sum + (s.probs[key] || 0), 0) || 1;
+    const gradeProbs = Object.fromEntries(GRADE_CLASS_KEYS.map((key) => [key, (s.probs[key] || 0) / gradeMass]));
+    const gradeTop = GRADE_CLASS_KEYS.slice().sort((a, b) => gradeProbs[b] - gradeProbs[a])[0];
     setRes({
       resultKey: `${s.id}-${Date.now()}`,
-      top: s.top, probs: s.probs, conf: s.conf, uncertainty: s.uncertainty,
-      koil: s.top === "KOIL", trueLabel: s.true_label, correct: s.correct,
+      top: gradeTop, probs: gradeProbs, conf: gradeProbs[gradeTop], uncertainty: s.uncertainty,
+      koil: false, trueLabel: s.true_label, correct: gradeTop === s.true_label,
       image: `${BASE}${s.file}`, cam: s.cam ? `${BASE}${s.cam}` : undefined,
       camSource: s.cam ? "precomputed_gradcam" : undefined,
       modelMode: "model",
@@ -110,13 +120,16 @@ export default function Analyze() {
       const d = await analyzeReal(upImg);
       const probs: Record<string, number> = {};
       (d.classification || []).forEach((c: any) => (probs[c.key] = c.prob));
-      CLASS_KEYS.forEach((k) => { if (probs[k] == null) probs[k] = 0; });
-      const top = d.top?.key || CLASS_KEYS.slice().sort((a, b) => probs[b] - probs[a])[0];
+      GRADE_CLASS_KEYS.forEach((k) => { if (probs[k] == null) probs[k] = 0; });
+      const top = d.top?.key || GRADE_CLASS_KEYS.slice().sort((a, b) => probs[b] - probs[a])[0];
       const xaiOk = d.mode === "model" && d.advanced_xai?.ok === true && Boolean(d.heatmap);
       setRes({
         resultKey: `upload-${Date.now()}`,
         top, probs, conf: Math.max(...Object.values(probs)),
         uncertainty: d.uncertainty_viz || d.uncertainty || { level: "med" }, koil: !!d.koilocyte,
+        koilAssessment: d.koil_assessment,
+        koilCam: d.koil_xai?.ok === true ? d.koil_xai?.heatmap : undefined,
+        koilXaiOk: d.koil_xai?.ok === true,
         image: upImg, cam: xaiOk ? d.heatmap : undefined, camSource: d.heatmap_source,
         activationMap: xaiOk ? d.advanced_xai?.activation_regions : undefined,
         activationCoverage: xaiOk ? d.advanced_xai?.activation_coverage : undefined,
@@ -157,7 +170,7 @@ export default function Analyze() {
       </div>
       <p className="mt-3 text-sm text-mut">The examples below are <b>real Herlev images</b> with precomputed model outputs. Uploaded images require the local analysis server.</p>
       <p className="mt-2 rounded-lg border border-line p-3 text-xs text-mut">
-        Phase 1 evidence covers the Bethesda-style 5-class output, HPV-related morphology-risk note, normal/abnormal safety triage, Grad-CAM, uncertainty, and clinician sign-off.
+        Cytology grade and koilocytosis morphology are separate endpoints. Grade uses NILM, LSIL, HSIL, and SCC; the KOIL endpoint is trained on conventional Pap-smear crops and is not yet validated for ThinPrep.
         Contour, SAM, z-stack, and WSI backend features are roadmap prototypes rather than validated outputs.
       </p>
 
@@ -180,7 +193,7 @@ export default function Analyze() {
             {busy && <LoaderCircle className="animate-spin" size={17} aria-hidden />}
             {busy ? "Running model and explanations…" : "Analyze uploaded image"}
           </button>
-          {busy && <div className="mt-2 text-center text-xs text-mut" role="status" aria-live="polite">Running image quality checks, 5-class inference, MC Dropout, and validated class-activation maps.</div>}
+          {busy && <div className="mt-2 text-center text-xs text-mut" role="status" aria-live="polite">Running image quality checks, 4-class grade inference, independent KOIL assessment, uncertainty, and class-specific activation maps.</div>}
           {/* privacy note (S11) */}
           <p className="mt-2 text-[11px] text-mut">🔒 Uploaded images are processed by the local server on port 8003 and are not permanently stored. Precomputed examples work offline.</p>
           {err && <p className="mt-3 flex items-start gap-2 rounded-lg p-3 text-xs" role="alert" style={{ background: "color-mix(in srgb,var(--hsil) 12%,transparent)", color: "var(--hsil)" }}><AlertTriangle className="mt-0.5 shrink-0" size={15} aria-hidden />{err}</p>}
@@ -201,7 +214,7 @@ export default function Analyze() {
           <p className="text-xs text-mut">Select a case to inspect the measured output. Correct and incorrect predictions are both included.</p>
         </div>
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filter examples by Bethesda category">
-          {["ALL", ...CLASS_KEYS].map((k) => (
+          {["ALL", ...GRADE_CLASS_KEYS].map((k) => (
             <button
               key={k}
               onClick={() => setSampleFilter(k)}
@@ -267,6 +280,7 @@ function ResultCard({ res }: { res: Result }) {
     poorQuality ? "image quality did not pass" : "",
     xaiFailed ? "no valid model explanation is available" : "",
     demoMode ? "the backend is in heuristic demo mode" : "",
+    res.koilAssessment && res.koilAssessment.mode !== "model" ? "the independent KOIL model is unavailable" : "",
   ].filter(Boolean);
   const canPatientReport = releaseBlockers.length === 0;
 
@@ -300,6 +314,7 @@ function ResultCard({ res }: { res: Result }) {
     const imageUrl = new URL(res.image, window.location.href).href;
     const camUrl = res.cam ? new URL(res.cam, window.location.href).href : "";
     const activationUrl = res.activationMap ? new URL(res.activationMap, window.location.href).href : "";
+    const koilCamUrl = res.koilCam ? new URL(res.koilCam, window.location.href).href : "";
     const patientSection = canPatientReport
       ? `<section><h2>Patient-facing summary</h2><p>${abn ? "The reviewed preliminary screening result shows an abnormality that requires follow-up. This does not confirm cancer." : "The reviewed preliminary screening result is normal. Repeat screening at the recommended interval."}</p></section>`
       : `<section class="locked"><h2>Patient report not released</h2><p>${htmlEscape(releaseBlockers.join("; "))}.</p></section>`;
@@ -312,8 +327,8 @@ body{font-family:Arial,sans-serif;max-width:900px;margin:36px auto;padding:0 24p
 <p class="meta">Anong | CerviCo-Pilot research prototype</p><h1>Reviewed cervical cytology pre-screen report</h1>
 <p class="meta">Case ${htmlEscape(caseId)} | ${htmlEscape(new Date().toLocaleString("en-GB"))}</p>
 <div class="warning"><b>Decision-support output only.</b> Not a final diagnosis, not an HPV DNA/RNA test, and not a regulated clinical report.</div>
-<div class="grid"><span class="label">Specimen</span><b>ThinPrep/Pap-style cytology image</b><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">XAI status</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div>
-<section><h2>Review images</h2><div class="images"><div><p class="meta">Original image</p><img src="${htmlEscape(imageUrl)}" alt="Reviewed cytology image"></div>${camUrl ? `<div><p class="meta">${htmlEscape(res.xai.primaryMethod || "Class activation")} heatmap</p><img src="${htmlEscape(camUrl)}" alt="Class-activation heatmap"></div>` : ""}${activationUrl ? `<div><p class="meta">Activation boundary (not segmentation)</p><img src="${htmlEscape(activationUrl)}" alt="Thresholded class-activation regions"></div>` : ""}</div></section>
+<div class="grid"><span class="label">Specimen</span><b>ThinPrep/Pap-style cytology image</b><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">Grade XAI</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">KOIL morphology</span><span>${res.koilAssessment ? `${htmlEscape(res.koilAssessment.status)} (${(res.koilAssessment.probability * 100).toFixed(1)}%; threshold ${res.koilAssessment.threshold != null ? (res.koilAssessment.threshold * 100).toFixed(1) + "%" : "not available"})` : "Not assessed for this precomputed case"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div>
+<section><h2>Review images</h2><div class="images"><div><p class="meta">Original image</p><img src="${htmlEscape(imageUrl)}" alt="Reviewed cytology image"></div>${camUrl ? `<div><p class="meta">${htmlEscape(res.xai.primaryMethod || "Class activation")} grade heatmap</p><img src="${htmlEscape(camUrl)}" alt="Grade class-activation heatmap"></div>` : ""}${koilCamUrl ? `<div><p class="meta">KOIL-specific Grad-CAM</p><img src="${htmlEscape(koilCamUrl)}" alt="KOIL morphology class-activation heatmap"></div>` : ""}${activationUrl ? `<div><p class="meta">Activation boundary (not segmentation)</p><img src="${htmlEscape(activationUrl)}" alt="Thresholded class-activation regions"></div>` : ""}</div></section>
 ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (research demo sign-off)<br><span class="meta">A qualified clinician remains responsible for diagnosis, documentation, and follow-up.</span></div>
 </body></html>`;
   }
@@ -406,14 +421,28 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
         <div className="mt-2 text-[10px] text-mut">
           This assessment uses cellular morphology in the image only. It does not detect HPV DNA/RNA.
         </div>
+        {res.koilAssessment && (
+          <div className="mt-3 grid gap-2 border-t border-line pt-3 sm:grid-cols-3">
+            <div><div className="text-[10px] uppercase text-mut">KOIL endpoint</div><b className="text-ink">{res.koilAssessment.status}</b></div>
+            <div><div className="text-[10px] uppercase text-mut">Probability</div><b className="font-mono text-ink">{(res.koilAssessment.probability * 100).toFixed(1)}%</b></div>
+            <div><div className="text-[10px] uppercase text-mut">Locked threshold</div><b className="font-mono text-ink">{res.koilAssessment.threshold != null ? `${(res.koilAssessment.threshold * 100).toFixed(1)}%` : "Unavailable"}</b></div>
+            <p className="sm:col-span-3 text-[10px] text-mut">{res.koilAssessment.domain_warning}</p>
+          </div>
+        )}
       </div>
+      {res.koilCam && (
+        <figure className="mt-3 rounded-lg border border-line p-3">
+          <img src={res.koilCam} className="mx-auto max-h-80 rounded-lg object-contain" alt="KOIL-specific Grad-CAM heatmap" />
+          <figcaption className="mt-2 text-xs text-mut"><b className="text-ink">KOIL-specific Grad-CAM.</b> This map targets the independent koilocytotic-morphology output. It is attention evidence, not cell segmentation and not proof of HPV infection.</figcaption>
+        </figure>
+      )}
       {res.trueLabel && (
         <div className="mt-1 text-xs text-mut">True label: <b style={{ color: classInfo(res.trueLabel).color }}>{classInfo(res.trueLabel).icon} {res.trueLabel}</b>
           {res.correct ? <span style={{ color: "var(--nilm)" }}> · Correct prediction</span> : <span style={{ color: "var(--scc)" }}> · Incorrect prediction</span>}</div>
       )}
 
       <div className="mt-4 space-y-1.5 font-mono text-xs" role="img" aria-label={`Class probabilities; highest prediction ${shownTop}`}>
-        {CLASS_KEYS.map((k) => {
+        {GRADE_CLASS_KEYS.map((k) => {
           const p = Math.round((res.probs[k] || 0) * 100);
           return (
             <div key={k}>
@@ -435,7 +464,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
           <select value={override ?? ""} onChange={(e) => sign("edited", e.target.value || null)}
             className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink" aria-label="Edit Bethesda category">
             <option value="">✏ Edit category…</option>
-            {CLASS_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+            {GRADE_CLASS_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
           </select>
           <button onClick={() => sign("rejected", shownTop)} className="rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: "var(--scc)", color: "var(--scc)" }}>✘ Reject slide</button>
         </div>

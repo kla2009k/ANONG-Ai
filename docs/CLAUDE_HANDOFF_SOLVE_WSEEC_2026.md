@@ -1,5 +1,12 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Critical update 2026-07-13:** Statements below that call KOIL a zero-support
+> placeholder are historical. Read `docs/KOIL_REAL_DATA_VALIDATION_2026.md`
+> first. The live architecture separates four-class grade from an independent
+> SIPaKMeD KOIL morphology endpoint (locked-test sensitivity 0.9624,
+> specificity 0.9764, AUROC 0.9912). This is conventional Pap-smear morphology
+> evidence, not ThinPrep validation and not an HPV DNA/RNA endpoint.
+
 วันที่เขียน: 2026-07-07  
 ผู้ใช้ต้องการ: ให้ Claude รับงานต่อจาก Codex โดยเข้าใจ framing ล่าสุดของ CervicalAI / CerviCo-Pilot แบบละเอียด โดยเฉพาะการส่ง **Samsung Solve for Tomorrow 2026** และ **WSEEC**  
 สถานะเอกสารนี้: ใช้เป็นไฟล์เริ่มอ่านก่อนทำงานต่อ

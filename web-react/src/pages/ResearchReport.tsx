@@ -5,6 +5,12 @@ const BASE = import.meta.env.BASE_URL;
 
 const DOCS = [
   {
+    title: "Independent KOIL validation report",
+    file: "/docs/KOIL_REAL_DATA_VALIDATION_2026.md",
+    desc: "Official SIPaKMeD provenance, source-cluster split, locked-test metrics, confidence intervals, error analysis, XAI, and claims policy.",
+    tag: "MD",
+  },
+  {
     title: "WSEEC 2026 full paper - polished PDF",
     file: "/docs/CerviCo_Pilot_WSEEC_2026_Full_Paper_Polished.pdf",
     desc: "Polished 12-page English WSEEC submission, laid out in Microsoft Word and visually checked after rendering.",
@@ -55,9 +61,11 @@ const DOCS = [
 ];
 
 const EVIDENCE = [
-  ["Dataset", "Herlev public cervical cytology, 917 real images", "No Thai ThinPrep validation yet"],
-  ["Model", "EfficientNet-B0, `models/best_cervical.pt`", "Synthetic-heavy metrics are excluded from public evidence"],
-  ["5-class", "Accuracy 0.6934, macro AUROC 0.7311", "Moderate performance; KOIL is not validated"],
+  ["Grade/triage data", "Herlev public cervical cytology, 917 real images", "No Thai ThinPrep validation yet"],
+  ["KOIL data", "SIPaKMeD, 4,049 cells from 966 source clusters", "Conventional Pap-smear crops; no paired HPV assay"],
+  ["Grade model", "EfficientNet-B0, `models/best_cervical.pt`", "Interface exposes four supported grade classes"],
+  ["KOIL endpoint", "Sensitivity 0.9624, specificity 0.9764, AUROC 0.9912", "Locked 641-cell test; cluster-bootstrap CIs reported"],
+  ["Legacy grade evaluation", "Accuracy 0.6934, macro AUROC 0.7311", "Historical five-output head; KOIL unsupported in Herlev"],
   ["Binary triage", "Sensitivity 1.0, AUROC 0.964, TP 101 / TN 26 / FP 10 / FN 0", "Held-out Herlev split, not a Thai-domain result"],
   ["Cross-validation", "Binary sensitivity 0.9867 +/- 0.0086, AUROC 0.9435 +/- 0.0448", "Still limited to the Herlev domain"],
   ["Calibration", "Temperature scaling improved Herlev held-out ECE/Brier", "Not a fully calibrated external Thai model"],

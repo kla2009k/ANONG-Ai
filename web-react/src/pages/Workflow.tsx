@@ -2,17 +2,18 @@ import { Link } from "wouter";
 
 const FLOW = [
   ["1", "Image intake", "Receive a ThinPrep/Pap-style cytology image with a quality note.", "The image must be interpretable; reject or recollect when quality is inadequate."],
-  ["2", "5-class cytology grade", "Suggest a Bethesda-style category: NILM, LSIL, HSIL, SCC, or the KOIL placeholder.", "The 5-class output is the product identity; binary triage is the safety layer."],
-  ["3", "HPV morphology note", "Describe cellular morphology that may be HPV-related.", "This is not an HPV DNA/RNA test and does not confirm infection."],
-  ["4", "Grad-CAM + uncertainty", "Show the emphasized image region and estimated uncertainty.", "Grad-CAM supports review; it is not causal proof."],
-  ["5", "Clinician sign-off", "A qualified reviewer can confirm, edit, or reject the result.", "High uncertainty blocks the patient report."],
-  ["6", "Report + follow-up", "Release clinician/patient reports after sign-off and record the demo audit entry.", "The localStorage audit is a demo; a pilot requires a server-side signed log."],
+  ["2", "4-class cytology grade", "Suggest a Bethesda-style category: NILM, LSIL, HSIL, or SCC.", "Detailed grade remains separate from the binary safety view."],
+  ["3", "Independent KOIL morphology", "Estimate koilocytotic morphology with the SIPaKMeD model and its locked threshold.", "This is not a Bethesda grade and not an HPV DNA/RNA test."],
+  ["4", "HPV morphology note", "Describe cellular morphology that may be HPV-related.", "This is not an HPV DNA/RNA test and does not confirm infection."],
+  ["5", "Class-specific XAI + uncertainty", "Show separate grade/KOIL attention maps and estimated uncertainty.", "Grad-CAM supports review; it is not causal proof or segmentation."],
+  ["6", "Clinician sign-off", "A qualified reviewer can confirm, edit, or reject the result.", "High uncertainty blocks the patient report."],
+  ["7", "Report + follow-up", "Release clinician/patient reports after sign-off and record the demo audit entry.", "The localStorage audit is a demo; a pilot requires a server-side signed log."],
 ];
 
 const SAFETY = [
   ["High uncertainty", "Route to independent human review", "Do not release an automatic patient report."],
   ["HSIL / SCC", "Prioritize prompt confirmatory referral", "This represents high-risk cytology, not HPV confirmation."],
-  ["KOIL", "Keep as a Phase 2 target", "Herlev contains no true KOIL examples, so this class is not validated."],
+  ["KOIL", "Independent endpoint", "Internally validated on SIPaKMeD conventional Pap-smear crops; ThinPrep external validation remains required."],
   ["OOD / poor image", "Reject or recollect", "The model must not be forced to answer every case."],
 ];
 

@@ -23,7 +23,7 @@ function answer(q: string) {
   if (s.includes("confidence") || s.includes("uncertain") || s.includes("uncertainty")) {
     return "A high-uncertainty case is deferred to independent human review, and the website blocks automatic patient-report release. This safety gate prevents a weak model output from being communicated as if it were clinically confirmed.";
   }
-  return "Use this system only as cervical cytology screening support, not as a final diagnosis. The core framing is a 5-class Bethesda-style output, binary safety triage, HPV-related morphology risk, Grad-CAM, uncertainty, and clinician sign-off.";
+  return "Use this system only as cervical cytology screening support, not as a final diagnosis. It combines a four-class grade endpoint, binary safety triage, an independent KOIL morphology endpoint, Grad-CAM, uncertainty, and clinician sign-off. KOIL morphology does not establish HPV infection.";
 }
 
 export default function Ask() {

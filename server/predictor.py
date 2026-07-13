@@ -7,8 +7,8 @@ Modes:
   - "model": loads models/best_cervical.pt (EfficientNet transfer)
 
 Core outputs:
-  - 5-class probs (NILM/LSIL/HSIL/SCC/KOIL)
-  - koilocyte flag
+  - 4-class cytology-grade probabilities (NILM/LSIL/HSIL/SCC)
+  - independent koilocytosis-morphology assessment
   - quality gate (basic + advanced module)
   - MC Dropout uncertainty (improved)
   - Advanced XAI: multi-method CAM (Grad/Score/Eigen/Layer), uncertainty overlay, top-k patches
@@ -67,7 +67,7 @@ try:
 except Exception:
     HAS_WSI_SIM = False
 
-CLASSES = ["NILM", "LSIL", "HSIL", "SCC", "KOIL"]
+CLASSES = ["NILM", "LSIL", "HSIL", "SCC"]
 CLASS_KEYS = CLASSES
 
 _STATE: Dict[str, Any] = {
@@ -75,6 +75,9 @@ _STATE: Dict[str, Any] = {
     "net": None,
     "ckpt": None,
     "device": "cpu",
+    "koil_net": None,
+    "koil_ckpt": None,
+    "koil_mode": "unavailable",
 }
 
 LOW_CONF = 0.35  # flag if top prob < this
@@ -103,7 +106,7 @@ def load_model() -> Dict[str, Any]:
             import torch
             ck = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
             arch = ck.get("arch", "efficientnet_b0")
-            n = len(ck.get("classes", CLASSES))
+            n = len(ck.get("classes", [*CLASSES, "KOIL"]))
             net = _build_net(arch, n)
             net.load_state_dict(ck["state_dict"])
             net.eval()
@@ -116,11 +119,42 @@ def load_model() -> Dict[str, Any]:
             _STATE["mode"] = "demo"
     else:
         _STATE["mode"] = "demo"
-    return {"mode": _STATE["mode"], "classes": CLASSES}
+
+    koil_path = MODELS / "koil_sipakmed" / "best_koil_model.pt"
+    _STATE.update(koil_net=None, koil_ckpt=None, koil_mode="unavailable")
+    if koil_path.exists():
+        try:
+            import torch
+            koil_ck = torch.load(str(koil_path), map_location="cpu", weights_only=False)
+            koil_net = _build_net(koil_ck.get("arch", "efficientnet_b0"), len(koil_ck["classes"]))
+            koil_net.load_state_dict(koil_ck["state_dict"])
+            koil_net.eval()
+            koil_net.to(_STATE["device"])
+            _STATE.update(koil_net=koil_net, koil_ckpt=koil_ck, koil_mode="model")
+            print("[predictor] loaded independent SIPaKMeD koilocytosis morphology model")
+        except Exception as e:
+            print("[predictor] KOIL model load failed:", repr(e))
+    return {
+        "mode": _STATE["mode"],
+        "classes": CLASSES,
+        "koil_mode": _STATE["koil_mode"],
+        "koil_endpoint": "independent morphology one-vs-rest",
+    }
 
 
 def mode() -> str:
     return _STATE["mode"]
+
+
+def status() -> Dict[str, Any]:
+    return {
+        "grade_mode": _STATE["mode"],
+        "grade_classes": list(CLASSES),
+        "koil_mode": _STATE["koil_mode"],
+        "koil_endpoint": "koilocytosis morphology one-vs-rest",
+        "koil_training_domain": "SIPaKMeD conventional Pap-smear cropped cells" if _STATE["koil_mode"] == "model" else None,
+        "hpv_test": False,
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -389,7 +423,7 @@ def _classifier_quality(bgr: np.ndarray) -> Dict[str, Any]:
 # Demo heuristic (transparent, not a claim)
 # ──────────────────────────────────────────────────────────────────────────────
 def _demo_classify(bgr: np.ndarray, image_bytes: bytes) -> list[Dict[str, Any]]:
-    """Crude cytology-ish features → 5-class scores (clearly demo)."""
+    """Crude cytology-ish features -> four grade scores (clearly demo)."""
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     # keep uint8 for OTSU; work on inverted for dark nuclei
     inv = (255 - gray).astype(np.uint8)
@@ -413,7 +447,7 @@ def _demo_classify(bgr: np.ndarray, image_bytes: bytes) -> list[Dict[str, Any]]:
     for i in range(5):
         s[i] += 0.2 * ((seed * (i + 1)) % 1.0)
 
-    p = np.exp(s) / np.exp(s).sum()
+    p = np.exp(s[:4]) / np.exp(s[:4]).sum()
     out = []
     for k, pp in zip(CLASSES, p):
         out.append({"key": k, "prob": round(float(pp), 4)})
@@ -424,6 +458,25 @@ def _demo_classify(bgr: np.ndarray, image_bytes: bytes) -> list[Dict[str, Any]]:
 # ──────────────────────────────────────────────────────────────────────────────
 # Model path
 # ──────────────────────────────────────────────────────────────────────────────
+def _grade_probabilities(model_classes: list[str], probabilities: np.ndarray) -> list[Dict[str, Any]]:
+    """Remove the unsupported legacy KOIL output and renormalize grade classes."""
+    indexed = [
+        (index, name, float(probabilities[index]))
+        for index, name in enumerate(model_classes)
+        if name in CLASSES
+    ]
+    if {name for _, name, _ in indexed} != set(CLASSES):
+        raise ValueError(f"grade checkpoint does not contain the required classes: {model_classes}")
+    denominator = sum(probability for _, _, probability in indexed)
+    if denominator <= 0:
+        raise ValueError("grade probabilities do not have positive mass")
+    result = [
+        {"key": name, "prob": round(probability / denominator, 4), "model_index": index}
+        for index, name, probability in indexed
+    ]
+    return sorted(result, key=lambda item: -item["prob"])
+
+
 def _model_classify(bgr: np.ndarray) -> list[Dict[str, Any]]:
     import torch
     net = _STATE["net"]; ck = _STATE["ckpt"]; dev = _STATE["device"]
@@ -440,9 +493,58 @@ def _model_classify(bgr: np.ndarray) -> list[Dict[str, Any]]:
         logits = net(t)
         probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
-    out = [{"key": k, "prob": round(float(p), 4)} for k, p in zip(CLASSES, probs)]
-    out.sort(key=lambda d: -d["prob"])
-    return out
+    model_classes = list(ck.get("classes", [*CLASSES, "KOIL"]))
+    return _grade_probabilities(model_classes, probs)
+
+
+def _model_koil_assessment(bgr: np.ndarray) -> Dict[str, Any]:
+    import torch
+
+    net = _STATE["koil_net"]
+    ck = _STATE["koil_ckpt"]
+    device = _STATE["device"]
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    small = cv2.resize(rgb, (ck.get("img_size", 224), ck.get("img_size", 224)))
+    mean = np.asarray(ck.get("mean", [0.485, 0.456, 0.406]), dtype=np.float32)
+    std = np.asarray(ck.get("std", [0.229, 0.224, 0.225]), dtype=np.float32)
+    normalized = (small.astype(np.float32) / 255.0 - mean) / std
+    tensor = torch.from_numpy(normalized.transpose(2, 0, 1)[None]).to(device)
+    with torch.no_grad():
+        logits = net(tensor) / float(ck.get("temperature", 1.0))
+        probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
+    index = int(ck["koil_index"])
+    score = float(probabilities[index])
+    threshold = float(ck["koil_threshold"])
+    return {
+        "status": "positive" if score >= threshold else "negative",
+        "positive": bool(score >= threshold),
+        "probability": round(score, 4),
+        "threshold": round(threshold, 4),
+        "decision_margin": round(score - threshold, 4),
+        "mode": "model",
+        "endpoint": "koilocytosis morphology one-vs-rest",
+        "training_domain": "SIPaKMeD conventional Pap-smear cropped cells",
+        "hpv_test": False,
+        "domain_warning": "Not validated for ThinPrep and does not detect HPV DNA or RNA.",
+    }
+
+
+def _demo_koil_assessment(bgr: np.ndarray) -> Dict[str, Any]:
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    dark_fraction = float((gray < np.percentile(gray, 35)).mean())
+    score = min(0.95, max(0.05, 0.15 + dark_fraction))
+    return {
+        "status": "unvalidated_demo",
+        "positive": False,
+        "probability": round(score, 4),
+        "threshold": None,
+        "decision_margin": None,
+        "mode": "heuristic_demo",
+        "endpoint": "koilocytosis morphology one-vs-rest",
+        "training_domain": None,
+        "hpv_test": False,
+        "domain_warning": "Demo heuristic only; no KOIL result is released.",
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -471,9 +573,11 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
     top = cls[0]
     low_conf = top["prob"] < LOW_CONF
 
-    # koilocyte flag
-    koil_score = next((d["prob"] for d in cls if d["key"] == "KOIL"), 0.0)
-    koil_flag = (koil_score > 0.25) or any(d["key"] == "KOIL" and d["prob"] > 0.15 for d in cls[:2])
+    if _STATE["koil_mode"] == "model" and _STATE["koil_net"] is not None:
+        koil_assessment = _model_koil_assessment(bgr)
+    else:
+        koil_assessment = _demo_koil_assessment(bgr)
+    koil_flag = bool(koil_assessment["positive"])
 
     # ── Z-stack simulation (EDF + multi-channel) ──────────────────────────────
     zstack_info = None
@@ -588,6 +692,7 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
     heatmap = None
     heatmap_source = None
     advanced_xai = None
+    koil_xai = None
 
     if want_heatmap:
         if _STATE["mode"] == "model":
@@ -601,7 +706,9 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
                 small = cv2.resize(rgb, (img_size, img_size))
                 x = (small.astype(np.float32) / 255.0 - mean) / std
                 t = torch.from_numpy(x.transpose(2, 0, 1)[None]).to(_STATE["device"])
-                pred = next((i for i, d in enumerate(cls) if d["prob"] == max(dd["prob"] for dd in cls)), 0)
+                # Classification is sorted for display, so use the checkpoint's
+                # original output index for class-specific attribution.
+                pred = int(top.get("model_index", CLASSES.index(top["key"])))
 
                 if HAS_XAI_ADV:
                     methods = ["gradcam", "gradcam++", "layercam", "scorecam", "eigencam"]
@@ -732,6 +839,44 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
         except Exception:
             pass
 
+    if want_heatmap and _STATE["koil_mode"] == "model" and HAS_XAI_ADV:
+        try:
+            import torch
+
+            koil_ck = _STATE["koil_ckpt"]
+            image_size = int(koil_ck.get("img_size", 224))
+            rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+            small = cv2.resize(rgb, (image_size, image_size))
+            mean = np.asarray(koil_ck.get("mean", [0.485, 0.456, 0.406]), dtype=np.float32)
+            std = np.asarray(koil_ck.get("std", [0.229, 0.224, 0.225]), dtype=np.float32)
+            normalized = (small.astype(np.float32) / 255.0 - mean) / std
+            tensor = torch.from_numpy(normalized.transpose(2, 0, 1)[None]).to(_STATE["device"])
+            koil_cam = compute_cam(
+                _STATE["koil_net"],
+                koil_ck.get("arch", "efficientnet_b0"),
+                tensor,
+                int(koil_ck["koil_index"]),
+                "gradcam",
+            )
+            diagnostics = _cam_diagnostics(koil_cam)
+            koil_xai = {
+                "ok": diagnostics["valid"],
+                "method": "gradcam",
+                "target": "Koilocytotic morphology",
+                "diagnostics": diagnostics,
+                "heatmap": _png_b64(adv_overlay(bgr, koil_cam)) if diagnostics["valid"] else None,
+                "disclaimer": "Class-specific attention map; not cell segmentation or proof of HPV infection.",
+            }
+        except Exception as exc:
+            koil_xai = {
+                "ok": False,
+                "method": "gradcam",
+                "target": "Koilocytotic morphology",
+                "failure_reason": f"koil_xai_pipeline_error:{type(exc).__name__}",
+                "heatmap": None,
+                "disclaimer": "No KOIL explanation is released when attribution fails validation.",
+            }
+
     # Synthetic contours are never returned alongside trained-model inference.
     contours = _fake_contours(bgr, top["key"], n=7) if _STATE["mode"] == "demo" else []
 
@@ -762,13 +907,14 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
         "classification": cls,
         "top": top,
         "koilocyte": bool(koil_flag),
+        "koil_assessment": koil_assessment,
         "uncertainty": uncertainty or unc_viz,
         "uncertainty_viz": unc_viz,
         "heatmap": heatmap,
         "heatmap_source": heatmap_source,
         "contours": contours,
         "contours_source": "synthetic_demo" if contours else None,
-        "disclaimer": "เครื่องมือคัดกรองเบื้องต้นด้วย AI — ต้องให้แพทย์ยืนยัน ไม่ใช่การวินิจฉัย",
+        "disclaimer": "Research pre-screen only; clinician confirmation is required. Not a diagnosis or HPV test.",
     }
 
     if conformal_set:
@@ -781,6 +927,8 @@ def analyze(image_bytes: bytes, want_heatmap: bool = True,
         out["wsi_simulation"] = wsi_info
     if advanced_xai:
         out["advanced_xai"] = advanced_xai
+    if koil_xai:
+        out["koil_xai"] = koil_xai
 
     return out
 

@@ -72,16 +72,16 @@ export default function ModelCard() {
         <div className="mb-3 font-semibold text-ink">Governance & safety policy</div>
         <div className="grid gap-3 text-sm text-mut md:grid-cols-2">
           <div>
-            <b className="text-ink">5-class output</b>
-            <div className="text-xs">Primary structured output for Bethesda-style screening support, not a final diagnosis.</div>
+            <b className="text-ink">Four-class grade output</b>
+            <div className="text-xs">NILM, LSIL, HSIL, or SCC screening support from the Herlev checkpoint; not a final diagnosis.</div>
           </div>
           <div>
             <b className="text-ink">Binary triage</b>
             <div className="text-xs">A high-sensitivity safety layer for abnormal/high-risk case triage.</div>
           </div>
           <div>
-            <b className="text-ink">HPV risk</b>
-            <div className="text-xs">A morphology-risk assessment from cytology images, not an HPV DNA/RNA test.</div>
+            <b className="text-ink">Independent KOIL endpoint</b>
+            <div className="text-xs">Koilocytic morphology assessed by a separate SIPaKMeD model, not an HPV DNA/RNA test.</div>
           </div>
           <div>
             <b className="text-ink">Uncertainty gate</b>
@@ -127,12 +127,12 @@ export default function ModelCard() {
                 <td className="py-2 font-mono">{t.cv.mcc}</td>
               </tr>
               <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">5-class accuracy</td>
+                <td className="py-2 pr-4">Supported-grade accuracy (4-class)</td>
                 <td className="py-2 pr-4 font-mono text-mut">—</td>
                 <td className="py-2 font-mono">{f.acc}</td>
               </tr>
               <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">5-class QWK <span className="text-xs text-mut">(ordinal)</span></td>
+                <td className="py-2 pr-4">Supported-grade QWK <span className="text-xs text-mut">(ordinal)</span></td>
                 <td className="py-2 pr-4 font-mono text-mut">—</td>
                 <td className="py-2 font-mono">{f.qwk}</td>
               </tr>
@@ -145,7 +145,7 @@ export default function ModelCard() {
           </table>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-mut">
-          Evidence note: KOIL recall is 0 because Herlev contains no true KOIL examples; this class is not validated in Phase 1.
+          Evidence note: Herlev contains no true KOIL examples, so KOIL is excluded from the grade output. The separate SIPaKMeD morphology endpoint achieved locked-test sensitivity 0.9624 and specificity 0.9764, but is not externally validated for ThinPrep.
           Specificity near 0.70 implies some over-referral, a trade-off of the current high-sensitivity screening configuration.
           See the Performance page for the complete results and boundaries.
         </p>

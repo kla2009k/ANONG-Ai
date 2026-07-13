@@ -2,14 +2,14 @@ import { Reveal } from "@/components/Reveal";
 import { METRICS, classInfo } from "@/lib/data";
 import { useEffect, useState } from "react";
 
-const CK = ["NILM", "LSIL", "HSIL", "SCC", "KOIL"];
+const CK = ["NILM", "LSIL", "HSIL", "SCC"];
 const BASE = import.meta.env.BASE_URL;
 
 function Stat({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="card p-5">
+    <div className="card min-w-0 overflow-hidden p-5">
       <div className="text-xs text-mut">{label}</div>
-      <div className="mt-1 font-mono text-3xl font-semibold" style={{ color: color || "var(--ink)" }}>{value}</div>
+      <div className="mt-1 break-words font-mono text-2xl font-semibold sm:text-3xl" style={{ color: color || "var(--ink)" }}>{value}</div>
       {sub && <div className="text-xs text-mut">{sub}</div>}
     </div>
   );
@@ -18,10 +18,10 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub?
 /* ── horizontal bar chart (per-class recall) ── */
 function PerClassChart() {
   return (
-    <svg viewBox="0 0 360 170" className="w-full" role="img"
-      aria-label="Bar chart of held-out recall by Bethesda category: NILM 0.72, LSIL 0.61, HSIL 0.87, SCC 0.59, KOIL 0.00">
+    <svg viewBox="0 0 360 138" className="w-full" role="img"
+      aria-label="Bar chart of held-out recall by supported grade category: NILM 0.72, LSIL 0.61, HSIL 0.87, SCC 0.59">
       <title>Held-out recall by category</title>
-      {METRICS.perClass.map((p, i) => {
+      {METRICS.perClass.filter((p) => p.k !== "KOIL").map((p, i) => {
         const y = 12 + i * 32, w = p.recall * 250, col = classInfo(p.k).color;
         return (
           <g key={p.k} fontFamily="IBM Plex Mono" fontSize="11">
@@ -82,17 +82,17 @@ function FoldLineChart() {
   );
 }
 
-/* ── 5x5 confusion heatmap ── */
+/* Historical Herlev checkpoint, restricted to supported grade classes. */
 function ConfusionHeatmap() {
-  const cm = METRICS.confusion;
+  const cm = METRICS.confusion.slice(0, 4).map((row) => row.slice(0, 4));
   const max = Math.max(...cm.flat());
   const cell = 52, ox = 60, oy = 28;
   return (
-    <svg viewBox={`0 0 ${ox + cell * 5 + 10} ${oy + cell * 5 + 40}`} className="w-full max-w-md" fontFamily="IBM Plex Mono" fontSize="11" role="img"
-      aria-label="Five-by-five held-out confusion matrix. The diagonal represents correct predictions; the KOIL row is empty because the dataset contains no KOIL examples.">
-      <title>Held-out five-class confusion matrix</title>
+    <svg viewBox={`0 0 ${ox + cell * 4 + 10} ${oy + cell * 4 + 40}`} className="w-full max-w-md" fontFamily="IBM Plex Mono" fontSize="11" role="img"
+      aria-label="Four-by-four held-out confusion matrix for the supported Herlev grade classes.">
+      <title>Held-out supported-grade confusion matrix</title>
       {CK.map((c, j) => <text key={"p" + c} x={ox + j * cell + cell / 2} y={oy - 10} fill="var(--mut)" textAnchor="middle">{c}</text>)}
-      <text x={ox + cell * 2.5} y={oy + cell * 5 + 30} fill="var(--mut)" textAnchor="middle" fontSize="10">Predicted →</text>
+      <text x={ox + cell * 2} y={oy + cell * 4 + 30} fill="var(--mut)" textAnchor="middle" fontSize="10">Predicted →</text>
       {cm.map((row, i) =>
         row.map((v, j) => {
           const corr = i === j;
@@ -156,16 +156,16 @@ function ReliabilityChart({ curves }: { curves: any }) {
 }
 
 export default function Performance() {
-  const t = METRICS.triage, f = METRICS.fiveClass, bc = METRICS.binaryConfusion;
+  const t = METRICS.triage, f = METRICS.fiveClass, bc = METRICS.binaryConfusion, k = METRICS.koil;
   const [curves, setCurves] = useState<any | null>(null);
   useEffect(() => {
     fetch(`${BASE}samples/curves.json`).then((r) => r.json()).then(setCurves).catch(() => setCurves(null));
   }, []);
   return (
-    <div className="mx-auto max-w-5xl px-6 py-14">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="kicker mb-2">Performance · measured evidence</div>
       <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Evaluation results</h1>
-      <p className="mt-3 text-sm text-mut">{METRICS.dataset.name}, {METRICS.dataset.total} images · held-out n={METRICS.dataset.test} + bootstrap 95% CI + 5-fold CV</p>
+      <p className="mt-3 max-w-full break-words text-sm text-mut">{METRICS.dataset.name}, {METRICS.dataset.total} images · held-out n={METRICS.dataset.test} + bootstrap 95% CI + 5-fold CV</p>
 
       <Reveal as="div" className="kicker mt-8 mb-3">Binary screening view</Reveal>
       <div className="grid gap-4 md:grid-cols-3">
@@ -176,7 +176,7 @@ export default function Performance() {
           <div className="mt-1 font-mono text-3xl font-semibold text-scc">{t.highRisk}</div>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <Stat label="AUPRC" value={t.cv.auprc} /><Stat label="Specificity" value={t.cv.specificity} />
         <Stat label="MCC" value={t.cv.mcc} /><Stat label="Balanced Acc" value={t.cv.bacc} />
       </div>
@@ -195,14 +195,14 @@ export default function Performance() {
         </Reveal>
       </div>
 
-      <Reveal as="div" className="kicker mt-8 mb-3">Five-class Bethesda-style view</Reveal>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <Reveal as="div" className="kicker mt-8 mb-3">Historical Herlev grade view</Reveal>
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
         <Stat label="Accuracy" value={f.acc} /><Stat label="QWK (ordinal)" value={f.qwk} /><Stat label="Recall HSIL+SCC" value={f.recall_hs} />
       </div>
 
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Held-out five-class confusion matrix</div>
+          <div className="mb-1 text-sm font-semibold text-ink">Held-out supported-grade confusion matrix</div>
           <div className="mb-3 text-xs text-mut">Diagonal cells are correct predictions; off-diagonal cells show class confusion.</div>
           <ConfusionHeatmap />
         </Reveal>
@@ -219,6 +219,18 @@ export default function Performance() {
             ))}
           </div>
         </Reveal>
+      </div>
+
+      <Reveal as="div" className="kicker mt-8 mb-3">Independent KOIL morphology endpoint</Reveal>
+      <p className="mb-4 text-sm text-mut">{k.dataset}: {k.total} cells from {k.clusters} source clusters. The locked test set contains {k.positive} KOIL-positive and {k.negative} negative cells; splits are source-cluster-disjoint.</p>
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <Stat label="Sensitivity" value={k.sensitivity} sub={`95% CI ${k.sensitivityCi}`} color="var(--teal)" />
+        <Stat label="Specificity" value={k.specificity} sub={`95% CI ${k.specificityCi}`} color="var(--navy)" />
+        <Stat label="AUROC / AUPRC" value={`${k.auroc} / ${k.auprc}`} sub={`F1 ${k.f1}`} />
+        <Stat label="Calibration ECE" value={k.ece} sub={`locked threshold ${k.threshold}`} />
+      </div>
+      <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+        {Object.entries(k.confusion).map(([label, value]) => <div key={label} className="card p-3"><div className="font-mono text-xl font-semibold text-ink">{value}</div><div className="text-[10px] text-mut">{label}</div></div>)}
       </div>
 
       <Reveal as="div" className="kicker mt-8 mb-3">ROC + Calibration (binary triage)</Reveal>
@@ -239,7 +251,7 @@ export default function Performance() {
 
       <div className="butter-panel mt-6 rounded-lg border p-5 text-sm">
         <b className="text-hsil">Required context:</b> held-out results, confidence intervals, and cross-validation are shown instead of a single optimistic score. Sensitivity is high in the current Herlev evidence,
-        while specificity is moderate. KOIL is not validated because Herlev contains no examples, and post-hoc calibration still requires external validation.
+        while specificity is moderate. KOIL is evaluated separately on SIPaKMeD conventional Pap-smear crops; it is not a Bethesda grade, not ThinPrep validation, and not an HPV DNA/RNA test. External calibration remains required.
       </div>
     </div>
   );

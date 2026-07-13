@@ -7,7 +7,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <Navbar />
       <main className="flex-1">{children}</main>
       <footer className="border-t border-line py-6 text-center text-xs text-mut">
-        <span className="font-display font-semibold text-teal">Anong</span> · <span className="font-mono">CerviCo-Pilot</span> · Decision-support research tool · Clinician sign-off required · Herlev public data
+        <span className="font-display font-semibold text-teal">Anong</span> · <span className="font-mono">CerviCo-Pilot</span> · Decision-support research tool · Clinician sign-off required · Herlev + SIPaKMeD evidence
       </footer>
     </div>
   );

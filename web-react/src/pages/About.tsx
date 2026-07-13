@@ -11,7 +11,7 @@ export default function About() {
       <div className="mt-8 grid gap-5 text-sm md:grid-cols-2">
         <div className="card p-5">
           <div className="mb-2 font-semibold text-ink">Datasets</div>
-          <ul className="space-y-1 text-mut"><li>· Herlev (917 images — Phase 1)</li><li>· SIPaKMeD / RepoMedUNM (Phase 2 targets)</li></ul>
+          <ul className="space-y-1 text-mut"><li>· Herlev (917 images: grade and triage)</li><li>· SIPaKMeD (4,049 cells: independent KOIL morphology)</li><li>· Thai ThinPrep + paired HPV assays (external-validation target)</li></ul>
         </div>
         <div className="card p-5">
           <div className="mb-2 font-semibold text-ink">Technology</div>
@@ -23,8 +23,8 @@ export default function About() {
         <div className="mb-3 font-semibold text-ink">Community-hospital clinical workflow</div>
         <div className="grid gap-3 text-mut md:grid-cols-5">
           <div><b className="text-teal">1</b><br />Upload a ThinPrep/Pap image</div>
-          <div><b className="text-teal">2</b><br />Review the 5-class suggestion</div>
-          <div><b className="text-teal">3</b><br />Inspect HPV risk + Grad-CAM</div>
+          <div><b className="text-teal">2</b><br />Review the four-class grade</div>
+          <div><b className="text-teal">3</b><br />Inspect KOIL morphology + Grad-CAM</div>
           <div><b className="text-teal">4</b><br />Confirm, edit, or reject</div>
           <div><b className="text-teal">5</b><br />Release a reviewed report</div>
         </div>
@@ -36,8 +36,8 @@ export default function About() {
       <div className="card mt-5 p-5 text-sm">
         <div className="mb-3 font-semibold text-ink">Development roadmap</div>
         <div className="grid gap-4 text-mut md:grid-cols-3">
-          <div><b className="text-teal">Phase 1 evidence</b><br />Real Herlev data, 5-class output, morphology-risk framing, binary safety triage, XAI, and sign-off ✓</div>
-          <div><b className="text-teal">Phase 2 prototype</b><br />Thai ThinPrep data, paired HPV results, KOIL, segmentation, and WSI workflow</div>
+          <div><b className="text-teal">Current evidence</b><br />Herlev four-class grade display and triage plus a separate source-cluster-disjoint SIPaKMeD KOIL endpoint, XAI, uncertainty, and sign-off.</div>
+          <div><b className="text-teal">Next validation phase</b><br />Thai ThinPrep data, paired HPV results, external calibration, segmentation, and WSI workflow</div>
           <div><b className="text-teal">Phase 3 validation</b><br />Reader study, external calibration, regulatory/privacy work, and regional expansion</div>
         </div>
       </div>

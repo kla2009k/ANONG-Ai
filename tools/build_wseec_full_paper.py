@@ -57,20 +57,22 @@ ABSTRACT = (
     "Cervical cancer is largely preventable when screening, interpretation, communication, "
     "and follow-up operate as a continuous pathway. This study developed CerviCo-Pilot, an "
     "explainable and uncertainty-aware research prototype for clinician-in-the-loop cervical "
-    "cytology screening support. The system combines a Bethesda-style five-class output "
-    "(NILM, LSIL, HSIL, SCC, and a KOIL placeholder), a binary normal/abnormal safety-triage "
+    "cytology screening support. The system separates a four-class cytology-grade output "
+    "(NILM, LSIL, HSIL, and SCC) from an independent koilocytosis-morphology endpoint, and adds a binary normal/abnormal safety-triage "
     "view, Grad-CAM visual review support, Monte Carlo Dropout uncertainty, and a report lock "
     "that requires clinician sign-off before patient-facing communication. An EfficientNet-B0 "
-    "model was trained and evaluated using 917 real images from the public Herlev cervical "
+    "grade model was trained and evaluated using 917 real images from the public Herlev cervical "
     "cytology dataset; segmentation masks were excluded from performance evidence. On the "
-    "held-out test set (n=137), five-class accuracy was 0.6934, macro F1 was 0.5545, macro "
+    "held-out test set (n=137), the legacy five-output evaluation had accuracy 0.6934, macro F1 0.5545, macro "
     "AUROC was 0.7311, and quadratic weighted kappa was 0.687. The binary safety-triage view "
     "achieved sensitivity 1.000, specificity 0.7222, AUROC 0.964, AUPRC 0.9856, and a "
     "confusion matrix of TP=101, TN=26, FP=10, and FN=0. Five-fold cross-validation produced "
     "binary sensitivity of 0.9867 +/- 0.0086 and AUROC of 0.9435 +/- 0.0448. Post-hoc "
-    "temperature scaling improved held-out calibration metrics without materially changing "
-    "discrimination. The prototype demonstrates a complete review workflow rather than an "
-    "autonomous diagnostic device. Its present evidence is limited to the Herlev domain; it "
+    "temperature scaling improved held-out calibration metrics without materially changing discrimination. "
+    "For the separate KOIL endpoint, EfficientNet-B0 was trained on all 4,049 official SIPaKMeD cropped cells using source-cluster-disjoint splits. "
+    "On the locked test set (641 cells; 133 KOIL-positive), sensitivity was 0.9624, specificity 0.9764, AUROC 0.9912, AUPRC 0.9810, and ECE 0.0134; "
+    "cluster-bootstrap 95% confidence intervals were 0.9167-0.9921 for sensitivity and 0.9583-0.9916 for specificity. "
+    "The prototype demonstrates a complete review workflow rather than an autonomous diagnostic device. Herlev and SIPaKMeD are public conventional cytology domains; the system "
     "does not replace molecular HPV testing, and Thai ThinPrep validation, paired HPV "
     "endpoints, reader studies, and prospective evaluation remain necessary before clinical "
     "use."
@@ -83,6 +85,7 @@ KEYWORDS = [
     "Grad-CAM",
     "clinician-in-the-loop",
     "ThinPrep",
+    "koilocytosis",
 ]
 
 REFERENCES = [
@@ -99,6 +102,7 @@ REFERENCES = [
     "[11] X. Liu et al., Reporting guidelines for clinical trial reports for interventions involving artificial intelligence: the CONSORT-AI extension, Nature Medicine, vol. 26, pp. 1364-1374, 2020.",
     "[12] B. Vasey et al., Reporting guideline for the early-stage clinical evaluation of decision support systems driven by artificial intelligence: DECIDE-AI, Nature Medicine, vol. 28, pp. 924-933, 2022.",
     "[13] S. G. Finlayson et al., The clinician and dataset shift in artificial intelligence, New England Journal of Medicine, vol. 385, pp. 283-286, 2021.",
+    "[14] M. E. Plissiti et al., SIPaKMeD: A new dataset for feature and image based classification of normal and pathological cervical cells in Pap smear images, Proc. IEEE ICIP, 2018, pp. 3144-3148.",
 ]
 
 

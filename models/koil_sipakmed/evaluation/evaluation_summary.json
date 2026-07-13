@@ -1,0 +1,16 @@
+{
+  "locked_test_cases": 641,
+  "false_negatives": 5,
+  "false_positives": 12,
+  "threshold": 0.3366755545139313,
+  "artifacts": [
+    "herlev_grade_confusion_4class.png",
+    "koil_calibration.png",
+    "koil_error_gallery.png",
+    "koil_gradcam_audit.png",
+    "koil_gradcam_paper.png",
+    "koil_test_performance.png"
+  ],
+  "error_analysis": "error_analysis.json",
+  "xai_disclaimer": "Grad-CAM is class-specific attention, not segmentation or causal proof."
+}

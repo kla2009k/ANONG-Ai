@@ -48,10 +48,10 @@ export default function Settings() {
       <section className="card mt-5 p-6">
         <h2 className="font-display text-lg font-semibold text-ink">System information</h2>
         <div className="mt-3 grid gap-x-6 gap-y-1.5 text-sm text-mut sm:grid-cols-2">
-          <div>Version <span className="font-mono text-ink">Phase 1 POC</span></div>
+          <div>Version <span className="font-mono text-ink">Phase 1.6 dual endpoint</span></div>
           <div>Model <span className="font-mono text-ink">EfficientNet-B0</span></div>
-          <div>Dataset <span className="font-mono text-ink">Herlev 917</span></div>
-          <div>Output <span className="font-mono text-ink">Bethesda 5-class</span></div>
+          <div>Datasets <span className="font-mono text-ink">Herlev + SIPaKMeD</span></div>
+          <div>Outputs <span className="font-mono text-ink">4-grade + KOIL</span></div>
         </div>
         <p className="mt-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: "color-mix(in srgb, var(--scc) 8%, transparent)", color: "var(--scc)" }}>
           ⚠️ Research decision-support tool. Clinician sign-off is always required. Not a final diagnosis and not an HPV DNA/RNA test.

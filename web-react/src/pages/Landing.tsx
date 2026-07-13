@@ -3,9 +3,10 @@ import { Reveal } from "@/components/Reveal";
 import { METRICS } from "@/lib/data";
 
 const READINESS = [
-  ["Model", "Done", "EfficientNet-B0 on real Herlev"],
+  ["Models", "Done", "Separate EfficientNet-B0 grade and KOIL endpoints"],
   ["Binary safety", "Strong P1", `${METRICS.triage.cv.sensitivity} sensitivity`],
-  ["5-class grading", "Partial", `${METRICS.fiveClass.acc} accuracy`],
+  ["4-class grading", "Partial", `${METRICS.fiveClass.acc} accuracy on Herlev`],
+  ["KOIL morphology", "Internally validated", `${METRICS.koil.sensitivity} sensitivity on SIPaKMeD`],
   ["Calibration", "P1 improved", "Temperature scaling on Herlev only"],
   ["Thai ThinPrep", "Missing", "Protocol exists; data not collected"],
   ["Clinical use", "Not ready", "Reader study and validation required"],
@@ -39,9 +40,9 @@ export default function Landing() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-mono text-xs uppercase tracking-[.2em] text-teal">Current evidence</div>
-                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Phase 1 research prototype</h2>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Dual-endpoint research prototype</h2>
                 </div>
-                <span className="rounded-full border border-teal px-3 py-1 text-xs text-teal">Herlev only</span>
+                <span className="rounded-full border border-teal px-3 py-1 text-xs text-teal">Herlev + SIPaKMeD</span>
               </div>
               <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                 <div className="rounded-lg border border-line p-3">
@@ -54,7 +55,7 @@ export default function Landing() {
                 </div>
                 <div className="rounded-lg border border-line p-3">
                   <div className="whitespace-nowrap font-mono text-lg font-semibold text-hsil sm:text-xl">{METRICS.fiveClass.qwk}</div>
-                  <div className="text-xs text-mut">5-class QWK CV</div>
+                  <div className="text-xs text-mut">4-class grade QWK CV</div>
                 </div>
                 <div className="rounded-lg border border-line p-3">
                   <div className="whitespace-nowrap font-mono text-lg font-semibold text-scc sm:text-xl">0</div>
@@ -68,7 +69,7 @@ export default function Landing() {
           </div>
           <Reveal as="div" className="mt-8 grid gap-3 md:grid-cols-3">
             {[
-              ["1", "Run analysis", "Upload an image or select a Herlev example to review the 5-class output, Grad-CAM, uncertainty, and HPV-related morphology risk."],
+              ["1", "Run analysis", "Upload an image or select a Herlev example to review the four-class grade, independent KOIL morphology score, Grad-CAM, and uncertainty."],
               ["2", "Clinician sign-off", "A clinician can confirm, edit, or reject the result before any patient report is released."],
               ["3", "Audit and follow-up", "Store a local demo history, export JSON, and demonstrate the controlled workflow."],
             ].map(([n, title, body]) => (

@@ -52,6 +52,38 @@ class ReportReleaseGateTests(unittest.TestCase):
         self.assertFalse(result["layer_patient"]["locked"])
         self.assertEqual(result["release_gates"], [])
 
+    def test_positive_koil_requires_valid_koil_xai(self):
+        analysis = analysis_payload(
+            koilocyte=True,
+            koil_assessment={"mode": "model", "status": "positive", "probability": 0.91, "threshold": 0.34},
+            koil_xai={"ok": False, "failure_reason": "flat_activation"},
+        )
+        result = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
+
+        self.assertTrue(result["layer_patient"]["locked"])
+        self.assertIn("koil_xai_unavailable", result["release_gates"])
+
+    def test_active_koil_model_and_xai_can_pass_the_koil_gates(self):
+        analysis = analysis_payload(
+            koilocyte=True,
+            koil_assessment={"mode": "model", "status": "positive", "probability": 0.91, "threshold": 0.34},
+            koil_xai={"ok": True, "method": "gradcam"},
+        )
+        result = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
+
+        self.assertFalse(result["layer_patient"]["locked"])
+        self.assertEqual(result["layer_clinical"]["koil_xai_method"], "gradcam")
+        self.assertEqual(result["layer_clinical"]["risk_level"], "MODERATE")
+        self.assertIn("KOIL morphology", result["layer_clinical"]["triage"])
+        self.assertIn("KOIL morphology", result["layer_patient"]["result"])
+
+    def test_uncertainty_is_forwarded_to_clinical_triage(self):
+        analysis = analysis_payload(uncertainty_viz={"level": "high", "flag": True})
+
+        result = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
+
+        self.assertIn("Do not release automatically", result["layer_clinical"]["triage"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,15 +22,15 @@ export const CLASSES: ClassInfo[] = [
     desc: "Koilocyte morphology is a Phase 2 target and is not validated in Phase 1.", triage: "Consider confirmatory HPV testing when clinically indicated." },
 ];
 
-export const VERSION = { name: "Phase 1 POC", date: "2026-06", model: "EfficientNet-B0" };
+export const VERSION = { name: "Phase 1.6 dual endpoint", date: "2026-07", model: "EfficientNet-B0 x2" };
 
 export const MODEL_CARD = {
   name: "CerviCo-Pilot — Cervical Cytology Screening Model",
   intendedUse: "Assist medical personnel in screening Pap/ThinPrep-style cervical cytology images to support triage and referral prioritization.",
   users: "Clinicians, pathologists, and cytotechnologists",
   decisionPoint: "Pre-screen triage before confirmatory colposcopy or HPV testing",
-  data: "Public Herlev dataset, 917 images with segmentation masks excluded; no Thai-domain validation data yet",
-  training: "EfficientNet-B0 transfer learning with focal loss, oversampling, TTA, and a 5-class Bethesda-style target",
+  data: "Herlev: 917 images for grade/triage; SIPaKMeD: 4,049 cells from 966 clusters for independent KOIL morphology; no Thai-domain validation",
+  training: "Separate EfficientNet-B0 models: four-class grade display from the historical Herlev checkpoint and source-cluster-disjoint SIPaKMeD KOIL training",
   doNotUse: [
     "Final diagnosis without qualified clinician review",
     "Replacement for a clinician, pathologist, or cytotechnologist",
@@ -38,13 +38,15 @@ export const MODEL_CARD = {
     "Out-of-distribution images without validation and appropriate adaptation",
   ],
   limitations: [
-    "KOIL is not learned because Herlev contains no true KOIL examples",
+    "KOIL morphology is internally validated on SIPaKMeD conventional Pap-smear crops, not ThinPrep",
     "Moderate specificity (about 0.70) may cause over-referral",
     "Post-hoc temperature scaling was evaluated on Herlev only; external Thai calibration is still required",
     "The small public dataset creates domain-shift risk for Thai clinical images",
   ],
 };
 export const CLASS_KEYS = CLASSES.map((c) => c.key);
+export const GRADE_CLASSES = CLASSES.filter((c) => c.key !== "KOIL");
+export const GRADE_CLASS_KEYS = GRADE_CLASSES.map((c) => c.key);
 export const classInfo = (k: string) => CLASSES.find((c) => c.key === k) ?? CLASSES[0];
 
 export interface Sample {
@@ -94,6 +96,14 @@ export const METRICS = {
     [0, 0, 0, 0, 0],
   ],
   binaryConfusion: { TP: 101, TN: 26, FP: 10, FN: 0 },
+  koil: {
+    dataset: "SIPaKMeD official cropped cells",
+    total: 4049, clusters: 966, test: 641, positive: 133, negative: 508,
+    sensitivity: "0.9624", sensitivityCi: "0.9167-0.9921",
+    specificity: "0.9764", specificityCi: "0.9583-0.9916",
+    auroc: "0.9912", auprc: "0.9810", f1: "0.9377", ece: "0.0134",
+    threshold: "0.3367", confusion: { TP: 128, TN: 496, FP: 12, FN: 5 },
+  },
 };
 
 export async function analyzeReal(imageDataUrl: string) {

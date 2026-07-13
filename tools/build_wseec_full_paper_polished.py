@@ -17,6 +17,7 @@ from build_wseec_full_paper import ABSTRACT, AUTHORS, KEYWORDS, REFERENCES, TITL
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "docs" / "wseec_2026"
 OUT = OUT_DIR / "CerviCo_Pilot_WSEEC_2026_Full_Paper_Polished.docx"
+KOIL_ASSETS = ROOT / "models" / "koil_sipakmed" / "evaluation"
 
 TEAL = "0E7490"
 NAVY = "143B5E"
@@ -332,7 +333,7 @@ def add_abstract(doc):
     set_font(r, size=12, bold=True, italic=True, color=NAVY)
     r = para.add_run(", ".join(KEYWORDS))
     set_font(r, size=12, italic=True, color=INK)
-    callout(doc, "Evidence boundary", "The present evidence is limited to the public Herlev domain. HPV output means morphology-related risk communication and does not replace molecular HPV testing.", tone="gold")
+    callout(doc, "Evidence boundary", "Grade and triage evidence comes from Herlev; KOIL morphology evidence comes from SIPaKMeD conventional Pap-smear crops. Neither is Thai ThinPrep validation or molecular HPV testing.", tone="gold")
 
 
 def add_chapter1(doc):
@@ -344,8 +345,9 @@ def add_chapter1(doc):
     p(doc, "Many image classifiers provide only a label and confidence score. Such output is insufficient for a safety-sensitive workflow because confidence may be miscalibrated, explanations may be over-trusted, and patient-facing communication may be released without appropriate review. A useful prototype should combine grading, triage, explainability, uncertainty, and explicit clinician control.")
     heading(doc, "1.3 Research Objectives")
     for text in [
-        "Develop a Bethesda-style five-class cervical cytology screening-support model.",
-        "Add a high-sensitivity binary safety-triage view without replacing the five-class output.",
+        "Develop a four-class Bethesda-style cervical cytology grading model.",
+        "Develop a separate koilocytosis-morphology endpoint without treating KOIL as a Bethesda grade.",
+        "Add a high-sensitivity binary safety-triage view without replacing the grade output.",
         "Provide Grad-CAM review support and uncertainty-aware abstention.",
         "Demonstrate clinician sign-off, report locking, and offline operation.",
         "Define a validation pathway for Thai ThinPrep images and paired HPV endpoints.",
@@ -360,11 +362,12 @@ def add_chapter2(doc):
     heading(doc, "2.1 Cervical Cytology and the Bethesda Framework")
     p(doc, "The Bethesda System standardizes cervical cytology terminology and distinguishes negative findings from low-grade, high-grade, and malignant squamous abnormalities [4]. Preserving multiple classes supports clinical communication, whereas a secondary binary view is useful for screening-safety analysis.")
     heading(doc, "2.2 Image Classification and Explainability")
-    p(doc, "The Herlev benchmark contains 917 single-cell cervical cytology images [5]. EfficientNet provides an efficient scaling strategy for image models [6], making EfficientNet-B0 suitable for an offline prototype. Grad-CAM localizes regions associated with a class score [7], but it remains a review aid rather than causal proof.")
+    p(doc, "The Herlev benchmark contains 917 single-cell cervical cytology images [5]. SIPaKMeD provides 4,049 cropped cells from 966 source cluster images across five morphology classes, including 825 koilocytotic cells [14]. EfficientNet provides an efficient scaling strategy for offline image models [6]. Grad-CAM localizes regions associated with a class score [7], but it remains a review aid rather than causal proof.")
     heading(doc, "2.3 Uncertainty, Calibration, and Governance")
     p(doc, "Monte Carlo Dropout provides an approximate uncertainty signal [8], while temperature scaling can improve probability calibration without changing class ordering [9]. Medical-AI guidance emphasizes representative data, human-AI interaction, lifecycle monitoring, and transparent reporting [10-12]. Dataset shift remains a major risk when moving from a public benchmark to a different population, preparation method, microscope, or camera [13].")
     add_table(doc, "Table 1. Design principles derived from the literature.", ["Principle", "System implementation", "Boundary"], [
-        ["Structured cytology", "Five-class Bethesda-style suggestion", "Not a final cytology report"],
+        ["Structured cytology", "Four-class Bethesda-style grade", "Not a final cytology report"],
+        ["KOIL morphology", "Independent one-vs-rest endpoint", "Not HPV DNA/RNA status"],
         ["Screening safety", "Binary normal/abnormal triage", "Not the sole product output"],
         ["Explainability", "Grad-CAM heatmap", "Review aid, not causal proof"],
         ["Uncertainty", "MC Dropout and abstention", "Requires external validation"],
@@ -375,37 +378,39 @@ def add_chapter2(doc):
 def add_chapter3a(doc):
     chapter_header(doc, 3, "RESEARCH METHOD")
     heading(doc, "3.1 Study Design and Dataset")
-    p(doc, "This retrospective model-development and prototype-integration study used 917 real images from the public Herlev cervical cytology dataset [5]. Segmentation-mask files and synthetic-heavy historical experiments were excluded from public performance evidence. The held-out test set contained 137 images.")
+    p(doc, "This retrospective model-development and prototype-integration study used two public datasets. Grade and binary-triage evidence used 917 real Herlev images [5], with segmentation masks and synthetic experiments excluded. The independent KOIL endpoint used all 4,049 official SIPaKMeD cropped cells from 966 source clusters [14].")
     add_table(doc, "Table 2. Dataset and model card summary.", ["Item", "Specification"], [
-        ["Dataset", "Herlev public cervical cytology dataset"],
-        ["Images", "917 real images; masks excluded"],
+        ["Grade/triage dataset", "Herlev: 917 real images; masks excluded"],
+        ["KOIL dataset", "SIPaKMeD: 4,049 cells from 966 source clusters"],
         ["Architecture", "EfficientNet-B0 with ImageNet transfer learning"],
-        ["Five-class output", "NILM, LSIL, HSIL, SCC, KOIL placeholder"],
-        ["Binary triage", "NILM=normal; remaining classes=abnormal"],
-        ["Evidence status", "Phase 1 Herlev-only research prototype"],
+        ["Grade output", "NILM, LSIL, HSIL, SCC"],
+        ["KOIL output", "Independent koilocytosis morphology probability"],
+        ["Evidence status", "Internal public-dataset validation; no Thai ThinPrep evidence"],
     ], [4.1, 9.9], font_size=9.2)
     heading(doc, "3.2 End-to-End Workflow")
-    p(doc, "The workflow accepts a cytology image, returns five-class probabilities and a binary triage interpretation, generates a Grad-CAM overlay, estimates uncertainty, and routes the result to clinician confirmation, correction, or rejection. A patient-facing report remains locked when the case is uncertain or unsigned.")
+    p(doc, "The workflow accepts a cytology image, returns four grade probabilities, binary triage, and an independent KOIL morphology assessment. Grade and KOIL use class-specific Grad-CAM review. Uncertainty and image-quality gates route unsafe cases to clinician confirmation, correction, or rejection; patient-facing output remains locked until all gates pass.")
     add_figure(doc, ASSETS / "workflow_diagram.png", "Figure 1. CerviCo-Pilot clinician-in-the-loop workflow.", 13.2, 4.5)
 
 
 def add_chapter3b(doc):
     chapter_header(doc, 3, "RESEARCH METHOD", continued=True)
     heading(doc, "3.3 Model Development and Evaluation")
-    p(doc, "Images were resized for EfficientNet-B0 input and processed through the canonical project pipeline. Transfer learning, class-aware training, focal-loss experiments, oversampling, and test-time augmentation were used to address limited data and class imbalance. Only metrics reproduced from models/best_cervical.pt are used in this paper.")
+    p(doc, "Images were resized for EfficientNet-B0 input and processed through canonical pipelines. Herlev grade/triage metrics were reproduced from models/best_cervical.pt. For SIPaKMeD, source clusters were split before training (676/145/145 clusters for train/validation/test), preventing cropped cells from the same cluster crossing splits. Model selection, temperature scaling, and a sensitivity-constrained KOIL threshold were fixed on validation data before one-time test evaluation.")
     add_table(doc, "Table 3. Reproducible evaluation specification.", ["Component", "Specification", "Purpose"], [
         ["Held-out evaluation", "n=137; TTA enabled", "Primary test evidence"],
+        ["KOIL locked test", "641 cells; 145 clusters", "Independent endpoint evidence"],
         ["Bootstrap", "2,000 percentile resamples", "Confidence intervals"],
         ["Cross-validation", "Five folds; mean +/- SD", "Split robustness"],
         ["Binary threshold", "0.50", "Normal/abnormal triage"],
         ["Calibration", "Temperature=0.794103", "Post-hoc probability scaling"],
+        ["KOIL calibration", "Temperature=0.838126", "Validation-fit; test locked"],
         ["Explainability", "Grad-CAM", "Visual review support"],
         ["Uncertainty", "MC Dropout", "Abstention signal"],
     ], [3.5, 5.4, 5.1], font_size=8.5)
     heading(doc, "3.4 Metrics and Safety Policy")
-    p(doc, "Five-class evaluation included accuracy, macro F1, macro AUROC, per-class recall, and quadratic weighted kappa. Binary triage included sensitivity, specificity, AUROC, AUPRC, MCC, and confusion counts. Calibration used ECE and Brier score. High uncertainty triggers abstention language and blocks patient-report release.")
+    p(doc, "Legacy grade evaluation included accuracy, macro F1, macro AUROC, per-class recall, and quadratic weighted kappa. Binary triage and KOIL one-vs-rest evaluation included sensitivity, specificity, AUROC, AUPRC, precision, F1, and confusion counts. KOIL confidence intervals used 2,000 source-cluster bootstrap resamples. Calibration used ECE and Brier score. High uncertainty triggers abstention and blocks patient-report release.")
     heading(doc, "3.5 Prototype System")
-    p(doc, "The React/FastAPI prototype supports sample review, image upload, Grad-CAM display, confirm/edit/reject actions, report preview, evidence download, and an audit demonstration. It is intended for supervised research demonstration and does not satisfy regulated clinical deployment requirements.")
+    p(doc, "The React/FastAPI prototype supports sample review, image upload, separate grade and KOIL probabilities, class-specific Grad-CAM, confirm/edit/reject actions, report export, and an audit demonstration. It is intended for supervised research demonstration and does not satisfy regulated clinical deployment requirements.")
     callout(doc, "Do-not-use boundary", "No autonomous diagnosis, molecular HPV status, unsupervised patient release, or Thai-domain performance claim.", tone="gold")
 
 
@@ -413,8 +418,8 @@ def add_chapter4a(doc):
     chapter_header(doc, 4, "RESULTS AND DISCUSSION")
     heading(doc, "4.1 Primary Quantitative Results")
     add_table(doc, "Table 4. Held-out and cross-validation results.", ["Measure", "Result", "Interpretation"], [
-        ["Five-class accuracy", "0.6934", "Moderate detailed grading"],
-        ["Macro F1 / macro AUROC", "0.5545 / 0.7311", "Class-specific limitations"],
+        ["Legacy five-output accuracy", "0.6934", "KOIL unsupported in Herlev"],
+        ["Legacy macro F1 / AUROC", "0.5545 / 0.7311", "Includes unsupported KOIL output"],
         ["Quadratic weighted kappa", "0.687", "Severity agreement"],
         ["Binary sensitivity / specificity", "1.000 / 0.7222", "FN=0; some over-referral"],
         ["Binary AUROC / AUPRC", "0.964 / 0.9856", "Strong Herlev triage"],
@@ -422,48 +427,56 @@ def add_chapter4a(doc):
         ["Five-fold AUROC", "0.9435 +/- 0.0448", "Within-domain robustness"],
     ], [5.0, 3.6, 5.4], font_size=8.5)
     add_figure_pair(doc, ASSETS / "headline_metrics.png", "Figure 2. Held-out headline metrics.", ASSETS / "cv_folds.png", "Figure 3. Five-fold cross-validation.", 6.25, 4.55)
-    p(doc, "The two output layers served different purposes. Five-class grading preserved cytology detail but remained moderate, while binary triage achieved high sensitivity. The binary result should therefore be interpreted as a safety view rather than a replacement for the five-class objective.")
+    p(doc, "The historical checkpoint used a five-output head, but Herlev contained no true KOIL support; the deployed interface therefore exposes only four grade classes and obtains KOIL morphology from the separate SIPaKMeD model. Binary triage achieved high sensitivity and remains a safety view rather than a replacement for detailed grade review.")
 
 
 def add_chapter4b(doc):
     chapter_header(doc, 4, "RESULTS AND DISCUSSION", continued=True)
-    heading(doc, "4.2 Class-Specific Error Analysis")
-    add_figure(doc, ASSETS / "confusion_matrix.png", "Figure 4. Five-class output-space confusion matrix on the held-out test set; KOIL recall is not estimable because support is zero.", 8.7, 7.1)
-    add_table(doc, "Table 5. Held-out per-class recall and limitations.", ["Class", "Support", "Recall", "Interpretation"], [
+    heading(doc, "4.2 Grade Error Analysis")
+    add_figure(doc, KOIL_ASSETS / "herlev_grade_confusion_4class.png", "Figure 4. Herlev confusion matrix for the four supported grade classes.", 7.5, 5.5)
+    add_table(doc, "Table 5. Herlev held-out per-class recall.", ["Class", "Support", "Recall", "Interpretation"], [
         ["NILM", "36", "0.7222", "False positives reduce specificity"],
         ["LSIL", "49", "0.6122", "Overlap with higher-grade morphology"],
         ["HSIL", "30", "0.8667", "Strongest high-grade recall"],
         ["SCC", "22", "0.5909", "Requires improvement"],
-        ["KOIL", "0", "N/A", "Not estimable; no true KOIL support"],
     ], [2.4, 2.2, 2.2, 7.2], font_size=8.5)
-    p(doc, "The absence of true KOIL examples is an evidence gap, not a successful negative result. KOIL is retained only as a future target and interface placeholder. SCC recall also remains insufficient for autonomous grading.")
+    heading(doc, "4.3 Independent KOIL Morphology Endpoint")
+    add_table(doc, "Table 6. Locked SIPaKMeD KOIL one-vs-rest test results.", ["Measure", "Result", "Cluster-bootstrap 95% CI"], [
+        ["Support", "133 positive / 508 negative", "145 source clusters"],
+        ["Sensitivity / specificity", "0.9624 / 0.9764", "0.9167-0.9921 / 0.9583-0.9916"],
+        ["Precision / F1", "0.9143 / 0.9377", "0.8291-0.9702 / 0.8811-0.9706"],
+        ["AUROC / AUPRC", "0.9912 / 0.9810", "0.9786-0.9984 / 0.9506-0.9951"],
+    ], [4.2, 4.2, 5.6], font_size=8.1)
+    p(doc, "At the validation-locked threshold of 0.3367, the model produced 128 TP, 496 TN, 12 FP, and 5 FN cells. False positives were limited to dyskeratotic (n=9) and metaplastic (n=3) morphology; each false negative came from a different source cluster. These errors require expert review and do not represent HPV test errors.", size=10.2)
 
 
 def add_chapter4c(doc):
     chapter_header(doc, 4, "RESULTS AND DISCUSSION", continued=True)
-    heading(doc, "4.3 Calibration, Explainability, and System Interpretation")
-    add_table(doc, "Table 6. Held-out calibration before and after temperature scaling.", ["Measure", "Before", "After"], [
+    heading(doc, "4.4 Calibration, Explainability, and System Interpretation")
+    add_table(doc, "Table 7. Held-out calibration evidence.", ["Endpoint / measure", "Before", "After"], [
         ["Multiclass ECE", "0.066853", "0.038670"],
         ["Binary ECE", "0.090679", "0.073787"],
         ["Binary Brier score", "0.071015", "0.066994"],
-        ["Binary AUROC", "0.963971", "0.963421"],
+        ["KOIL ECE", "Not reported", "0.013385"],
+        ["KOIL Brier score", "Not reported", "0.019025"],
     ], [6.0, 4.0, 4.0], font_size=9.0)
-    add_figure_pair(doc, ASSETS / "calibration_before_after.png", "Figure 5. Calibration comparison.", ASSETS / "sample_gradcam_grid.jpg", "Figure 6. Cytology and Grad-CAM examples.", 6.25, 4.65)
-    p(doc, "Temperature scaling improved held-out ECE and Brier score while leaving discrimination nearly unchanged, consistent with post-hoc calibration [9]. However, calibration remains domain-dependent and cannot be extended to Thai ThinPrep images without external evidence.")
-    p(doc, "The prototype's contribution is the integration of evaluation and review workflow: Grad-CAM can be challenged, uncertainty can trigger abstention, and patient communication is gated by clinician action. This aligns with human-AI interaction and transparent-reporting principles [10-12]. Dataset shift remains the principal translation risk [13].")
+    add_figure(doc, KOIL_ASSETS / "koil_test_performance.png", "Figure 5. SIPaKMeD morphology confusion matrix and locked-test KOIL ROC/precision-recall curves.", 13.4, 3.6)
+    add_figure_pair(doc, ASSETS / "calibration_before_after.png", "Figure 6. Herlev calibration.", KOIL_ASSETS / "koil_gradcam_paper.png", "Figure 7. KOIL-specific Grad-CAM audit cases.", 6.25, 4.25)
+    p(doc, "Temperature scaling improved calibration without changing class ordering [9]. KOIL Grad-CAM was generated for the independent endpoint and is presented as attention evidence, not segmentation or causal proof. Calibration and attribution remain domain-dependent and cannot be extended to Thai ThinPrep images without external evidence.", size=10.5)
+    p(doc, "The prototype integrates evaluation and review: explanations can be challenged, uncertainty can trigger abstention, and patient communication is gated by clinician action [10-12]. Dataset shift remains the principal translation risk [13].", size=10.5)
     callout(doc, "Required next evidence", "Thai ThinPrep external validation, paired HPV endpoints, pathologist error review, an unaided-versus-AI-assisted reader study, and a prospective workflow pilot.")
 
 
 def add_chapter5(doc):
     chapter_header(doc, 5, "CONCLUSION")
     heading(doc, "5.1 Conclusion")
-    p(doc, "CerviCo-Pilot demonstrates an end-to-end, explainable, and uncertainty-aware cervical cytology screening-support prototype. On real Herlev images, binary triage achieved held-out sensitivity of 1.000 and AUROC of 0.964, while five-class grading achieved accuracy of 0.6934 and macro AUROC of 0.7311. These results support continued research but do not justify autonomous diagnosis or deployment.")
+    p(doc, "CerviCo-Pilot demonstrates an end-to-end, explainable, and uncertainty-aware cervical cytology screening-support prototype. On Herlev, binary triage achieved held-out sensitivity 1.000 and AUROC 0.964, while the legacy five-output grade evaluation achieved accuracy 0.6934. On the separate locked SIPaKMeD test set, KOIL morphology sensitivity was 0.9624 and AUROC 0.9912. These within-dataset results support continued research but do not justify autonomous diagnosis or deployment.")
     p(doc, "The main contribution is the system design: detailed cytology output is preserved, a binary view emphasizes screening safety, Grad-CAM supports visual review, uncertainty enables abstention, and clinician sign-off controls patient-facing communication. The system can operate locally and presents its limitations alongside its predictions.")
     heading(doc, "5.2 Limitations")
     for text in [
-        "Evidence is restricted to a small public single-cell dataset.",
+        "Evidence is restricted to two public single-cell conventional cytology datasets.",
         "No Thai ThinPrep/LBC external validation or paired molecular HPV endpoint is available.",
-        "KOIL has no true support, and SCC recall remains limited.",
+        "KOIL morphology is internally validated on SIPaKMeD only; SCC grade recall remains limited.",
         "Grad-CAM, uncertainty, and report wording have not been evaluated in a clinical reader study.",
         "The web audit and report export remain research-demo components.",
     ]:
@@ -471,7 +484,7 @@ def add_chapter5(doc):
     heading(doc, "5.3 Future Work")
     p(doc, "The next phase will collect de-identified Thai ThinPrep/LBC images under ethics and data-governance approval, lock an external test set, add paired HPV labels, perform pathologist-reviewed error analysis, and conduct a reader study. A prospective pilot should measure review time, notification time, follow-up completion, and automation bias.")
     heading(doc, "5.4 Research Integrity Statement")
-    p(doc, "All performance values were copied from canonical project evaluation files for the shipped EfficientNet-B0 checkpoint. External sources support background and methods only; they do not create CerviCo-Pilot performance evidence.")
+    p(doc, "All performance values were copied from canonical evaluation files for the shipped Herlev grade/triage and SIPaKMeD KOIL checkpoints. External sources support background and methods only; they do not create CerviCo-Pilot performance evidence.")
 
 
 def add_references(doc):

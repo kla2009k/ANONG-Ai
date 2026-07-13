@@ -5,7 +5,7 @@ const STEPS = [
     n: "1",
     title: "Start with current truth",
     path: "/",
-    action: "Open the dashboard and state that this is a Phase 1, Herlev-only research prototype.",
+    action: "Open the dashboard and state that grade/triage evidence is Herlev and KOIL morphology evidence is separately SIPaKMeD.",
     proof: "Point to the measured metrics, zero Thai validation datasets, and the HPV boundary.",
   },
   {
@@ -13,7 +13,7 @@ const STEPS = [
     title: "Run an analysis",
     path: "/analyze",
     action: "Select a Herlev example and open the Grad-CAM view.",
-    proof: "Show the 5-class output, probabilities, heatmap, uncertainty, and HPV-related morphology risk.",
+    proof: "Show the four-class grade, independent KOIL morphology score, endpoint-specific heatmaps, and uncertainty.",
   },
   {
     n: "3",
@@ -86,7 +86,7 @@ export default function DemoMode() {
         <h2 className="font-display text-xl font-semibold text-ink">Opening line</h2>
         <p className="mt-2 text-sm leading-6 text-mut">
           CerviCo-Pilot is neither a chatbot nor an autonomous diagnostic system. It is a cervical cytology screening-support workflow:
-          the vision model provides a 5-class suggestion, the interface shows Grad-CAM and uncertainty, a clinician signs off,
+          one vision endpoint provides a four-class grade and another assesses KOIL morphology; the interface shows endpoint-specific Grad-CAM and uncertainty, a clinician signs off,
           and the patient report remains locked until the workflow permits communication.
         </p>
       </section>

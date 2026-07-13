@@ -1,8 +1,15 @@
 # Project_CervicalAI — Anong · CerviCo-Pilot
 
+> **Critical KOIL update (2026-07-13):** Read
+> `docs/KOIL_REAL_DATA_VALIDATION_2026.md` before changing model claims, paper
+> metrics, inference, reports, or the web. KOIL is now an independent SIPaKMeD
+> morphology endpoint with real locked-test evidence. It is not a fifth
+> Bethesda grade and not an HPV infection test. Historical KOIL placeholder
+> text later in this file must not override the new canonical report.
+
 Clinician-in-the-loop cervical cytology screening co-pilot. It reads
-ThinPrep/Pap-style images, gives a Bethesda-style 5-class abnormality grade,
-adds a binary normal/abnormal safety-triage view, estimates HPV-related
+ThinPrep/Pap-style images, gives a four-class Bethesda-style abnormality grade,
+adds an independent KOIL morphology endpoint and binary safety-triage view, estimates HPV-related
 morphology risk, and flags cases for expert review. Every output is advisory
 and a clinician signs off.
 
@@ -62,11 +69,12 @@ and a clinician signs off.
   scan `src`, `index.html`, and non-document `public/` files for Thai Unicode.
   Downloadable research documents may retain their original submission language.
 - Numbers must match across web (`web-react/src/lib/data.ts` METRICS) = docx = docs/*.md.
-- 5-class Bethesda-style output = primary product identity.
+- Four-class Bethesda-style grade output (NILM/LSIL/HSIL/SCC) = primary grade endpoint.
+- KOIL is an independent morphology endpoint trained and locked-tested on SIPaKMeD.
 - Binary normal/abnormal triage = safety layer, not the whole product.
 - HPV wording must be "HPV-related morphology risk"; never say the model detects
   HPV infection or replaces HPV DNA/RNA testing.
-- KOIL is Phase 2 / not validated in current Herlev-only Phase 1.
+- KOIL evidence is internal SIPaKMeD conventional Pap-smear validation only; Thai ThinPrep and paired HPV validation remain future work.
 - When unsure, ask before guessing.
 - Before publishing or generating new claims, run:
   `python tools/audit_claims.py`
@@ -92,8 +100,8 @@ and a clinician signs off.
   quality gate uses `single_cell_crop_herlev_v1`, not slide-level cellularity.
   Read `docs/ANALYZE_HARDENING_AND_DEPLOYMENT_2026.md`.
 - When class support is zero, report recall as `N/A (not estimable)`, not `0.0`.
-  KOIL remains visible as an output placeholder/evidence gap but has no Phase 1
-  performance estimate.
+  This rule applies to the historical Herlev grade checkpoint. Report KOIL only
+  from the independent SIPaKMeD endpoint and its locked-test metrics.
 - External sources support public-health/governance framing only. They do not
   create model-performance claims. Read `docs/SOURCE_CITATION_LEDGER.md` before
   using WHO/CDC/FDA/CONSORT-AI/DECIDE-AI claims.
