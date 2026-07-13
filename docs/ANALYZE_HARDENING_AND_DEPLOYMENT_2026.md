@@ -87,10 +87,22 @@ was inspected at full resolution after the final chart change.
 
 ## Deployment
 
+- Public static site: `https://kla2009k.github.io/ANONG-Ai/`.
+- Deployment was verified on 2026-07-13 at commit `43692a8`: the Anong HTML,
+  hashed JS/CSS, sample JSON, manifest, and polished WSEEC PDF all returned 200.
+- The repository is currently configured for legacy `main`-root Pages and also
+  has an artifact workflow. A checked-in root bundle and `.nojekyll` make both
+  paths serve the same app instead of GitHub rendering the repository README.
+- Direct nested URLs use the checked-in `404.html` SPA fallback. GitHub may send
+  HTTP 404 for the initial nested request while the browser still renders the
+  correct client route; normal navigation from the app remains the preferred path.
 - GitHub Actions CI runs Python tests, frontend build, and claim audit.
 - GitHub Pages builds with `/ANONG-Ai/` router and asset base paths.
 - Pages includes SPA fallback and supports the precomputed evidence/demo flow.
 - Live upload requires a FastAPI backend URL configured as `VITE_API_URL`.
+- GitHub Pages cannot execute the PyTorch/FastAPI backend. Until a Render service
+  is provisioned and `VITE_API_URL` is set, public users can inspect the eight
+  precomputed Herlev examples; live upload remains available at the local server.
 - Dockerfile, Compose, and Render blueprint package the model server and web app.
 - Raw data, experiment artifacts, archives, node_modules, and generated QA output
   are excluded from Git.
