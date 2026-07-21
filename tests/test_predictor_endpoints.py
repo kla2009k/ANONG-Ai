@@ -1,7 +1,9 @@
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
+from server import predictor
 from server.predictor import CLASSES, _grade_probabilities
 
 
@@ -22,6 +24,17 @@ class PredictorEndpointTests(unittest.TestCase):
                 ["NILM", "LSIL", "HSIL", "KOIL"],
                 np.asarray([0.2, 0.3, 0.4, 0.1], dtype=np.float32),
             )
+
+    def test_status_exposes_locked_and_external_koil_evidence(self):
+        evidence = {
+            "locked_test": {"test_koil": {"support_positive": 133, "sensitivity": 0.9624, "specificity": 0.9764, "auroc": 0.9912}},
+            "external_challenge": {"dataset": "CCCID v2", "support_positive": 20, "sensitivity": 0.95},
+        }
+        with patch.dict(predictor._STATE, {"koil_evidence": evidence}):
+            status = predictor.status()["koil_evidence"]
+        self.assertEqual(status["locked_test_support"], 133)
+        self.assertEqual(status["external_positive_support"], 20)
+        self.assertEqual(status["external_dataset"], "CCCID v2")
 
 
 if __name__ == "__main__":

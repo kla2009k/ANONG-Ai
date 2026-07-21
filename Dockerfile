@@ -19,6 +19,8 @@ COPY server/ server/
 COPY ml/ ml/
 COPY models/best_cervical.pt models/best_cervical.pt
 COPY models/koil_sipakmed/best_koil_model.pt models/koil_sipakmed/best_koil_model.pt
+COPY models/koil_sipakmed/test_metrics.json models/koil_sipakmed/test_metrics.json
+COPY models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json
 COPY --from=web-build /build/web-dist web-dist/
 RUN mkdir -p artifacts
 EXPOSE 8003

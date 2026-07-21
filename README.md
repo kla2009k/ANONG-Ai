@@ -36,16 +36,18 @@ the complete deployment, smoke-test, troubleshooting, and rollback runbook.
 
 ชื่อที่ผู้ใช้เห็นบนเว็บคือ **Anong** ส่วน **CerviCo-Pilot** ยังคงเป็นชื่อเทคนิคของระบบและชื่อที่ใช้เชื่อมกับ model card, metrics และเอกสารวิจัย ใช้รูปแบบ **Anong · CerviCo-Pilot** เมื่อต้องแสดงทั้งสองบริบท Product UI ทุก route ใช้ภาษาอังกฤษเท่านั้น ส่วนไฟล์รายงานดาวน์โหลดอาจคงภาษาต้นฉบับของเวที ชุดสีเว็บเป็น pastel clinical: ชมพูกุหลาบ เหลืองเนย และครีม รายละเอียดอยู่ที่ `PRODUCT.md`, `docs/ANONG_WEB_REBRAND_2026.md` และ `docs/ANONG_ENGLISH_UI_MIGRATION_2026.md`
 
-## Current Truth (2026-07-07)
+## Current Truth (updated 2026-07-21)
 
 CerviCo-Pilot is a **clinician-in-the-loop cervical cytology screening co-pilot**.
-The primary product output is a **Bethesda-style 5-class grade**. The binary
+The primary grade output is a **four-category morphology estimate** (NILM,
+LSIL, HSIL, SCC). KOIL is a separate one-vs-rest morphology endpoint because
+koilocytosis can coexist with a grade and is not itself a Bethesda grade. The binary
 normal/abnormal output is a **safety triage layer**, not the whole project. The
 HPV output must be described as **HPV-related morphology risk**, not HPV
 infection detection or HPV DNA/RNA testing.
 
-**Current honest evidence**: real Herlev data only. Results reproduced from the
-current `best_cervical.pt`:
+**Current honest grade evidence** uses real Herlev data. Results reproduced from
+the current `best_cervical.pt`:
 
 - held-out 5-class accuracy: **0.6934**
 - held-out macro AUROC: **0.7311**
@@ -57,10 +59,20 @@ current `best_cervical.pt`:
 - 5-fold binary sensitivity: **0.9867 +/- 0.0086**
 - 5-fold binary AUROC: **0.9435 +/- 0.0448**
 
-`best_cervical.pt` is the honest EfficientNet-B0 checkpoint. The old polluted
+`best_cervical.pt` is the honest EfficientNet-B0 grade checkpoint. The old polluted
 B3/synthetic-heavy metrics are not public evidence. Herlev masks (`-d.bmp`) are
-excluded. KOIL recall is **N/A (not estimable)** because Herlev has no true KOIL
-examples; KOIL is Phase 2, not a validated current capability.
+excluded. KOIL recall remains **N/A (not estimable)** in the Herlev grade table
+because Herlev has no true KOIL examples; it must not be displayed as zero.
+
+The independent KOIL endpoint was trained and locked-tested on real SIPaKMeD
+cells with source-cluster-disjoint splits. At the locked threshold it achieved
+sensitivity 0.9624, specificity 0.9764, and AUROC 0.9912. A deterministic,
+preselected external positive-only challenge on 20 expert-labelled CCCID v2
+BD SurePath liquid-based koilocyte images detected 19/20 (sensitivity 0.9500;
+Wilson 95% CI 0.7639-0.9911). Because the CCCID challenge contains no negatives,
+external specificity, AUROC, calibration, and clinical accuracy cannot be
+estimated. Neither model detects HPV DNA, RNA, genotype, persistence, or
+infection. See `docs/KOIL_REAL_DATA_VALIDATION_2026.md`.
 
 Start with these hardening docs before writing new claims:
 
@@ -117,8 +129,9 @@ python tools\audit_claims.py
 
 ## 1. ภาพรวม (One-liner สำหรับกรรมการ)
 
-AI อ่านภาพเซลล์ปากมดลูกจาก ThinPrep/Pap → ให้ระดับ Bethesda-style 5-class
-(NILM/LSIL/HSIL/SCC/KOIL placeholder) → ประเมิน HPV-related morphology risk
+AI อ่านภาพเซลล์ปากมดลูกจาก ThinPrep/Pap → ให้ระดับ morphology 4 กลุ่ม
+(NILM/LSIL/HSIL/SCC) พร้อม KOIL morphology endpoint แยกต่างหาก → ประเมิน
+HPV-related morphology risk
 จากลักษณะทางเซลล์วิทยา → แสดงจุดที่ AI โฟกัส (Grad-CAM) → บอกความไม่มั่นใจ
 (MC Dropout) → ออกรายงาน 2 ชั้นหลังแพทย์แก้/ยืนยันได้
 

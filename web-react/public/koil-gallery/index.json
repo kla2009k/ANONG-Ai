@@ -1,0 +1,240 @@
+{
+  "dataset": "CCCID v2",
+  "dataset_title": "Cervical Cancer Cell Image Database: Multi-focus Cytology Dataset",
+  "dataset_doi": "10.5281/zenodo.20807462",
+  "dataset_url": "https://zenodo.org/records/20807462",
+  "license": "CC BY-NC 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+  "attribution": "Ohno et al., Cervical Cancer Cell Image Database v2 (2026)",
+  "selection": "first 10 center-focus images from each of two expert-labelled koilocyte subtypes; no model-based selection",
+  "archive_file": "CCCID_V2_LSIL.zip",
+  "archive_md5": "6e2f6bf468addd80b698318d87c16123",
+  "intended_use": "external_koil_reference_and_preselected_positive_challenge",
+  "model_predictions_included": false,
+  "count": 20,
+  "counts": {
+    "KOIL": 20
+  },
+  "items": [
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-01",
+      "image": "koil-gallery/koil-intermediate-01.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(10367,9080,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-01",
+      "image": "koil-gallery/koil-superficial-01.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/001_(3220,9728,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-02",
+      "image": "koil-gallery/koil-intermediate-02.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(12513,7297,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-02",
+      "image": "koil-gallery/koil-superficial-02.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/001_(4559,10483,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-03",
+      "image": "koil-gallery/koil-intermediate-03.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(12710,10419,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-03",
+      "image": "koil-gallery/koil-superficial-03.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/001_(7513,8567,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-04",
+      "image": "koil-gallery/koil-intermediate-04.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(13175,5710,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-04",
+      "image": "koil-gallery/koil-superficial-04.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/002_(10799,8693,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-05",
+      "image": "koil-gallery/koil-intermediate-05.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(2582,9616,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-05",
+      "image": "koil-gallery/koil-superficial-05.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/002_(11520,12333,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-06",
+      "image": "koil-gallery/koil-intermediate-06.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(4514,11591,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-06",
+      "image": "koil-gallery/koil-superficial-06.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/002_(3683,11465,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-07",
+      "image": "koil-gallery/koil-intermediate-07.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(4790,11873,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-07",
+      "image": "koil-gallery/koil-superficial-07.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/003_(11458,12341,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-08",
+      "image": "koil-gallery/koil-intermediate-08.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(5582,10578,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-08",
+      "image": "koil-gallery/koil-superficial-08.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/003_(13034,8265,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-09",
+      "image": "koil-gallery/koil-intermediate-09.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(5891,10763,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-09",
+      "image": "koil-gallery/koil-superficial-09.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/003_(3675,11426,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-10",
+      "image": "koil-gallery/koil-intermediate-10.jpg",
+      "class": "KOIL",
+      "subtype": "Intermediate-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/13. Intermediate-type_Koilocytic_Cells/001_(6017,6704,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-10",
+      "image": "koil-gallery/koil-superficial-10.jpg",
+      "class": "KOIL",
+      "subtype": "Superficial-type koilocyte",
+      "focus_plane": 5,
+      "source_member": "CCCID_V2_LSIL/12. Superficial-type_Koilocytic_Cells/004_(4792,11860,5).jpeg",
+      "source_doi": "10.5281/zenodo.20807462",
+      "license": "CC BY-NC 4.0",
+      "domain": "BD SurePath liquid-based cervical cytology, Pap stain, center-focus plane"
+    }
+  ]
+}

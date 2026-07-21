@@ -12,7 +12,7 @@ clinical use.
 | Layer | Host | Purpose |
 |---|---|---|
 | Complete application | Render Docker web service | React, FastAPI, both model checkpoints, XAI, and PDF |
-| Public evidence mirror | GitHub Pages | Static pages, documents, and the CRIC reference atlas |
+| Public evidence mirror | GitHub Pages | Static pages, documents, and the CRIC/CCCID reference atlas |
 | Model API for Pages | The same Render service | Enables upload and server PDF actions from Pages |
 
 The simplest judging URL is the Render URL because frontend and API share one
@@ -76,7 +76,7 @@ GET  /api/health  -> 200, grade_mode=model, koil_mode=model
 GET  /api/ready   -> 200, ok=true, audit_store_ok=true
 GET  /api/metrics -> 200
 GET  /             -> React application
-GET  /gallery      -> 80 CRIC references plus model-audit tabs
+GET  /gallery      -> 80 CRIC grade references + 20 CCCID KOIL references + model-audit tabs
 POST /api/analyze  -> predictions, uncertainty, and valid XAI or explicit abstention
 POST /api/report/export/pdf -> application/pdf
 ```
@@ -86,15 +86,24 @@ de-identified image, Grad-CAM labels, report release gating, and PDF filename.
 
 ## Gallery provenance
 
-The gallery contains 80 real annotated CRIC Cervix cell crops: 20 NILM, 20
-LSIL, 20 HSIL, and 20 SCC examples. Within each displayed category, all 20
+The gallery contains 100 real annotated cell crops. CRIC Cervix contributes 20
+NILM, 20 LSIL, 20 HSIL, and 20 SCC examples. Within each CRIC category, all 20
 come from different source images. CRIC is explicitly CC BY 4.0 and each card
 links to its Figshare DOI. These images are external morphology references,
 not model predictions, not external validation, and not HPV-test evidence.
 
-KOIL remains a separate evidence tab. The model was evaluated with a locked
-SIPaKMeD test split, but the project does not republish a bulk SIPaKMeD gallery
-without explicit redistribution terms.
+The 20 KOIL references are deterministic center-focus exports from the
+expert-labelled CCCID v2 BD SurePath liquid-based dataset: 10 superficial-type
+and 10 intermediate-type koilocytes under CC BY-NC 4.0. Their source members,
+DOI, attribution, and SHA-256 hashes are recorded in the gallery manifest.
+Commercial reuse requires a separate license review.
+
+The independent KOIL model still uses a locked SIPaKMeD test split for its
+primary sensitivity/specificity evidence. CCCID is reported separately as a
+20-positive external challenge: 19/20 detected, sensitivity 0.9500, Wilson 95%
+CI 0.7639-0.9911. Because no CCCID negatives are included, external specificity,
+AUROC, and calibration are not estimable. The gallery does not claim HPV DNA or
+RNA detection.
 
 ## Storage and privacy
 

@@ -1,5 +1,18 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Critical KOIL/HPV update 2026-07-21:** Read
+> `docs/KOIL_REAL_DATA_VALIDATION_2026.md` and
+> `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md` first. The Case Gallery
+> now contains 80 CRIC grade references plus 20 expert-labelled CCCID v2
+> liquid-based KOIL references. The unchanged SIPaKMeD-trained KOIL endpoint
+> detected 19/20 of the deterministic preselected CCCID positives (sensitivity
+> 0.9500; Wilson 95% CI 0.7639-0.9911). This is a positive-only challenge, so
+> external specificity, AUROC, calibration, and clinical accuracy are not
+> estimable. It is not an HPV DNA/RNA endpoint and is not Thai ThinPrep
+> validation. The live analyze/report/PDF path now carries this evidence and a
+> separate KOIL-specific Grad-CAM. Full regression status: 43/43 tests and the
+> production frontend build passed on 2026-07-21.
+
 > **Critical update 2026-07-21:** Read
 > `docs/CLINICAL_CONTEXT_PDF_GALLERY_UPDATE_2026-07-21.md` before continuing.
 > Analyze now has report-only age/symptom/HPV-lab context, a symptom
@@ -726,11 +739,15 @@ npm.cmd run build
 
 > It is HPV-related morphology risk assessment, not HPV infection detection.
 
-### Risk 4: KOIL recall = 0
+### Risk 4: KOIL evidence may be conflated with the Herlev grade table
 
 พูดตรง ๆ:
 
-> Herlev does not contain true KOIL samples in the current Phase 1 training/evaluation, so KOIL is Phase 2 target, not a validated current capability.
+> KOIL recall is not estimable in the Herlev grade table because Herlev has no
+> true KOIL support. KOIL is evaluated separately: locked SIPaKMeD sensitivity
+> 0.9624 and specificity 0.9764, plus a 19/20 positive-only CCCID liquid-based
+> challenge. The CCCID result cannot estimate external specificity and neither
+> dataset establishes HPV infection status.
 
 ### Risk 5: Specificity around 0.69-0.72
 
@@ -802,12 +819,16 @@ npm.cmd run build
 > CerviCo-Pilot is not a diagnosis machine. It is a cervical screening co-pilot: it suggests a cytology morphology grade, separately estimates koilocytotic morphology, explains where the model responded, flags uncertainty, and keeps the clinician in control. It does not detect HPV DNA/RNA, and Thai ThinPrep clinical validation remains future work.
 # 2026-07-21 deployment and gallery update
 
-- The public Case Gallery now includes a reproducible 80-cell CRIC Cervix
-  reference atlas: 20 NILM, 20 LSIL, 20 HSIL, and 20 SCC crops under CC BY 4.0.
+- The public Case Gallery now includes a reproducible 100-cell atlas: 20 each
+  for NILM, LSIL, HSIL, SCC, and KOIL. The first four categories use CRIC
+  Cervix under CC BY 4.0; KOIL uses 20 CCCID v2 center-focus liquid-based
+  cytology crops under CC BY-NC 4.0.
 - Treat the CRIC atlas only as external morphology reference material. It is
   not model evaluation, external validation, ThinPrep evidence, or HPV testing.
-- KOIL remains a separate SIPaKMeD locked-test evidence track. Do not bulk
-  republish SIPaKMeD images until explicit redistribution terms are documented.
+- KOIL remains a separate morphology endpoint. SIPaKMeD supplies training and
+  locked testing; CCCID supplies only the limited 20-positive external
+  challenge and public reference images. Do not bulk republish SIPaKMeD images
+  until explicit redistribution terms are documented.
 - `scripts/build_cric_reference_gallery.py` regenerates the atlas and records
   per-image DOI provenance plus SHA-256 hashes.
 - Docker now includes both `models/best_cervical.pt` and

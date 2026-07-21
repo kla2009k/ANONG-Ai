@@ -1,7 +1,8 @@
 # Independent KOIL Morphology Endpoint: Real-Data Validation
 
-**Status:** completed internal public-dataset validation
+**Status:** completed locked internal public-dataset evaluation plus a limited external positive-only challenge
 **Locked evaluation date:** 2026-07-13
+**External challenge date:** 2026-07-21
 **Canonical checkpoint:** `models/koil_sipakmed/best_koil_model.pt`
 **Canonical metrics:** `models/koil_sipakmed/test_metrics.json`
 
@@ -141,11 +142,14 @@ Supported wording:
 - "The split was source-cluster-disjoint and confidence intervals used 2,000
   source-cluster bootstrap resamples."
 - "The model detects morphology consistent with SIPaKMeD's Koilocytotic class."
+- "On a deterministic, preselected 20-positive CCCID v2 liquid-based challenge,
+  the endpoint detected 19/20 koilocyte images (sensitivity 0.9500; Wilson 95%
+  CI 0.7639-0.9911). Specificity was not estimable."
 
 Claims to avoid:
 
 - "The model detects HPV infection or genotype."
-- "The KOIL result is validated on ThinPrep or Thai clinical data."
+- "The KOIL result is fully externally validated on ThinPrep or Thai clinical data."
 - "Sensitivity is 96.24% for HPV infection."
 - "The Grad-CAM is segmentation or proof of causality."
 
@@ -161,6 +165,8 @@ python scripts\validate_sipakmed_official.py
 python scripts\prepare_sipakmed_koil.py
 python -u ml\scripts\train_koil_sipakmed.py --epochs 25 --batch 32 --bootstrap 2000
 python scripts\evaluate_koil_artifacts.py
+python scripts\build_cccid_koil_gallery.py
+python scripts\evaluate_cccid_koil_gallery.py
 python -m pytest -q
 cd web-react
 npm.cmd run build
@@ -173,8 +179,8 @@ npm.cmd run build
 - `/api/ready` returns HTTP 200 only when the grade model, KOIL model, and audit
   store are all active. A missing model returns HTTP 503 rather than silently
   declaring a heuristic endpoint ready.
-- Final automated verification: 33 Python tests passed and the TypeScript/Vite
-  production build completed on 2026-07-13.
+- Final automated verification: 43 Python tests passed and the TypeScript/Vite
+  production build completed on 2026-07-21.
 - HTTP smoke test on locked KOIL cell `009_01.bmp`: KOIL probability 0.9889 at
   threshold 0.3367, grade Grad-CAM valid, KOIL Grad-CAM valid, and
   `hpv_test=false`. The report remained locked because grade uncertainty was
@@ -184,7 +190,48 @@ The GitHub Pages build is a static interface. Uploaded-image model inference
 requires the FastAPI backend URL through `VITE_API_URL`; the static sample
 gallery remains available when the backend is offline.
 
-## 12. Remaining evidence gap
+## 12. CCCID v2 liquid-based positive challenge
+
+The project now includes a small, reproducible domain challenge from CCCID v2,
+an expert-labelled BD SurePath liquid-based cervical cytology dataset.
+
+- Record: <https://zenodo.org/records/20807462>
+- DOI: `10.5281/zenodo.20807462`
+- License: **CC BY-NC 4.0**; commercial reuse requires a separate license review.
+- Selection: the first 10 center-focus plane-5 images from each of the
+  Superficial-type and Intermediate-type Koilocytic Cell directories.
+- Selection was fixed before inference and did not use model scores.
+- Result: TP=19, FN=1, sensitivity=0.9500.
+- Wilson 95% CI: 0.7639-0.9911.
+- Specificity, AUROC, AUPRC, calibration, PPV, and NPV are not estimable from
+  this positive-only set.
+
+Canonical artefacts:
+
+- `web-react/public/koil-gallery/index.json`: source member, subtype, focus
+  plane, DOI, attribution, and license for every displayed image.
+- `web-react/public/koil-gallery/sha256.json`: exported-image integrity hashes.
+- `models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json`: locked
+  per-image challenge result and checkpoint hash.
+- `web-react/public/evidence/cccid_koil_20_case_challenge.json`: public evidence
+  mirror used by the website.
+
+This result is evidence that the existing SIPaKMeD-trained endpoint can respond
+to expert-labelled koilocytes under a limited liquid-based domain shift. It is
+not a negative-inclusive external validation, not a Thai ThinPrep study, and
+not evidence of HPV infection detection.
+
+## 13. End-to-end runtime verification
+
+On 2026-07-21, `koil-superficial-01.jpg` was submitted to the local production
+API. The active model returned KOIL probability 0.9831 at the unchanged locked
+threshold 0.3367, a valid KOIL-specific Grad-CAM, and the SIPaKMeD plus CCCID
+evidence objects. A confirmed research report passed its release gates and the
+server generated a two-page 850,293-byte PDF containing the KOIL evidence,
+KOIL-specific Grad-CAM, and the explicit statement that the result is not an
+HPV DNA/RNA test.
+
+## 14. Remaining evidence gap
 
 The next material step is a pre-registered, externally locked evaluation on
 de-identified Thai ThinPrep/LBC data with patient-disjoint splitting,

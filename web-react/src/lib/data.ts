@@ -29,7 +29,7 @@ export const MODEL_CARD = {
   intendedUse: "Assist medical personnel in screening Pap/ThinPrep-style cervical cytology images to support triage and referral prioritization.",
   users: "Clinicians, pathologists, and cytotechnologists",
   decisionPoint: "Pre-screen triage before confirmatory colposcopy or HPV testing",
-  data: "Herlev: 917 images for grade/triage; SIPaKMeD: 4,049 cells from 966 clusters for independent KOIL morphology; no Thai-domain validation",
+  data: "Herlev: 917 images for grade/triage; SIPaKMeD: 4,049 cells from 966 clusters for KOIL training/locked testing; CCCID v2: 20 preselected LBC KOIL positives for a limited external challenge; no Thai-domain validation",
   training: "Separate EfficientNet-B0 models: four-class grade display from the historical Herlev checkpoint and source-cluster-disjoint SIPaKMeD KOIL training",
   doNotUse: [
     "Final diagnosis without qualified clinician review",
@@ -38,7 +38,7 @@ export const MODEL_CARD = {
     "Out-of-distribution images without validation and appropriate adaptation",
   ],
   limitations: [
-    "KOIL morphology is internally validated on SIPaKMeD conventional Pap-smear crops, not ThinPrep",
+    "KOIL has a 20-positive CCCID liquid-based challenge, but no negative-inclusive external ThinPrep validation",
     "Moderate specificity (about 0.70) may cause over-referral",
     "Post-hoc temperature scaling was evaluated on Herlev only; external Thai calibration is still required",
     "The small public dataset creates domain-shift risk for Thai clinical images",
@@ -69,7 +69,7 @@ export const METRICS = {
   },
   perClass: [
     { k: "NILM", recall: 0.72 }, { k: "LSIL", recall: 0.61 },
-    { k: "HSIL", recall: 0.87 }, { k: "SCC", recall: 0.59 }, { k: "KOIL", recall: 0.0 },
+    { k: "HSIL", recall: 0.87 }, { k: "SCC", recall: 0.59 },
   ],
   folds: [
     ["1", "0.587", "0.553", "0.978", "0.861"],
@@ -104,6 +104,8 @@ export const METRICS = {
     auroc: "0.9912", auprc: "0.9810", f1: "0.9377", ece: "0.0134",
     multiclassAccuracy: "0.9750", multiclassMacroF1: "0.9753",
     threshold: "0.3367", confusion: { TP: 128, TN: 496, FP: 12, FN: 5 },
+    externalDataset: "CCCID v2 BD SurePath liquid-based cytology",
+    externalDetected: "19 / 20", externalSensitivity: "0.9500", externalSensitivityCi: "0.7639-0.9911",
   },
 };
 

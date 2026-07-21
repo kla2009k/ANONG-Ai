@@ -13,6 +13,8 @@ class DeploymentContractTests(unittest.TestCase):
         required = (
             "models/best_cervical.pt",
             "models/koil_sipakmed/best_koil_model.pt",
+            "models/koil_sipakmed/test_metrics.json",
+            "models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json",
         )
         for checkpoint in required:
             self.assertTrue((ROOT / checkpoint).is_file(), checkpoint)

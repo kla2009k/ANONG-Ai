@@ -25,4 +25,7 @@ models/*
 !models/best_cervical.pt
 !models/koil_sipakmed/
 !models/koil_sipakmed/best_koil_model.pt
+!models/koil_sipakmed/test_metrics.json
+!models/koil_sipakmed/evaluation/
+!models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json
 server/*.log

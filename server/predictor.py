@@ -22,6 +22,7 @@ Checkpoint contract (from ml/scripts/train_classifier.py):
 from __future__ import annotations
 import base64
 import io
+import json
 import pathlib
 import hashlib
 import sys
@@ -78,6 +79,7 @@ _STATE: Dict[str, Any] = {
     "koil_net": None,
     "koil_ckpt": None,
     "koil_mode": "unavailable",
+    "koil_evidence": None,
 }
 
 LOW_CONF = 0.35  # flag if top prob < this
@@ -131,6 +133,11 @@ def load_model() -> Dict[str, Any]:
             koil_net.eval()
             koil_net.to(_STATE["device"])
             _STATE.update(koil_net=koil_net, koil_ckpt=koil_ck, koil_mode="model")
+            locked_path = MODELS / "koil_sipakmed" / "test_metrics.json"
+            external_path = MODELS / "koil_sipakmed" / "evaluation" / "cccid_koil_20_case_challenge.json"
+            locked = json.loads(locked_path.read_text(encoding="utf-8")) if locked_path.exists() else None
+            external = json.loads(external_path.read_text(encoding="utf-8")) if external_path.exists() else None
+            _STATE["koil_evidence"] = {"locked_test": locked, "external_challenge": external}
             print("[predictor] loaded independent SIPaKMeD koilocytosis morphology model")
         except Exception as e:
             print("[predictor] KOIL model load failed:", repr(e))
@@ -147,6 +154,9 @@ def mode() -> str:
 
 
 def status() -> Dict[str, Any]:
+    evidence = _STATE.get("koil_evidence") or {}
+    locked = (evidence.get("locked_test") or {}).get("test_koil") or {}
+    external = evidence.get("external_challenge") or {}
     return {
         "grade_mode": _STATE["mode"],
         "grade_classes": list(CLASSES),
@@ -154,6 +164,15 @@ def status() -> Dict[str, Any]:
         "koil_endpoint": "koilocytosis morphology one-vs-rest",
         "koil_training_domain": "SIPaKMeD conventional Pap-smear cropped cells" if _STATE["koil_mode"] == "model" else None,
         "hpv_test": False,
+        "koil_evidence": {
+            "locked_test_support": locked.get("support_positive"),
+            "locked_test_sensitivity": locked.get("sensitivity"),
+            "locked_test_specificity": locked.get("specificity"),
+            "locked_test_auroc": locked.get("auroc"),
+            "external_positive_support": external.get("support_positive"),
+            "external_positive_sensitivity": external.get("sensitivity"),
+            "external_dataset": external.get("dataset"),
+        },
     }
 
 
@@ -515,6 +534,9 @@ def _model_koil_assessment(bgr: np.ndarray) -> Dict[str, Any]:
     index = int(ck["koil_index"])
     score = float(probabilities[index])
     threshold = float(ck["koil_threshold"])
+    evidence = _STATE.get("koil_evidence") or {}
+    locked = (evidence.get("locked_test") or {}).get("test_koil") or {}
+    external = evidence.get("external_challenge") or {}
     return {
         "status": "positive" if score >= threshold else "negative",
         "positive": bool(score >= threshold),
@@ -525,7 +547,25 @@ def _model_koil_assessment(bgr: np.ndarray) -> Dict[str, Any]:
         "endpoint": "koilocytosis morphology one-vs-rest",
         "training_domain": "SIPaKMeD conventional Pap-smear cropped cells",
         "hpv_test": False,
-        "domain_warning": "Not validated for ThinPrep and does not detect HPV DNA or RNA.",
+        "domain_warning": "Trained on conventional Pap crops; limited positive-only CCCID liquid-based challenge is available. This does not detect HPV DNA or RNA.",
+        "evidence": {
+            "locked_test": {
+                "dataset": "SIPaKMeD",
+                "support_positive": locked.get("support_positive"),
+                "support_negative": locked.get("support_negative"),
+                "sensitivity": locked.get("sensitivity"),
+                "specificity": locked.get("specificity"),
+                "auroc": locked.get("auroc"),
+            },
+            "external_positive_challenge": {
+                "dataset": external.get("dataset"),
+                "support_positive": external.get("support_positive"),
+                "true_positive": external.get("true_positive"),
+                "sensitivity": external.get("sensitivity"),
+                "specificity": None,
+                "limitation": external.get("limitation"),
+            },
+        },
     }
 
 

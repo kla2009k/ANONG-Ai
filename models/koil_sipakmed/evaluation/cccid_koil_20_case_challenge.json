@@ -1,0 +1,165 @@
+{
+  "dataset": "CCCID v2",
+  "dataset_doi": "10.5281/zenodo.20807462",
+  "license": "CC BY-NC 4.0",
+  "evaluation_type": "deterministic_external_positive_only_challenge",
+  "selection_locked_before_inference": true,
+  "selection": "first 10 center-focus images from each of two expert-labelled koilocyte subtypes; no model-based selection",
+  "model_training_domain": "SIPaKMeD conventional Pap-smear single-cell crops",
+  "challenge_domain": "CCCID BD SurePath liquid-based cytology center-focus images",
+  "checkpoint_sha256": "6f6aa12eac2dd294576539f51b1306078b493ef4da8d48378ea0e91f9f979ba0",
+  "support_positive": 20,
+  "true_positive": 19,
+  "false_negative": 1,
+  "sensitivity": 0.95,
+  "sensitivity_wilson_95_ci": {
+    "lower": 0.763868806553258,
+    "upper": 0.9911185511992047
+  },
+  "specificity": null,
+  "auroc": null,
+  "limitation": "Positive-only 20-image challenge; specificity, AUROC, calibration, and clinical accuracy are not estimable.",
+  "hpv_test": false,
+  "rows": [
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-01",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9591,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-01",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9831,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-02",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9901,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-02",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.6741,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-03",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.8457,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-03",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.976,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-04",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9864,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-04",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.8866,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-05",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": false,
+      "koil_probability": 0.2793,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-05",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9595,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-06",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9958,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-06",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.7839,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-07",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9965,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-07",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9832,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-08",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9799,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-08",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9725,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-09",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.959,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-09",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9172,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-INTERMEDIATE-10",
+      "subtype": "Intermediate-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9796,
+      "locked_threshold": 0.3367
+    },
+    {
+      "id": "CCCID-KOIL-SUPERFICIAL-10",
+      "subtype": "Superficial-type koilocyte",
+      "positive": true,
+      "koil_probability": 0.9503,
+      "locked_threshold": 0.3367
+    }
+  ]
+}

@@ -18,6 +18,10 @@ interface Result {
     status: string; positive: boolean; probability: number; threshold?: number | null;
     decision_margin?: number | null; mode: string; training_domain?: string | null;
     domain_warning?: string; hpv_test: boolean;
+    evidence?: {
+      locked_test?: { dataset?: string; support_positive?: number; support_negative?: number; sensitivity?: number; specificity?: number; auroc?: number };
+      external_positive_challenge?: { dataset?: string; support_positive?: number; true_positive?: number; sensitivity?: number; specificity?: null; limitation?: string };
+    };
   };
   koilCam?: string; koilXaiOk?: boolean;
   trueLabel?: string; correct?: boolean;
@@ -81,6 +85,21 @@ export default function Analyze() {
   useEffect(() => {
     fetch(`${BASE}samples/samples.json`).then((r) => r.json()).then(setSamples).catch(() => setSamples([]));
     backendStatus().then(setBackend);
+    const reference = new URLSearchParams(window.location.search).get("reference");
+    if (reference?.startsWith("koil-gallery/") && /^[a-z0-9/_-]+\.jpg$/i.test(reference)) {
+      fetch(`${BASE}${reference}`).then((response) => {
+        if (!response.ok) throw new Error("Reference image could not be loaded.");
+        return response.blob();
+      }).then((blob) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setUpImg(reader.result as string);
+          setFileName(reference.split("/").pop() || "CCCID KOIL reference.jpg");
+          setRes(null);
+        };
+        reader.readAsDataURL(blob);
+      }).catch((error) => setErr(error instanceof Error ? error.message : "Reference image could not be loaded."));
+    }
   }, []);
 
   function pickSample(s: Sample) {
@@ -285,6 +304,8 @@ function ResultCard({ res, clinicalContext }: { res: Result; clinicalContext: Cl
   const shownTop = override || res.top;
   const I = classInfo(shownTop);
   const hpv = hpvRisk(shownTop, res.koil);
+  const lockedKoilEvidence = res.koilAssessment?.evidence?.locked_test;
+  const externalKoilEvidence = res.koilAssessment?.evidence?.external_positive_challenge;
   const abn = shownTop !== "NILM";
   const highUnc = res.uncertainty.level === "high";
   const qualityStatus = res.quality?.status || (res.quality?.ok === false ? "fail" : "pass");
@@ -351,7 +372,7 @@ body{font-family:Arial,sans-serif;max-width:900px;margin:36px auto;padding:0 24p
 <p class="meta">Case ${htmlEscape(caseId)} | ${htmlEscape(new Date().toLocaleString("en-GB"))}</p>
 <div class="warning"><b>Decision-support output only.</b> Not a final diagnosis, not an HPV DNA/RNA test, and not a regulated clinical report.</div>
 <section><h2>Clinical context (report-only)</h2><div class="grid"><span class="label">Age</span><span>${clinicalContext.age_years ? `${clinicalContext.age_years} years` : "Not entered"}</span><span class="label">Specimen</span><b>${htmlEscape(clinicalContext.specimen_type)}</b><span class="label">Reported symptoms</span><span>${htmlEscape(symptomText)}</span><span class="label">Last screening</span><span>${htmlEscape(clinicalContext.last_screening)}</span><span class="label">Laboratory HPV test</span><span>${htmlEscape(clinicalContext.hpv_test)}${clinicalContext.hpv_genotype ? `; genotype ${htmlEscape(clinicalContext.hpv_genotype)}` : ""}</span><span class="label">Other risk context</span><span>${htmlEscape(contextRisk)}</span></div><p class="meta">These fields were not used to alter the image model prediction.</p>${hasSymptoms ? `<div class="warning"><b>Symptom safety:</b> reported symptoms require separate clinical evaluation regardless of this image result.</div>` : ""}</section>
-<section><h2>Image analysis</h2><div class="grid"><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">Grade XAI</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">KOIL morphology</span><span>${res.koilAssessment ? `${htmlEscape(res.koilAssessment.status)} (${(res.koilAssessment.probability * 100).toFixed(1)}%; threshold ${res.koilAssessment.threshold != null ? (res.koilAssessment.threshold * 100).toFixed(1) + "%" : "not available"})` : "Not assessed for this precomputed case"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div></section>
+<section><h2>Image analysis</h2><div class="grid"><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">Grade XAI</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">KOIL morphology</span><span>${res.koilAssessment ? `${htmlEscape(res.koilAssessment.status)} (${(res.koilAssessment.probability * 100).toFixed(1)}%; threshold ${res.koilAssessment.threshold != null ? (res.koilAssessment.threshold * 100).toFixed(1) + "%" : "not available"})` : "Not assessed for this precomputed case"}</span><span class="label">KOIL evidence</span><span>${lockedKoilEvidence ? `SIPaKMeD locked test: sensitivity ${((lockedKoilEvidence.sensitivity || 0) * 100).toFixed(1)}%, specificity ${((lockedKoilEvidence.specificity || 0) * 100).toFixed(1)}%, AUROC ${(lockedKoilEvidence.auroc || 0).toFixed(3)}. CCCID positive challenge: ${externalKoilEvidence?.true_positive || 0}/${externalKoilEvidence?.support_positive || 0}.` : "Evidence metadata unavailable"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div></section>
 <section><h2>Review images</h2><div class="images"><div><p class="meta">Original image</p><img src="${htmlEscape(imageUrl)}" alt="Reviewed cytology image"></div>${camUrl ? `<div><p class="meta">${htmlEscape(res.xai.primaryMethod || "Class activation")} grade heatmap</p><img src="${htmlEscape(camUrl)}" alt="Grade class-activation heatmap"></div>` : ""}${koilCamUrl ? `<div><p class="meta">KOIL-specific Grad-CAM</p><img src="${htmlEscape(koilCamUrl)}" alt="KOIL morphology class-activation heatmap"></div>` : ""}${activationUrl ? `<div><p class="meta">Activation boundary (not segmentation)</p><img src="${htmlEscape(activationUrl)}" alt="Thresholded class-activation regions"></div>` : ""}</div></section>
 ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (research demo sign-off)<br><span class="meta">A qualified clinician remains responsible for diagnosis, documentation, and follow-up.</span></div>
 </body></html>`;
@@ -364,7 +385,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
       top: { key: res.top, prob: res.conf },
       classification: GRADE_CLASS_KEYS.map((key) => ({ key, prob: res.probs[key] || 0 })),
       koilocyte: Boolean(res.koil), koil_assessment: res.koilAssessment,
-      koil_xai: { ok: Boolean(res.koilXaiOk), method: res.koilXaiOk ? "gradcam" : undefined },
+      koil_xai: { ok: Boolean(res.koilXaiOk), method: res.koilXaiOk ? "gradcam" : undefined, heatmap: res.koilCam },
       uncertainty: { ...res.uncertainty, flag: highUnc }, quality: res.quality || { ok: true, status: "pass" },
       advanced_xai: { ok: res.xai.ok, primary_method: res.xai.primaryMethod }, heatmap: res.cam,
     };
@@ -484,6 +505,12 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
             <div><div className="text-[10px] uppercase text-mut">Probability</div><b className="font-mono text-ink">{(res.koilAssessment.probability * 100).toFixed(1)}%</b></div>
             <div><div className="text-[10px] uppercase text-mut">Locked threshold</div><b className="font-mono text-ink">{res.koilAssessment.threshold != null ? `${(res.koilAssessment.threshold * 100).toFixed(1)}%` : "Unavailable"}</b></div>
             <p className="sm:col-span-3 text-[10px] text-mut">{res.koilAssessment.domain_warning}</p>
+            {res.koilAssessment.evidence?.locked_test && <div className="sm:col-span-3 rounded-lg bg-paper p-3 text-[10px] leading-5 text-mut">
+              <b className="text-ink">Locked SIPaKMeD test:</b> sensitivity {((res.koilAssessment.evidence.locked_test.sensitivity || 0) * 100).toFixed(1)}%, specificity {((res.koilAssessment.evidence.locked_test.specificity || 0) * 100).toFixed(1)}%, AUROC {(res.koilAssessment.evidence.locked_test.auroc || 0).toFixed(3)}. {res.koilAssessment.evidence.locked_test.support_positive} positive and {res.koilAssessment.evidence.locked_test.support_negative} negative cells.
+            </div>}
+            {res.koilAssessment.evidence?.external_positive_challenge && <div className="sm:col-span-3 rounded-lg bg-paper p-3 text-[10px] leading-5 text-mut">
+              <b className="text-ink">External CCCID challenge:</b> {res.koilAssessment.evidence.external_positive_challenge.true_positive}/{res.koilAssessment.evidence.external_positive_challenge.support_positive} expert-labelled koilocytes detected ({((res.koilAssessment.evidence.external_positive_challenge.sensitivity || 0) * 100).toFixed(1)}%). Positive-only exploratory evidence; specificity is not estimable.
+            </div>}
           </div>
         )}
       </div>
@@ -540,6 +567,8 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
         <div className="text-xs text-mut">Date {new Date().toLocaleString("en-GB")} · Specimen: {clinicalContext.specimen_type} · Age: {clinicalContext.age_years ?? "not entered"}</div>
         <div className="mt-1">Result <b>{shownTop}</b> ({I.en}) · Confidence {(res.conf * 100).toFixed(0)}% · Uncertainty: {res.uncertainty.level}</div>
         <div>Quality: {res.quality ? `${qualityStatus}${res.quality.issues?.length ? ` (${res.quality.issues.join(", ")})` : ""}` : "precomputed"} · XAI: {res.xai.ok ? (res.xai.primaryMethod || "available") : "Unavailable"}</div>
+        <div>KOIL morphology: {res.koilAssessment ? `${res.koilAssessment.status} (${(res.koilAssessment.probability * 100).toFixed(1)}%; locked threshold ${res.koilAssessment.threshold != null ? `${(res.koilAssessment.threshold * 100).toFixed(1)}%` : "unavailable"})` : "not assessed"}</div>
+        <div>HPV laboratory context: {clinicalContext.hpv_test}{clinicalContext.hpv_genotype ? `; genotype ${clinicalContext.hpv_genotype}` : ""} · separate from image inference</div>
         <div>Recommended action: {I.triage}</div>
         <div>Reported symptoms: {clinicalContext.symptoms.map((key) => SYMPTOM_LABELS[key] || key).concat(clinicalContext.other_symptoms.trim() ? [clinicalContext.other_symptoms.trim()] : []).join("; ") || "none entered"}</div>
         {hasSymptoms && <div className="mt-1 text-scc">Symptoms require separate clinical evaluation regardless of the image result.</div>}

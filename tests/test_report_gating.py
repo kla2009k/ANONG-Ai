@@ -1,4 +1,9 @@
+import base64
+import io
 import unittest
+
+from PIL import Image
+from pypdf import PdfReader
 
 from server.app import ReportExportReq, ReportReq, report, report_export_pdf
 
@@ -15,6 +20,12 @@ def analysis_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def tiny_png_data_url() -> str:
+    stream = io.BytesIO()
+    Image.new("RGB", (32, 32), (180, 90, 130)).save(stream, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(stream.getvalue()).decode("ascii")
 
 
 class ReportReleaseGateTests(unittest.TestCase):
@@ -64,9 +75,13 @@ class ReportReleaseGateTests(unittest.TestCase):
         self.assertIn("koil_xai_unavailable", result["release_gates"])
 
     def test_active_koil_model_and_xai_can_pass_the_koil_gates(self):
+        evidence = {
+            "locked_test": {"sensitivity": 0.9624, "specificity": 0.9764, "auroc": 0.9912},
+            "external_positive_challenge": {"true_positive": 19, "support_positive": 20, "sensitivity": 0.95, "specificity": None},
+        }
         analysis = analysis_payload(
             koilocyte=True,
-            koil_assessment={"mode": "model", "status": "positive", "probability": 0.91, "threshold": 0.34},
+            koil_assessment={"mode": "model", "status": "positive", "probability": 0.91, "threshold": 0.34, "evidence": evidence},
             koil_xai={"ok": True, "method": "gradcam"},
         )
         result = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
@@ -76,6 +91,7 @@ class ReportReleaseGateTests(unittest.TestCase):
         self.assertEqual(result["layer_clinical"]["risk_level"], "MODERATE")
         self.assertIn("KOIL morphology", result["layer_clinical"]["triage"])
         self.assertIn("KOIL morphology", result["layer_patient"]["result"])
+        self.assertEqual(result["layer_clinical"]["koil_evidence"], evidence)
 
     def test_uncertainty_is_forwarded_to_clinical_triage(self):
         analysis = analysis_payload(uncertainty_viz={"level": "high", "flag": True})
@@ -139,6 +155,32 @@ class ReportReleaseGateTests(unittest.TestCase):
         self.assertTrue(response.body.startswith(b"%PDF-"))
         self.assertGreater(len(response.body), 1500)
         self.assertIn("attachment", response.headers.get("content-disposition", ""))
+
+    def test_pdf_includes_koil_evidence_and_specific_xai(self):
+        image = tiny_png_data_url()
+        evidence = {
+            "locked_test": {"sensitivity": 0.9624, "specificity": 0.9764, "auroc": 0.9912},
+            "external_positive_challenge": {"true_positive": 19, "support_positive": 20, "sensitivity": 0.95},
+        }
+        analysis = analysis_payload(
+            image=image,
+            heatmap=image,
+            koilocyte=True,
+            koil_assessment={"mode": "model", "status": "positive", "probability": 0.91, "threshold": 0.3367, "evidence": evidence},
+            koil_xai={"ok": True, "method": "gradcam", "heatmap": image},
+        )
+        generated_report = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
+        response = report_export_pdf(ReportExportReq(
+            case_id="CC-KOIL-XAI",
+            analysis=analysis,
+            report=generated_report,
+            review={"status": "confirmed"},
+        ))
+        text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(response.body)).pages)
+
+        self.assertIn("KOIL locked-test evidence", text)
+        self.assertIn("CCCID positive challenge", text)
+        self.assertIn("KOIL-specific Grad-CAM", text)
 
 
 if __name__ == "__main__":

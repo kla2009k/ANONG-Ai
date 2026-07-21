@@ -527,6 +527,7 @@ def report(req: ReportReq):
         "confidence": round(prob, 3),
         "koilocyte": bool(koil),
         "koil_assessment": koil_assessment,
+        "koil_evidence": koil_assessment.get("evidence") if koil_assessment else None,
         "koil_xai_method": koil_xai.get("method") if koil_xai.get("ok") is True else None,
         "uncertainty_flag": bool(unc.get("flag", False)),
         "triage": _triage_rule(bethesda, prob, bool(koil), bool(unc.get("flag", False))),
@@ -571,13 +572,13 @@ def report(req: ReportReq):
 
     controlled_explanation = {
         "summary": f"The model suggested {model_suggestion} with probability {prob:.3f}; the reviewed category is {bethesda}.",
-        "scope": "Grade evidence is from Herlev; the independent KOIL morphology endpoint is from SIPaKMeD conventional Pap-smear crops.",
+        "scope": "Grade evidence is from Herlev; KOIL locked-test evidence is from SIPaKMeD and the positive-only external challenge is from CCCID liquid-based cytology.",
         "explanation": f"{xai.get('primary_method') or 'No valid class-activation map'}; post-hoc visualization, not causal proof.",
         "limitations": [
             "Not a final diagnosis.",
             "Not validated on Thai ThinPrep clinical data.",
             "HPV-related morphology wording does not detect HPV DNA or RNA.",
-            "The KOIL endpoint is internally validated on SIPaKMeD but not externally validated on ThinPrep or Thai clinical data.",
+            "The KOIL endpoint has locked SIPaKMeD evidence and a limited positive-only CCCID liquid-based challenge, but no negative-inclusive external ThinPrep or Thai clinical validation.",
         ],
     }
 
@@ -793,7 +794,7 @@ def report_export(req: ReportExportReq):
             f"probability={koil_probability:.1f}%  "
             f"threshold={threshold_text}"
         )
-        lines.append("KOIL domain: SIPaKMeD conventional Pap-smear crops; not validated for ThinPrep.")
+        lines.append("KOIL domain: trained on SIPaKMeD conventional Pap-smear crops; limited CCCID liquid-based positive challenge only, without external specificity.")
     else:
         lines.append("KOIL morphology: not assessed")
     lines.append(f"Uncertainty: {unc.get('level','?')}  entropy={unc.get('entropy','?')} flag={unc.get('flag')}")
@@ -944,6 +945,10 @@ def report_export_pdf(req: ReportExportReq):
     symptoms = [symptom_labels.get(item, str(item).replace("_", " ")) for item in context.get("symptoms") or []]
     blockers = patient.get("blockers") or report_data.get("release_gates") or []
     koil = analysis.get("koil_assessment") or {}
+    koil_xai = analysis.get("koil_xai") or {}
+    koil_evidence = koil.get("evidence") or {}
+    koil_locked = koil_evidence.get("locked_test") or {}
+    koil_external = koil_evidence.get("external_positive_challenge") or {}
 
     story = [
         Paragraph("ANONG | CerviCo-Pilot", small),
@@ -978,6 +983,8 @@ def report_export_pdf(req: ReportExportReq):
             ("Image quality", clinical.get("quality_status", "unknown")),
             ("Grade XAI", clinical.get("xai_method", "unavailable")),
             ("KOIL morphology", f"{koil.get('status', 'not assessed')} ({float(koil.get('probability', 0)) * 100:.1f}%)" if koil else "Not assessed"),
+            ("KOIL locked-test evidence", f"Sensitivity {float(koil_locked.get('sensitivity', 0)) * 100:.1f}%; specificity {float(koil_locked.get('specificity', 0)) * 100:.1f}%; AUROC {float(koil_locked.get('auroc', 0)):.3f}" if koil_locked else "Unavailable"),
+            ("CCCID positive challenge", f"{koil_external.get('true_positive', 0)}/{koil_external.get('support_positive', 0)} detected; specificity not estimable" if koil_external else "Unavailable"),
             ("Triage", clinical.get("triage", "Not generated")),
             ("Recommended action", clinical.get("recommended_action", "Not generated")),
         ]),
@@ -993,20 +1000,29 @@ def report_export_pdf(req: ReportExportReq):
 
     original_image = _pdf_image(analysis.get("image"), 75 * mm, 68 * mm)
     heatmap_image = _pdf_image(analysis.get("heatmap") or report_data.get("xai_embed"), 75 * mm, 68 * mm)
-    if original_image or heatmap_image:
+    koil_heatmap_image = _pdf_image(koil_xai.get("heatmap"), 75 * mm, 68 * mm) if koil_xai.get("ok") is True else None
+    if original_image or heatmap_image or koil_heatmap_image:
         cells = []
         if original_image:
             cells.append([original_image, p("Original image", center_small)])
         if heatmap_image:
             cells.append([heatmap_image, p("Class-activation map (post-hoc; not segmentation)", center_small)])
-        image_table = Table([[cell[0] for cell in cells], [cell[1] for cell in cells]], colWidths=[78 * mm] * len(cells))
+        if koil_heatmap_image:
+            cells.append([koil_heatmap_image, p("KOIL-specific Grad-CAM (not HPV proof)", center_small)])
+        image_rows = []
+        for start in range(0, len(cells), 2):
+            pair = cells[start:start + 2]
+            if len(pair) == 1:
+                pair.append(["", ""])
+            image_rows.extend([[cell[0] for cell in pair], [cell[1] for cell in pair]])
+        image_table = Table(image_rows, colWidths=[78 * mm, 78 * mm])
         image_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (0, 0), (-1, -1), "CENTER"), ("BOX", (0, 0), (-1, -1), 0.45, line)]))
         story.append(image_table)
     else:
         story.append(p("No embeddable image evidence was supplied to the PDF renderer.", small))
     story.extend([
         Paragraph("Interpretive boundaries", heading),
-        p("The grade model estimates cervical cytology morphology. The independent KOIL endpoint estimates koilocytotic morphology from SIPaKMeD conventional Pap-smear crops. Neither endpoint detects HPV DNA, HPV RNA, viral genotype, persistence, or infection status."),
+        p("The grade model estimates cervical cytology morphology. The independent KOIL endpoint was trained on SIPaKMeD conventional Pap-smear crops and challenged on 20 expert-labelled CCCID liquid-based koilocyte images. Neither endpoint detects HPV DNA, HPV RNA, viral genotype, persistence, or infection status."),
         Spacer(1, 3 * mm),
         p("A class-activation map shows image regions that contributed to a model score. It is a post-hoc explanation and must not be presented as a validated nucleus/cell segmentation or causal proof."),
         Spacer(1, 3 * mm),

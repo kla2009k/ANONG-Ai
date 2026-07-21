@@ -232,6 +232,11 @@ export default function Performance() {
       <div className="blush-panel mt-4 rounded-lg border p-5 text-sm text-mut">
         <b className="text-ink">Where the project legitimately exceeds 97%:</b> the SIPaKMeD five-morphology auxiliary task reached <b className="font-mono text-teal">{k.multiclassAccuracy}</b> locked-test accuracy and <b className="font-mono text-teal">{k.multiclassMacroF1}</b> macro F1. This number belongs only to SIPaKMeD morphology classification. It must not be presented as Herlev Bethesda-grade accuracy, Thai ThinPrep performance, clinical diagnostic accuracy, or HPV detection accuracy.
       </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_2fr]">
+        <Stat label="External CCCID detected" value={k.externalDetected} sub="Expert-labelled KOIL positives" color="var(--koil)" />
+        <Stat label="External sensitivity" value={k.externalSensitivity} sub={`Wilson 95% CI ${k.externalSensitivityCi}`} color="var(--koil)" />
+        <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Positive-only domain challenge:</b> {k.externalDataset}. The 20 center-focus images were selected before inference and the SIPaKMeD threshold was not changed. Specificity, AUROC, calibration, and clinical accuracy are not estimable from this positive-only subset.</div>
+      </div>
       <div className="mt-4 grid grid-cols-4 gap-2 text-center">
         {Object.entries(k.confusion).map(([label, value]) => <div key={label} className="card p-3"><div className="font-mono text-xl font-semibold text-ink">{value}</div><div className="text-[10px] text-mut">{label}</div></div>)}
       </div>
@@ -254,7 +259,7 @@ export default function Performance() {
 
       <div className="butter-panel mt-6 rounded-lg border p-5 text-sm">
         <b className="text-hsil">Required context:</b> held-out results, confidence intervals, and cross-validation are shown instead of a single optimistic score. Sensitivity is high in the current Herlev evidence,
-        while specificity is moderate. KOIL is evaluated separately on SIPaKMeD conventional Pap-smear crops; it is not a Bethesda grade, not ThinPrep validation, and not an HPV DNA/RNA test. External calibration remains required.
+        while specificity is moderate. KOIL is evaluated separately on SIPaKMeD conventional Pap-smear crops and challenged on a small CCCID liquid-based positive subset; it is not a Bethesda grade and not an HPV DNA/RNA test. A full negative-inclusive external validation and external calibration remain required.
       </div>
     </div>
   );
