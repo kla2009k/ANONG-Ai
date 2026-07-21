@@ -1,5 +1,80 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Frontend consolidation update 2026-07-22:** The public navigation now
+> centers on six core destinations. KOIL Evidence, HPV Context, and Clinical
+> Workflow are combined at `/clinical-evidence`; legacy routes still render the
+> same page. The Overview reports 4,049 SIPaKMeD KOIL-task cells and 917 Herlev
+> grade-task images as separate evidence pools. A local demo reviewer profile
+> was added at `/login`. Full implementation and claim notes are below.
+
+## Frontend consolidation update (2026-07-22)
+
+### Team brief implemented
+
+The sidebar now exposes Overview, Analyze, Clinical Evidence, Case Gallery,
+Performance, and Evidence. `web-react/src/pages/ClinicalEvidence.tsx` brings
+four previously fragmented topics into one evidence-first page:
+
+1. KOIL development and locked-test evidence, including 4,049 SIPaKMeD cells,
+   966 source clusters, confidence intervals, and the 19/20 positive-only CCCID
+   challenge limitation.
+2. The strict boundary between image morphology, a separately performed
+   laboratory HPV assay, and clinician-entered context.
+3. A Bethesda-aligned future co-finding architecture for Candida,
+   Trichomonas, bacterial-vaginosis pattern, Actinomyces, HSV/CMV-associated
+   changes, and reactive/reparative changes.
+4. The controlled path from image quality through separate grade and KOIL
+   endpoints, XAI/uncertainty review, clinician sign-off, report, and audit.
+
+The Bethesda co-findings are explicitly marked **Not trained**. They must be a
+multi-label auxiliary endpoint because a non-neoplastic finding can coexist
+with NILM or an epithelial abnormality. They must not become mutually exclusive
+cancer-grade classes. Real expert labels, slide/patient grouping, mimic-focused
+error analysis, and external ThinPrep validation are required before claims.
+
+### Dataset count shown on Overview
+
+The Overview headlines `4,049 real KOIL-task cells` and separately displays
+`917 real grade-task images`. These belong to different datasets, units, and
+endpoints. Do not change this to “4,966 training images” or “4,000+ ThinPrep
+images”: SIPaKMeD is conventional Pap-smear cropped-cell data. Augmentation
+must never be represented as additional real cases.
+
+### Local reviewer profile
+
+`web-react/src/pages/Login.tsx` and `web-react/src/lib/session.ts` store display
+name, professional role, optional organization, and creation time in browser
+localStorage after acknowledgement. No password is requested. The page includes
+a delete control, and navbar state updates immediately.
+
+This is labelled `Local demo workspace`, not secure authentication. GitHub
+Pages cannot provide trustworthy clinical authorization. A pilot still needs
+an identity provider, server-side sessions, encryption, RBAC, expiry and
+revocation, privacy controls, and an immutable audit log. Patient identifiers
+must not be entered in this profile.
+
+### Routing and verification
+
+- Canonical combined route: `/clinical-evidence`
+- Backward-compatible routes: `/koil`, `/hpv`, `/workflow`
+- Reviewer route: `/login`
+- GitHub Pages SPA fallbacks include the new routes.
+- Evidence version in the public footer: `2026-07-22`.
+- `npm.cmd run build`: passed.
+- Chromium audit at 1440x1000 and 390x844: no page overflow, console errors,
+  broken reference images, overlap, or clipping.
+- Local reviewer profile create/delete flow: passed.
+
+### Non-negotiable claims
+
+- `4,049` means SIPaKMeD cells for the independent KOIL morphology task.
+- `917` means Herlev images for the separate grade/triage task.
+- KOIL morphology is not a Bethesda grade and not an HPV infection test.
+- The grade display is a four-class supported subset, not the complete Bethesda
+  reporting vocabulary.
+- Organism/reactive co-findings are future work with no trained model or metric.
+- The reviewer profile is a static demonstration, not production login.
+
 > **Static evidence hardening update 2026-07-21:** The public frontend now
 > distinguishes static evidence from live API mode before upload; static mode
 > never maps a canned prediction to a new upload. `ReportPreview` uses only

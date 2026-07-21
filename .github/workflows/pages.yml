@@ -39,7 +39,7 @@ jobs:
       - name: Add SPA fallback
         run: |
           cp web-dist/index.html web-dist/404.html
-          for route in analyze koil hpv datasets gallery workflow reports research-report demo deployment performance knowledge history ask model about settings; do
+          for route in analyze clinical-evidence koil hpv datasets gallery workflow reports research-report demo deployment performance knowledge history ask model about settings login; do
             mkdir -p "web-dist/$route"
             cp web-dist/index.html "web-dist/$route/index.html"
           done

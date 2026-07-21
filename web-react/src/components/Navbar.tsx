@@ -1,41 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   BarChart3,
   BookOpen,
-  Dna,
   Home,
   Images,
-  Info,
   Microscope,
   Menu,
   Moon,
-  Route,
   ScanLine,
   Sun,
   X,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 import { getTheme, toggleTheme } from "@/lib/theme";
+import { loadDemoProfile, PROFILE_EVENT, type DemoProfile } from "@/lib/session";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
 const NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: Home },
   { href: "/analyze", label: "Analyze", icon: ScanLine },
-  { href: "/koil", label: "KOIL Evidence", icon: Microscope },
-  { href: "/hpv", label: "HPV Context", icon: Dna },
+  { href: "/clinical-evidence", label: "Clinical Evidence", icon: Microscope },
   { href: "/gallery", label: "Case Gallery", icon: Images },
-  { href: "/workflow", label: "Clinical Workflow", icon: Route },
   { href: "/performance", label: "Performance", icon: BarChart3 },
   { href: "/research-report", label: "Evidence", icon: BookOpen },
-  { href: "/about", label: "About", icon: Info },
 ];
 
 export function Navbar() {
   const [loc] = useLocation();
   const [dark, setDark] = useState(getTheme() === "dark");
   const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState<DemoProfile | null>(() => loadDemoProfile());
+  useEffect(() => {
+    const refresh = () => setProfile(loadDemoProfile());
+    window.addEventListener(PROFILE_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => { window.removeEventListener(PROFILE_EVENT, refresh); window.removeEventListener("storage", refresh); };
+  }, []);
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-line bg-surface lg:hidden">
@@ -55,7 +58,7 @@ export function Navbar() {
             <span>Menu</span>
           </button>
         </div>
-        {open && <NavList loc={loc} dark={dark} setDark={setDark} onNavigate={() => setOpen(false)} mobile />}
+        {open && <NavList loc={loc} dark={dark} setDark={setDark} profile={profile} onNavigate={() => setOpen(false)} mobile />}
       </header>
 
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-surface p-4 lg:flex lg:flex-col">
@@ -66,9 +69,9 @@ export function Navbar() {
             <span className="block font-mono text-[9px] tracking-[.1em] text-mut">CerviCo-Pilot</span>
           </span>
         </Link>
-        <NavList loc={loc} dark={dark} setDark={setDark} />
+        <NavList loc={loc} dark={dark} setDark={setDark} profile={profile} />
         <div className="butter-panel mt-auto rounded-lg border p-3 text-[11px] leading-5 text-mut">
-          <div className="font-semibold text-ink">Phase 1.6 · dual endpoint</div>
+          <div className="font-semibold text-ink">Phase 1.7 · evidence workflow</div>
           <div className="mt-1">Herlev grade + SIPaKMeD KOIL morphology; not HPV DNA/RNA detection.</div>
         </div>
       </aside>
@@ -76,17 +79,18 @@ export function Navbar() {
   );
 }
 
-function NavList({ loc, dark, setDark, onNavigate, mobile = false }: {
+function NavList({ loc, dark, setDark, profile, onNavigate, mobile = false }: {
   loc: string;
   dark: boolean;
   setDark: (value: boolean) => void;
+  profile: DemoProfile | null;
   onNavigate?: () => void;
   mobile?: boolean;
 }) {
   return (
     <nav className={mobile ? "grid max-h-[calc(100vh-3.5rem)] content-start gap-0.5 overflow-y-auto border-t border-line bg-surface p-3" : "mt-4 grid min-h-0 flex-1 auto-rows-min content-start gap-0.5 overflow-y-auto pr-1"} aria-label="Primary navigation">
       {NAV.map((n) => {
-        const active = loc === n.href;
+        const active = loc === n.href || (n.href === "/clinical-evidence" && ["/koil", "/hpv", "/workflow"].includes(loc));
         const Icon = n.icon;
         return (
           <Link
@@ -104,6 +108,11 @@ function NavList({ loc, dark, setDark, onNavigate, mobile = false }: {
           </Link>
         );
       })}
+      <Link href="/login" onClick={onNavigate} aria-current={loc === "/login" ? "page" : undefined} className={"mt-2 flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition " + (loc === "/login" ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-ink")}>
+        <UserRound size={16} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{profile ? profile.displayName : "Reviewer sign-in"}</span>
+        <span className="text-[9px] uppercase">{profile ? "Local" : "Demo"}</span>
+      </Link>
       <button
         onClick={() => setDark(toggleTheme() === "dark")}
         aria-label={dark ? "Use light theme" : "Use dark theme"}

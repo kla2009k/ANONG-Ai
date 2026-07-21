@@ -12,14 +12,13 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const History = lazy(() => import("@/pages/History"));
 const Ask = lazy(() => import("@/pages/Ask"));
 const CaseGallery = lazy(() => import("@/pages/CaseGallery"));
-const Workflow = lazy(() => import("@/pages/Workflow"));
+const ClinicalEvidence = lazy(() => import("@/pages/ClinicalEvidence"));
 const ReportPreview = lazy(() => import("@/pages/ReportPreview"));
 const ResearchReport = lazy(() => import("@/pages/ResearchReport"));
 const DemoMode = lazy(() => import("@/pages/DemoMode"));
 const Deployment = lazy(() => import("@/pages/Deployment"));
-const KoilEvidence = lazy(() => import("@/pages/KoilEvidence"));
-const HpvContext = lazy(() => import("@/pages/HpvContext"));
 const DatasetRegistry = lazy(() => import("@/pages/DatasetRegistry"));
+const Login = lazy(() => import("@/pages/Login"));
 
 function NotFound() {
   return (
@@ -38,10 +37,11 @@ export default function App() {
         <Route path="/" component={Landing} />
         <Route path="/analyze" component={Analyze} />
         <Route path="/gallery" component={CaseGallery} />
-        <Route path="/koil" component={KoilEvidence} />
-        <Route path="/hpv" component={HpvContext} />
+        <Route path="/clinical-evidence" component={ClinicalEvidence} />
+        <Route path="/koil" component={ClinicalEvidence} />
+        <Route path="/hpv" component={ClinicalEvidence} />
         <Route path="/datasets" component={DatasetRegistry} />
-        <Route path="/workflow" component={Workflow} />
+        <Route path="/workflow" component={ClinicalEvidence} />
         <Route path="/reports" component={ReportPreview} />
         <Route path="/research-report" component={ResearchReport} />
         <Route path="/demo" component={DemoMode} />
@@ -53,6 +53,7 @@ export default function App() {
         <Route path="/model" component={ModelCard} />
         <Route path="/about" component={About} />
         <Route path="/settings" component={Settings} />
+        <Route path="/login" component={Login} />
         <Route component={NotFound} />
         </Switch>
       </Suspense>

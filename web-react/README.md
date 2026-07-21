@@ -1,5 +1,20 @@
 # Anong frontend
 
+## Current information architecture (2026-07-22)
+
+- `/` evidence-aware overview
+- `/analyze` model or precomputed-case review
+- `/clinical-evidence` combined KOIL, HPV, Bethesda co-finding roadmap, and
+  clinician workflow
+- `/gallery` real reference and error cases
+- `/performance` grade, triage, and independent KOIL metrics
+- `/research-report` formal evidence package
+- `/login` local demonstration reviewer profile
+
+`/koil`, `/hpv`, and `/workflow` are backward-compatible aliases for the
+combined page. The reviewer profile uses localStorage and is not secure
+production authentication. Never enter patient identifiers or passwords.
+
 React 19 + Vite 7 + Tailwind 4 frontend for the Anong user interface of the
 CerviCo-Pilot cervical-cytology research prototype.
 

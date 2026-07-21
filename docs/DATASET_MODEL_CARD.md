@@ -8,7 +8,7 @@
 > AUROC 0.9912. See `KOIL_REAL_DATA_VALIDATION_2026.md`. This is not ThinPrep
 > validation and not HPV DNA/RNA detection.
 
-Last updated: 2026-07-06
+Last updated: 2026-07-22
 
 ## Model
 
@@ -48,17 +48,31 @@ review and sign off before any patient-facing result is released.
 
 Primary Phase 1 evidence uses public Herlev cytology images.
 
-Current facts:
+Current grade-task facts:
 
 - 917 unique real images;
 - segmentation masks excluded;
 - mapped to Bethesda-style classes;
-- no true KOIL support in current Phase 1 data;
+- no true KOIL support in the Herlev grade-task data;
 - no Thai hospital images;
 - no paired HPV DNA/RNA endpoint;
 - no histology outcome endpoint.
 
-## Label Schema
+Independent KOIL-task facts:
+
+- 4,049 official SIPaKMeD cropped cells from 966 source clusters;
+- 825 Koilocytotic cells in the full dataset;
+- source-cluster-disjoint train/validation/locked-test split;
+- 641 locked-test cells, including 133 KOIL-positive cells;
+- conventional Pap-smear crops, not ThinPrep;
+- no paired HPV DNA/RNA assay;
+- 20 prespecified CCCID v2 liquid-based KOIL positives provide a limited
+  positive-only challenge, not full external validation.
+
+The 917 and 4,049 counts describe separate tasks and different sampling units.
+They must not be summed or presented as one training cohort.
+
+## Output Schema
 
 | Class | Meaning | Current Status |
 | --- | --- | --- |
@@ -66,12 +80,18 @@ Current facts:
 | LSIL | Low-grade squamous intraepithelial lesion | Supported |
 | HSIL | High-grade squamous intraepithelial lesion | Supported |
 | SCC | Squamous cell carcinoma | Supported but recall imperfect |
-| KOIL | Koilocyte / HPV-effect morphology | Separate SIPaKMeD endpoint; not a Bethesda grade |
+| KOIL | Koilocyte / HPV-related morphology | Separate SIPaKMeD endpoint; not a Bethesda grade and not an HPV assay |
 
-Binary safety triage:
+The four-class grade output and KOIL output can coexist. Binary safety triage:
 
 - negative: NILM
-- positive/abnormal: LSIL, HSIL, SCC, KOIL
+- positive/abnormal: LSIL, HSIL, or SCC; KOIL is reviewed as an additional
+  morphology signal under its own gate
+
+Proposed Bethesda-aligned organism and reactive/reparative co-findings are not
+trained. If developed, they require a separate multi-label auxiliary head and
+real expert-labelled support; they must not be inserted as mutually exclusive
+grade classes.
 
 ## Performance
 

@@ -87,7 +87,8 @@ export const METRICS = {
     { fold: 4, acc: 0.727, qwk: 0.743, sens: 0.978, auroc: 0.978 },
     { fold: 5, acc: 0.771, qwk: 0.817, sens: 1.000, auroc: 0.986 },
   ],
-  // real 5-class confusion (rows=true, cols=pred) NILM/LSIL/HSIL/SCC/KOIL
+  // Historical matrix storage. The supported grade display uses the first 4x4;
+  // KOIL had zero Herlev support and is now evaluated by a separate endpoint.
   confusion: [
     [26, 1, 7, 2, 0],
     [1, 30, 16, 2, 0],

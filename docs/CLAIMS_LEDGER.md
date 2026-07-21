@@ -2,7 +2,13 @@
 
 Purpose: one source of truth for what CerviCo-Pilot can and cannot claim.
 
-Last updated: 2026-07-06
+Last updated: 2026-07-22
+
+> **Current endpoint contract:** the deployed research workflow has a
+> four-class grade output (NILM, LSIL, HSIL, SCC) and a separate KOIL
+> morphology endpoint. KOIL is not a fifth mutually exclusive Bethesda grade.
+> The public evidence inventory contains 917 Herlev grade-task images and 4,049
+> SIPaKMeD KOIL-task cells; these counts must remain separate.
 
 Read with:
 
@@ -22,7 +28,8 @@ they cannot create new model-performance claims.
 | Claim | Status | Evidence | Safe Wording |
 | --- | --- | --- | --- |
 | The system is a cervical cytology screening assistant | Supported | Web/API demo + model card | "screening assistance" |
-| It outputs a Bethesda-style 5-class grade | Supported with limitations | `models/test_metrics.json` | "Bethesda-style grading support" |
+| It outputs a four-class Bethesda-style supported subset | Supported with limitations | `models/test_metrics.json`, endpoint contract | "four-class grading support: NILM, LSIL, HSIL, SCC" |
+| It outputs an independent KOIL morphology assessment | Supported with domain limitations | `docs/KOIL_REAL_DATA_VALIDATION_2026.md` | "independent koilocytotic-morphology endpoint; not an HPV test" |
 | It has strong binary normal/abnormal triage sensitivity on Herlev held-out/CV | Supported | `models/triage_metrics.json`, `models/cv_results.json` | "safety triage layer" |
 | It can show model attention using Grad-CAM | Supported as XAI demo | web/server XAI path | "Grad-CAM heatmap shows regions the model emphasized" |
 | It estimates uncertainty | Supported as prototype | MC Dropout flow | "uncertainty-aware; flags cases for review" |
@@ -76,8 +83,8 @@ Approved metrics:
 
 | Metric | Value | Source | Wording |
 | --- | --- | --- | --- |
-| Held-out 5-class accuracy | 0.6934 | `models/test_metrics.json` | "moderate 5-class accuracy" |
-| Held-out 5-class QWK | 0.687 | `models/triage_metrics.json` | "ordinal agreement signal" |
+| Held-out supported-grade accuracy | 0.6934 | `models/test_metrics.json` | "moderate four-class supported-grade accuracy" |
+| Held-out supported-grade QWK | 0.687 | `models/triage_metrics.json` | "ordinal agreement signal" |
 | Held-out HSIL recall | 0.8667 | `models/triage_metrics.json` | "HSIL recall was strong" |
 | Held-out SCC recall | 0.5909 | `models/triage_metrics.json` | "SCC recall remains imperfect" |
 | Held-out binary sensitivity | 1.0 | `models/triage_metrics.json` | "no false negatives in this held-out triage test" |
@@ -107,12 +114,13 @@ Safe Thai:
 > ระบบประเมินความเสี่ยงที่สัมพันธ์กับ HPV จากลักษณะทางเซลล์วิทยา ไม่ใช่การ
 > ตรวจหาเชื้อ HPV DNA/RNA โดยตรง
 
-## 5-Class vs Binary Wording
+## Grade, KOIL, and Binary Wording
 
 Safe:
 
-> The 5-class Bethesda-style grade is the primary product output. The binary
-> normal/abnormal view is a safety layer used to reduce missed abnormal cases.
+> The four-class grade display is the primary cytology output. KOIL is an
+> independent morphology endpoint. The binary normal/abnormal view is a safety
+> layer used to reduce missed abnormal cases.
 
 Unsafe:
 
@@ -120,7 +128,34 @@ Unsafe:
 
 Unsafe:
 
-> The 5-class model is ready for diagnosis.
+> The four-class grade model or KOIL endpoint is ready for diagnosis.
+
+## Dataset Count Wording
+
+Safe:
+
+> Current public evidence uses 917 Herlev images for grade/triage and 4,049
+> SIPaKMeD cropped cells for the separate KOIL morphology endpoint.
+
+Unsafe:
+
+> The model was trained on 4,966 ThinPrep images.
+
+Unsafe:
+
+> Data augmentation increased the number of real clinical cases.
+
+## Bethesda Co-finding Wording
+
+Safe:
+
+> Organism-related and reactive/reparative co-findings are a proposed future
+> multi-label endpoint. No current model or performance result supports them.
+
+Unsafe:
+
+> Anong currently detects Candida, Trichomonas, bacterial vaginosis,
+> Actinomyces, HSV, CMV, or reactive change.
 
 ## Claim Review Checklist
 
@@ -131,7 +166,7 @@ Before generating any proposal, deck, report, webpage, or abstract:
 - [ ] Does the document say clinician sign-off is required?
 - [ ] Does it avoid clinical-use readiness?
 - [ ] Does it disclose no Thai validation yet?
-- [ ] Does it disclose KOIL is not learned in Phase 1?
+- [ ] Does it disclose that Herlev has no KOIL support and the separate KOIL endpoint uses SIPaKMeD?
 - [ ] Does it describe binary triage as a safety layer, not the whole product?
 - [ ] Does it avoid old synthetic/B3 polluted metrics?
 - [ ] Did `python tools/audit_claims.py` pass for current source-of-truth files?
