@@ -1,7 +1,7 @@
 // Anong / CerviCo-Pilot — minimal service worker.
 // Strategy: network-first for /api (never cache predictions), cache-first for the
 // app shell + static assets so the UI loads offline. AI features still need network.
-const CACHE = "anong-en-v7";
+const CACHE = "anong-en-v8";
 const SHELL = ["./", "./manifest.webmanifest", "./icon-192.svg", "./icon-512.svg"];
 
 self.addEventListener("install", (e) => {
@@ -19,8 +19,19 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   // API: always network (no caching of medical predictions)
-  if (url.pathname.startsWith("/api")) return;
-  // static + shell: cache-first, fall back to network, then cache the result
+  if (url.pathname.includes("/api/")) return;
+  // Navigations are network-first so a newly deployed bundle cannot be held
+  // behind a stale cached index.html. The cached shell remains the offline fallback.
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+        return res;
+      }).catch(() => caches.match(e.request).then((hit) => hit || caches.match("./")))
+    );
+    return;
+  }
+  // Fingerprinted assets and evidence files are cache-first.
   e.respondWith(
     caches.match(e.request).then((hit) =>
       hit ||

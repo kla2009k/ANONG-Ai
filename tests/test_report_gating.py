@@ -1,6 +1,6 @@
 import unittest
 
-from server.app import ReportReq, report
+from server.app import ReportExportReq, ReportReq, report, report_export_pdf
 
 
 def analysis_payload(**overrides):
@@ -83,6 +83,62 @@ class ReportReleaseGateTests(unittest.TestCase):
         result = report(ReportReq(analysis=analysis, review={"status": "confirmed"}))
 
         self.assertIn("Do not release automatically", result["layer_clinical"]["triage"])
+
+    def test_clinician_override_changes_reviewed_category_not_model_suggestion(self):
+        result = report(ReportReq(
+            analysis=analysis_payload(),
+            review={"status": "edited", "final_label": "LSIL"},
+        ))
+
+        self.assertEqual(result["layer_clinical"]["bethesda"], "LSIL")
+        self.assertIn("model suggested NILM", result["detailed_explanation_llm"]["summary"])
+        self.assertIn("reviewed category is LSIL", result["detailed_explanation_llm"]["summary"])
+
+    def test_symptoms_lock_patient_release_until_clinician_acknowledges_them(self):
+        context = {
+            "age_years": 46,
+            "symptoms": ["postcoital_bleeding"],
+            "specimen_type": "thinprep_lbc",
+        }
+
+        locked = report(ReportReq(
+            analysis=analysis_payload(),
+            clinical_context=context,
+            review={"status": "confirmed"},
+        ))
+        released = report(ReportReq(
+            analysis=analysis_payload(),
+            clinical_context=context,
+            review={"status": "confirmed", "symptoms_acknowledged": True},
+        ))
+
+        self.assertIn("symptomatic_context_requires_acknowledgement", locked["release_gates"])
+        self.assertTrue(locked["layer_patient"]["locked"])
+        self.assertNotIn("symptomatic_context_requires_acknowledgement", released["release_gates"])
+        self.assertEqual(released["clinical_context"]["age_years"], 46)
+        self.assertEqual(released["layer_clinical"]["bethesda"], "NILM")
+        self.assertIn("symptoms still require", released["layer_patient"]["simple"])
+        self.assertIn("do not use this result for reassurance", released["layer_patient"]["action"])
+
+    def test_pdf_export_returns_a_real_gated_pdf(self):
+        analysis = analysis_payload()
+        generated_report = report(ReportReq(
+            analysis=analysis,
+            clinical_context={"age_years": 46, "symptoms": []},
+            review={"status": "confirmed"},
+        ))
+
+        response = report_export_pdf(ReportExportReq(
+            case_id="CC-TEST-001",
+            analysis=analysis,
+            report=generated_report,
+            clinical_context={"age_years": 46, "symptoms": []},
+        ))
+
+        self.assertEqual(response.media_type, "application/pdf")
+        self.assertTrue(response.body.startswith(b"%PDF-"))
+        self.assertGreater(len(response.body), 1500)
+        self.assertIn("attachment", response.headers.get("content-disposition", ""))
 
 
 if __name__ == "__main__":

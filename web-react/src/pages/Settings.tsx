@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getTheme, applyTheme, type Theme } from "@/lib/theme";
+import { API_BASE, API_IS_CONFIGURED } from "@/lib/api";
 
 export default function Settings() {
   const [theme, setTheme] = useState<Theme>(getTheme());
@@ -34,13 +35,13 @@ export default function Settings() {
         <div className="mt-3 space-y-2 text-sm text-mut">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <span>FastAPI server (uploaded-image analysis)</span>
-            <span className="font-mono text-xs">http://localhost:8003</span>
+            <span className="max-w-[55%] break-all text-right font-mono text-xs">{API_IS_CONFIGURED ? (API_BASE || "same origin") : "Not configured"}</span>
           </div>
           <div className="flex items-center justify-between border-b border-line pb-2">
             <span>Precomputed real examples (offline)</span>
             <span className="font-mono text-xs text-nilm">Ready ✓</span>
           </div>
-          <p className="pt-1 text-xs">Start the server with: <span className="font-mono">cd server &amp;&amp; uvicorn app:app --port 8003</span></p>
+          <p className="pt-1 text-xs">{API_IS_CONFIGURED ? <>Local start command: <span className="font-mono">python -m uvicorn server.app:app --port 8003</span></> : <>This deployment is in static evidence mode. Set <span className="font-mono">VITE_API_URL</span> during the Pages build to enable uploads and server-generated PDF files.</>}</p>
         </div>
       </section>
 

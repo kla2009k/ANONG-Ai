@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Info, LoaderCircle, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, FileDown, Info, LoaderCircle, ShieldCheck, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { XaiReviewPanel, type XaiState } from "@/components/XaiReviewPanel";
 import { GRADE_CLASS_KEYS, classInfo, analyzeReal, type Sample } from "@/lib/data";
 import { downloadAudit, loadAudit, saveAudit, type AuditEntry, type SignStatus } from "@/lib/audit";
+import { API_IS_CONFIGURED, backendStatus, createReviewedPdf, type ClinicalContext } from "@/lib/api";
+import { ClinicalContextPanel, EMPTY_CLINICAL_CONTEXT, SYMPTOM_LABELS } from "@/components/ClinicalContextPanel";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -70,10 +72,15 @@ export default function Analyze() {
   const [err, setErr] = useState("");
   const [upImg, setUpImg] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
+  const [clinicalContext, setClinicalContext] = useState<ClinicalContext>(EMPTY_CLINICAL_CONTEXT);
+  const [backend, setBackend] = useState<{ available: boolean; ready: boolean; detail: string }>({
+    available: API_IS_CONFIGURED, ready: false, detail: "Checking analysis API...",
+  });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch(`${BASE}samples/samples.json`).then((r) => r.json()).then(setSamples).catch(() => setSamples([]));
+    backendStatus().then(setBackend);
   }, []);
 
   function pickSample(s: Sample) {
@@ -173,6 +180,7 @@ export default function Analyze() {
         Cytology grade and koilocytosis morphology are separate endpoints. Grade uses NILM, LSIL, HSIL, and SCC; the KOIL endpoint is trained on conventional Pap-smear crops and is not yet validated for ThinPrep.
         Contour, SAM, z-stack, and WSI backend features are roadmap prototypes rather than validated outputs.
       </p>
+      <ClinicalContextPanel value={clinicalContext} onChange={setClinicalContext} />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(260px,.75fr)_minmax(0,1.25fr)]">
         <div>
@@ -188,19 +196,23 @@ export default function Analyze() {
             )}
           </label>
           {fileName && <div className="mt-2 truncate text-xs text-mut">Selected: <span className="text-ink">{fileName}</span></div>}
-          <button disabled={!upImg || busy} onClick={runUpload}
+          <button disabled={!upImg || busy || !backend.ready} onClick={runUpload}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-teal py-3 font-medium text-white transition hover:bg-teal-d disabled:cursor-not-allowed disabled:opacity-40" aria-busy={busy}>
             {busy && <LoaderCircle className="animate-spin" size={17} aria-hidden />}
             {busy ? "Running model and explanations…" : "Analyze uploaded image"}
           </button>
           {busy && <div className="mt-2 text-center text-xs text-mut" role="status" aria-live="polite">Running image quality checks, 4-class grade inference, independent KOIL assessment, uncertainty, and class-specific activation maps.</div>}
+          <div className="mt-2 flex items-start gap-2 text-[11px] text-mut" role="status">
+            <span className={backend.ready ? "text-nilm" : "text-scc"} aria-hidden>{backend.ready ? "●" : "○"}</span>
+            <span>{backend.detail} {!backend.ready && "Precomputed evidence cases remain available below."}</span>
+          </div>
           {/* privacy note (S11) */}
           <p className="mt-2 text-[11px] text-mut">🔒 Uploaded images are processed by the local server on port 8003 and are not permanently stored. Precomputed examples work offline.</p>
           {err && <p className="mt-3 flex items-start gap-2 rounded-lg p-3 text-xs" role="alert" style={{ background: "color-mix(in srgb,var(--hsil) 12%,transparent)", color: "var(--hsil)" }}><AlertTriangle className="mt-0.5 shrink-0" size={15} aria-hidden />{err}</p>}
         </div>
 
         <div aria-live="polite">
-          {res ? <ResultCard key={res.resultKey} res={res} /> : (
+          {res ? <ResultCard key={res.resultKey} res={res} clinicalContext={clinicalContext} /> : (
             <div className="grid h-full place-items-center rounded-2xl border border-dashed border-line p-8 text-center text-sm text-mut">
               Select a real example below or upload an image<br />to review the result and Grad-CAM
             </div>
@@ -256,12 +268,19 @@ export default function Analyze() {
   );
 }
 
-function ResultCard({ res }: { res: Result }) {
+function ResultCard({ res, clinicalContext }: { res: Result; clinicalContext: ClinicalContext }) {
   const [status, setStatus] = useState<SignStatus>("pending");
   const [override, setOverride] = useState<string | null>(null);
   const [caseId] = useState(newCaseId());
   const [audit, setAudit] = useState<AuditEntry[]>(() => loadAudit().slice(0, 5));
   const [auditSaved, setAuditSaved] = useState("");
+  const [symptomsAcknowledged, setSymptomsAcknowledged] = useState(false);
+  const [pdfState, setPdfState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [pdfMessage, setPdfMessage] = useState("");
+
+  useEffect(() => {
+    setSymptomsAcknowledged(false);
+  }, [clinicalContext]);
 
   const shownTop = override || res.top;
   const I = classInfo(shownTop);
@@ -274,6 +293,7 @@ function ResultCard({ res }: { res: Result }) {
   const xaiFailed = !res.xai.ok;
   const demoMode = res.modelMode === "demo";
   const signed = status === "confirmed" || status === "edited";
+  const hasSymptoms = clinicalContext.symptoms.length > 0 || clinicalContext.other_symptoms.trim().length > 0;
   const releaseBlockers = [
     !signed ? "clinician sign-off is incomplete" : "",
     highUnc ? "uncertainty is high" : "",
@@ -281,6 +301,7 @@ function ResultCard({ res }: { res: Result }) {
     xaiFailed ? "no valid model explanation is available" : "",
     demoMode ? "the backend is in heuristic demo mode" : "",
     res.koilAssessment && res.koilAssessment.mode !== "model" ? "the independent KOIL model is unavailable" : "",
+    hasSymptoms && !symptomsAcknowledged ? "reported symptoms have not been acknowledged by the reviewer" : "",
   ].filter(Boolean);
   const canPatientReport = releaseBlockers.length === 0;
 
@@ -315,8 +336,10 @@ function ResultCard({ res }: { res: Result }) {
     const camUrl = res.cam ? new URL(res.cam, window.location.href).href : "";
     const activationUrl = res.activationMap ? new URL(res.activationMap, window.location.href).href : "";
     const koilCamUrl = res.koilCam ? new URL(res.koilCam, window.location.href).href : "";
+    const symptomText = clinicalContext.symptoms.map((key) => SYMPTOM_LABELS[key] || key).concat(clinicalContext.other_symptoms.trim() ? [clinicalContext.other_symptoms.trim()] : []).join("; ") || "None entered";
+    const contextRisk = [clinicalContext.prior_abnormal_result ? "Prior abnormal result" : "", clinicalContext.immunocompromised ? "Immunocompromised" : "", clinicalContext.pregnant ? "Pregnant" : ""].filter(Boolean).join(", ") || "None entered";
     const patientSection = canPatientReport
-      ? `<section><h2>Patient-facing summary</h2><p>${abn ? "The reviewed preliminary screening result shows an abnormality that requires follow-up. This does not confirm cancer." : "The reviewed preliminary screening result is normal. Repeat screening at the recommended interval."}</p></section>`
+      ? `<section><h2>Patient-facing summary</h2><p>${hasSymptoms ? "The image result was reviewed, but the reported symptoms still require separate clinical evaluation. Do not use this image result for reassurance." : abn ? "The reviewed preliminary screening result shows an abnormality that requires follow-up. This does not confirm cancer." : "The reviewed preliminary screening category is NILM. Continue screening according to the applicable program and clinician advice."}</p></section>`
       : `<section class="locked"><h2>Patient report not released</h2><p>${htmlEscape(releaseBlockers.join("; "))}.</p></section>`;
     return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -327,10 +350,44 @@ body{font-family:Arial,sans-serif;max-width:900px;margin:36px auto;padding:0 24p
 <p class="meta">Anong | CerviCo-Pilot research prototype</p><h1>Reviewed cervical cytology pre-screen report</h1>
 <p class="meta">Case ${htmlEscape(caseId)} | ${htmlEscape(new Date().toLocaleString("en-GB"))}</p>
 <div class="warning"><b>Decision-support output only.</b> Not a final diagnosis, not an HPV DNA/RNA test, and not a regulated clinical report.</div>
-<div class="grid"><span class="label">Specimen</span><b>ThinPrep/Pap-style cytology image</b><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">Grade XAI</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">KOIL morphology</span><span>${res.koilAssessment ? `${htmlEscape(res.koilAssessment.status)} (${(res.koilAssessment.probability * 100).toFixed(1)}%; threshold ${res.koilAssessment.threshold != null ? (res.koilAssessment.threshold * 100).toFixed(1) + "%" : "not available"})` : "Not assessed for this precomputed case"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div>
+<section><h2>Clinical context (report-only)</h2><div class="grid"><span class="label">Age</span><span>${clinicalContext.age_years ? `${clinicalContext.age_years} years` : "Not entered"}</span><span class="label">Specimen</span><b>${htmlEscape(clinicalContext.specimen_type)}</b><span class="label">Reported symptoms</span><span>${htmlEscape(symptomText)}</span><span class="label">Last screening</span><span>${htmlEscape(clinicalContext.last_screening)}</span><span class="label">Laboratory HPV test</span><span>${htmlEscape(clinicalContext.hpv_test)}${clinicalContext.hpv_genotype ? `; genotype ${htmlEscape(clinicalContext.hpv_genotype)}` : ""}</span><span class="label">Other risk context</span><span>${htmlEscape(contextRisk)}</span></div><p class="meta">These fields were not used to alter the image model prediction.</p>${hasSymptoms ? `<div class="warning"><b>Symptom safety:</b> reported symptoms require separate clinical evaluation regardless of this image result.</div>` : ""}</section>
+<section><h2>Image analysis</h2><div class="grid"><span class="label">Backend mode</span><span>${htmlEscape(res.modelMode || "precomputed model result")}</span><span class="label">Image quality</span><span>${res.quality ? `${htmlEscape(qualityStatus)}${res.quality.issues?.length ? `: ${htmlEscape(res.quality.issues.join(", "))}` : ""}` : "Precomputed; live gate not rerun"}</span><span class="label">AI suggestion</span><span>${htmlEscape(res.top)}</span><span class="label">Reviewed category</span><b>${htmlEscape(shownTop)} - ${htmlEscape(I.en)}</b><span class="label">Confidence</span><span>${(res.conf * 100).toFixed(1)}%</span><span class="label">Uncertainty</span><span>${htmlEscape(res.uncertainty.level)}</span><span class="label">Grade XAI</span><span>${res.xai.ok ? htmlEscape(res.xai.primaryMethod || "available") : "Unavailable"}</span><span class="label">KOIL morphology</span><span>${res.koilAssessment ? `${htmlEscape(res.koilAssessment.status)} (${(res.koilAssessment.probability * 100).toFixed(1)}%; threshold ${res.koilAssessment.threshold != null ? (res.koilAssessment.threshold * 100).toFixed(1) + "%" : "not available"})` : "Not assessed for this precomputed case"}</span><span class="label">Interpretation</span><span>${htmlEscape(I.desc)}</span><span class="label">HPV note</span><span>${htmlEscape(hpv.detail)}</span><span class="label">Recommended action</span><span>${htmlEscape(I.triage)}</span></div></section>
 <section><h2>Review images</h2><div class="images"><div><p class="meta">Original image</p><img src="${htmlEscape(imageUrl)}" alt="Reviewed cytology image"></div>${camUrl ? `<div><p class="meta">${htmlEscape(res.xai.primaryMethod || "Class activation")} grade heatmap</p><img src="${htmlEscape(camUrl)}" alt="Grade class-activation heatmap"></div>` : ""}${koilCamUrl ? `<div><p class="meta">KOIL-specific Grad-CAM</p><img src="${htmlEscape(koilCamUrl)}" alt="KOIL morphology class-activation heatmap"></div>` : ""}${activationUrl ? `<div><p class="meta">Activation boundary (not segmentation)</p><img src="${htmlEscape(activationUrl)}" alt="Thresholded class-activation regions"></div>` : ""}</div></section>
 ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (research demo sign-off)<br><span class="meta">A qualified clinician remains responsible for diagnosis, documentation, and follow-up.</span></div>
 </body></html>`;
+  }
+
+  function analysisForReport(): Record<string, unknown> {
+    return {
+      image: res.image,
+      mode: res.modelMode || "model",
+      top: { key: res.top, prob: res.conf },
+      classification: GRADE_CLASS_KEYS.map((key) => ({ key, prob: res.probs[key] || 0 })),
+      koilocyte: Boolean(res.koil), koil_assessment: res.koilAssessment,
+      koil_xai: { ok: Boolean(res.koilXaiOk), method: res.koilXaiOk ? "gradcam" : undefined },
+      uncertainty: { ...res.uncertainty, flag: highUnc }, quality: res.quality || { ok: true, status: "pass" },
+      advanced_xai: { ok: res.xai.ok, primary_method: res.xai.primaryMethod }, heatmap: res.cam,
+    };
+  }
+
+  async function downloadReviewedPdf() {
+    setPdfState("busy"); setPdfMessage("");
+    try {
+      const blob = await createReviewedPdf({
+        case_id: caseId,
+        analysis: analysisForReport(),
+        review: { status, final_label: shownTop, symptoms_acknowledged: symptomsAcknowledged },
+        clinical_context: clinicalContext,
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = `${caseId}-anong-research-prescreen.pdf`; anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      setPdfState("done"); setPdfMessage("Formal research pre-screen PDF generated.");
+    } catch (error) {
+      setPdfState("error");
+      setPdfMessage(`${error instanceof Error ? error.message : "PDF generation failed"} Use Print / Save PDF as the offline fallback.`);
+    }
   }
 
   function downloadReviewedReport() {
@@ -468,31 +525,44 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
           </select>
           <button onClick={() => sign("rejected", shownTop)} className="rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: "var(--scc)", color: "var(--scc)" }}>✘ Reject slide</button>
         </div>
+        {hasSymptoms && (
+          <label className="mt-3 flex items-start gap-2 rounded-lg border border-scc/40 p-3 text-xs leading-5 text-mut">
+            <input type="checkbox" checked={symptomsAcknowledged} onChange={(event) => setSymptomsAcknowledged(event.target.checked)} className="mt-1 accent-[var(--teal)]" />
+            <span><b className="text-scc">Symptom acknowledgement:</b> I reviewed the reported symptoms and understand that this image result cannot rule out disease or replace symptom-led clinical evaluation.</span>
+          </label>
+        )}
         {auditSaved && <div className="mt-2 text-[10px] text-mut">{auditSaved} ({caseId})</div>}
       </div>
 
       {/* structured clinician report (M6) */}
       <div className="mt-4 rounded-lg border border-line p-3 text-sm" id="clinReport">
         <div className="mb-1 flex items-center justify-between font-mono text-xs text-teal"><span>Clinician report</span><span className="text-mut">{caseId}</span></div>
-        <div className="text-xs text-mut">Date {new Date().toLocaleString("en-GB")} · Specimen: ThinPrep/Pap</div>
+        <div className="text-xs text-mut">Date {new Date().toLocaleString("en-GB")} · Specimen: {clinicalContext.specimen_type} · Age: {clinicalContext.age_years ?? "not entered"}</div>
         <div className="mt-1">Result <b>{shownTop}</b> ({I.en}) · Confidence {(res.conf * 100).toFixed(0)}% · Uncertainty: {res.uncertainty.level}</div>
         <div>Quality: {res.quality ? `${qualityStatus}${res.quality.issues?.length ? ` (${res.quality.issues.join(", ")})` : ""}` : "precomputed"} · XAI: {res.xai.ok ? (res.xai.primaryMethod || "available") : "Unavailable"}</div>
         <div>Recommended action: {I.triage}</div>
+        <div>Reported symptoms: {clinicalContext.symptoms.map((key) => SYMPTOM_LABELS[key] || key).concat(clinicalContext.other_symptoms.trim() ? [clinicalContext.other_symptoms.trim()] : []).join("; ") || "none entered"}</div>
+        {hasSymptoms && <div className="mt-1 text-scc">Symptoms require separate clinical evaluation regardless of the image result.</div>}
         <div className="mt-2 border-t border-line pt-2 text-xs text-mut">Signatory: {signed ? (status === "edited" ? "✓ Edited and confirmed by clinician (demo)" : "✓ Confirmed by clinician (demo)") : "____________ (signature pending)"}</div>
         <div className="text-[10px] text-mut">AI pre-screen; clinician confirmation is required before release.</div>
         {signed && (
           <div className="mt-3 flex flex-wrap gap-2 print:hidden">
+            {API_IS_CONFIGURED && <button onClick={downloadReviewedPdf} disabled={pdfState === "busy"} className="inline-flex items-center gap-1.5 rounded-full bg-teal px-3 py-1.5 text-xs text-white disabled:opacity-50" type="button">
+              {pdfState === "busy" ? <LoaderCircle className="animate-spin" size={14} aria-hidden /> : <FileDown size={14} aria-hidden />}
+              {pdfState === "busy" ? "Generating PDF..." : "Download formal PDF"}
+            </button>}
             <button onClick={downloadReviewedReport} className="rounded-full border border-teal px-3 py-1.5 text-xs text-teal hover:bg-teal hover:text-white" type="button">Download reviewed HTML</button>
             <button onClick={printReviewedReport} className="rounded-full border border-line px-3 py-1.5 text-xs text-mut hover:border-teal hover:text-teal" type="button">Print / Save PDF</button>
           </div>
         )}
+        {pdfMessage && <p className={"mt-2 text-xs " + (pdfState === "error" ? "text-scc" : "text-nilm")} role="status">{pdfMessage}</p>}
       </div>
 
       {/* patient report — gated (M1/M4) */}
       {canPatientReport ? (
         <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "color-mix(in srgb,var(--teal) 7%,transparent)" }}>
           <div className="font-mono text-xs text-teal">Patient report</div>
-          <div className="mt-1">{abn ? "The preliminary screening result shows an abnormality that requires follow-up. This does not confirm cancer. Please attend the clinician appointment." : "The preliminary screening result is normal. Repeat screening at the recommended interval."}</div>
+          <div className="mt-1">{hasSymptoms ? "The image result was reviewed, but the reported symptoms still require separate clinical evaluation. Do not use this image result for reassurance." : abn ? "The preliminary screening result shows an abnormality that requires follow-up. This does not confirm cancer. Please attend the clinician appointment." : "The reviewed preliminary screening category is NILM. Continue screening according to the applicable program and clinician advice."}</div>
           <button onClick={() => window.print()} className="mt-2 rounded-full border border-line px-3 py-1 text-xs hover:border-teal print:hidden">Print / Save PDF</button>
         </div>
       ) : (

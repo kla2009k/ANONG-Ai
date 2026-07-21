@@ -12,6 +12,7 @@ Endpoints:
   POST /api/report    -> 2-layer report template + prototype LLM-style text + XAI embed support
   POST /api/contours/edit -> apply fake contour edits (prototype demo only)
   POST /api/report/export -> return structured report for client-side PDF/print (with XAI)
+  POST /api/report/export/pdf -> formal unsigned research pre-screen PDF
   POST /api/contour_edit -> SAM-like stub (prototype demo only)
 
 Run:
@@ -32,9 +33,9 @@ from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from PIL import Image, UnidentifiedImageError
 
 try:
@@ -208,7 +209,7 @@ allowed_origins = [
     origin.strip()
     for origin in os.getenv(
         "ANONG_ALLOWED_ORIGINS",
-        "http://localhost:8003,http://localhost:4174,http://localhost:5173,http://127.0.0.1:4174,http://127.0.0.1:5173",
+        "http://localhost:8003,http://localhost:4174,http://localhost:5173,http://127.0.0.1:4174,http://127.0.0.1:5173,https://kla2009k.github.io",
     ).split(",")
     if origin.strip()
 ]
@@ -254,7 +255,7 @@ def health():
         "classes": predictor.CLASSES,
         "model_status": model_status,
         "phase": "1.6",
-        "features": ["four_class_grade", "independent_koil_morphology", "batch", "stress", "validated_cam_or_abstain", "report_release_gates", "xai_embed"],
+        "features": ["four_class_grade", "independent_koil_morphology", "batch", "stress", "validated_cam_or_abstain", "report_release_gates", "report_only_clinical_context", "formal_research_pdf", "xai_embed"],
         "evaluated_scope": "Herlev grade/triage evidence plus independent SIPaKMeD KOIL morphology evidence; no Thai ThinPrep validation",
         "xai_scope": "Post-hoc engineering visualization with degeneracy checks; not clinically validated localization",
         "prototype_only": ["generated_fake_images", "contour_edit", "SAM-like refinement", "zstack", "WSI simulation"],
@@ -431,10 +432,25 @@ def generate_fake(req: GenerateFakeReq):
     return {"count": len(out), "images": out}
 
 
+class ClinicalContext(BaseModel):
+    """Optional context for reporting and triage; never used as model input."""
+    age_years: int | None = Field(default=None, ge=10, le=120)
+    symptoms: List[str] = Field(default_factory=list, max_length=12)
+    other_symptoms: str | None = Field(default=None, max_length=500)
+    specimen_type: str = Field(default="unknown", max_length=40)
+    last_screening: str = Field(default="unknown", max_length=40)
+    hpv_test: str = Field(default="not_performed", max_length=40)
+    hpv_genotype: str | None = Field(default=None, max_length=80)
+    prior_abnormal_result: bool = False
+    immunocompromised: bool = False
+    pregnant: bool = False
+
+
 class ReportReq(BaseModel):
     image: str | None = None
     analysis: dict
     review: dict | None = None
+    clinical_context: ClinicalContext | None = None
 
 
 class ContourEdit(BaseModel):
@@ -449,9 +465,22 @@ class ContourEditReq(BaseModel):
 
 
 class ReportExportReq(BaseModel):
+    case_id: str | None = Field(default=None, max_length=80)
     analysis: dict
     report: dict | None = None
     patient_hint: str | None = None
+    clinical_context: ClinicalContext | None = None
+
+
+def _clinical_context_payload(context: ClinicalContext | None) -> dict:
+    if context is None:
+        return {}
+    return _model_dump(context)
+
+
+def _has_reported_symptoms(context: dict) -> bool:
+    symptoms = [str(value).strip() for value in context.get("symptoms") or []]
+    return bool(symptoms or str(context.get("other_symptoms") or "").strip())
 
 
 @app.post("/api/report")
@@ -467,8 +496,12 @@ def report(req: ReportReq):
     heatmap = a.get("heatmap")
     quality = a.get("quality") or {}
     xai = a.get("advanced_xai") or {}
+    clinical_context = _clinical_context_payload(req.clinical_context)
+    symptomatic = _has_reported_symptoms(clinical_context)
 
-    bethesda = top.get("key", "UNKNOWN")
+    model_suggestion = top.get("key", "UNKNOWN")
+    reviewed_label = review.get("final_label")
+    bethesda = reviewed_label if reviewed_label in {"NILM", "LSIL", "HSIL", "SCC"} else model_suggestion
     prob = float(top.get("prob", 0.0))
 
     release_gates = []
@@ -486,6 +519,8 @@ def report(req: ReportReq):
         release_gates.append("koil_model_not_active")
     if koil and koil_xai.get("ok") is not True:
         release_gates.append("koil_xai_unavailable")
+    if symptomatic and review.get("symptoms_acknowledged") is not True:
+        release_gates.append("symptomatic_context_requires_acknowledgement")
 
     clinical = {
         "bethesda": bethesda,
@@ -500,6 +535,12 @@ def report(req: ReportReq):
         "quality_status": quality.get("status", "unknown"),
         "xai_method": xai.get("primary_method"),
         "review_status": review.get("status", "pending"),
+        "symptoms_present": symptomatic,
+        "context_note": (
+            "Symptoms require separate clinical evaluation; a cytology AI result must not be used to rule out disease."
+            if symptomatic else
+            "No symptoms were entered. Absence of entered symptoms is not a clinical finding."
+        ),
         "release_gates": release_gates,
         "note": "Research pre-screen only. Qualified clinician review is required before any patient-facing release.",
         "xai_embed_present": bool(heatmap) and xai.get("ok") is True,
@@ -519,9 +560,17 @@ def report(req: ReportReq):
             "release_status": "reviewed_demo",
             **_patient_layer(bethesda, prob, bool(koil), False),
         }
+        if symptomatic:
+            lay["symptom_safety_note"] = (
+                "Reported symptoms require clinician-led evaluation independent of this image result."
+            )
+            lay["result"] = "The image category was reviewed, but reported symptoms require separate clinical evaluation."
+            lay["action"] = "Follow the responsible clinician's symptom-led evaluation plan; do not use this result for reassurance."
+            lay["why"] = "A cytology image pre-screen cannot rule out the causes of reported symptoms."
+            lay["simple"] = "Reported symptoms still require clinical evaluation regardless of this image result."
 
     controlled_explanation = {
-        "summary": f"The model suggested {bethesda} with probability {prob:.3f}.",
+        "summary": f"The model suggested {model_suggestion} with probability {prob:.3f}; the reviewed category is {bethesda}.",
         "scope": "Grade evidence is from Herlev; the independent KOIL morphology endpoint is from SIPaKMeD conventional Pap-smear crops.",
         "explanation": f"{xai.get('primary_method') or 'No valid class-activation map'}; post-hoc visualization, not causal proof.",
         "limitations": [
@@ -535,6 +584,7 @@ def report(req: ReportReq):
     out = {
         "layer_clinical": clinical,
         "layer_patient": lay,
+        "clinical_context": clinical_context,
         "release_gates": release_gates,
         "detailed_explanation_llm": controlled_explanation,
         "source": "deterministic controlled template; no generative clinical text",
@@ -725,6 +775,7 @@ def report_export(req: ReportExportReq):
     patient = r.get("layer_patient") or {}
     xai_state = a.get("advanced_xai") or {}
     xai = (r.get("xai_embed") or a.get("heatmap") or a.get("xai_embed")) if xai_state.get("ok") is True else None
+    context = _clinical_context_payload(req.clinical_context) or r.get("clinical_context") or {}
 
     # Build a compact text block
     lines = []
@@ -749,6 +800,11 @@ def report_export(req: ReportExportReq):
     if clinical:
         lines.append(f"Clinical: {clinical.get('bethesda')} | triage={clinical.get('triage','')}")
         lines.append(f"Risk: {clinical.get('risk_level')} | Action: {clinical.get('recommended_action','')}")
+    if context:
+        lines.append(f"Context: age={context.get('age_years') or 'not entered'}; specimen={context.get('specimen_type', 'unknown')}")
+        symptoms = context.get("symptoms") or []
+        lines.append(f"Reported symptoms: {', '.join(symptoms) if symptoms else 'none entered'}")
+        lines.append("Context fields are report-only and were not used by the image model.")
     if patient:
         lines.append(f"Patient release: {patient.get('release_status', 'unknown')}")
         if patient.get("locked"):
@@ -766,11 +822,216 @@ def report_export(req: ReportExportReq):
         "top": top,
         "analysis": a,
         "report": r,
+        "clinical_context": context,
         "text": text_block,
         "xai_embed": xai,
         "export_version": "2.0-research-gated",
         "exported_at": __import__("datetime").datetime.now().isoformat(),
     }
+
+
+def _pdf_safe(value: Any) -> str:
+    return html.escape(str(value if value not in (None, "") else "Not entered"))
+
+
+def _pdf_image(data_url: Any, width: float, max_height: float):
+    """Return a ReportLab image for a bounded data URL, or None."""
+    if not isinstance(data_url, str) or not data_url.startswith("data:image/") or "," not in data_url:
+        return None
+    try:
+        from reportlab.platypus import Image as RLImage
+        raw = base64.b64decode(data_url.split(",", 1)[1], validate=True)
+        if len(raw) > MAX_BYTES:
+            return None
+        with Image.open(io.BytesIO(raw)) as source:
+            source.verify()
+        flowable = RLImage(io.BytesIO(raw))
+        scale = min(width / flowable.imageWidth, max_height / flowable.imageHeight)
+        flowable.drawWidth = flowable.imageWidth * scale
+        flowable.drawHeight = flowable.imageHeight * scale
+        return flowable
+    except Exception:
+        return None
+
+
+@app.post("/api/report/export/pdf")
+def report_export_pdf(req: ReportExportReq):
+    """Generate a formal, unsigned research pre-screen PDF with explicit release state."""
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen.canvas import Canvas
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    payload = report_export(req)
+    analysis = payload.get("analysis") or {}
+    report_data = payload.get("report") or {}
+    clinical = report_data.get("layer_clinical") or {}
+    patient = report_data.get("layer_patient") or {}
+    context = payload.get("clinical_context") or {}
+    top = payload.get("top") or {}
+    case_id = re.sub(r"[^A-Za-z0-9_.-]", "-", req.case_id or "ANONG-UNASSIGNED")[:80]
+    generated = payload.get("exported_at", "")
+
+    stream = io.BytesIO()
+    document = SimpleDocTemplate(
+        stream, pagesize=A4, rightMargin=17 * mm, leftMargin=17 * mm,
+        topMargin=20 * mm, bottomMargin=19 * mm,
+        title=f"{case_id} Anong reviewed research pre-screen",
+        author="Anong | CerviCo-Pilot",
+    )
+    styles = getSampleStyleSheet()
+    ink = colors.HexColor("#4A3340")
+    rose = colors.HexColor("#A84064")
+    line = colors.HexColor("#EAD4D3")
+    cream = colors.HexColor("#FFF8E9")
+    warn = colors.HexColor("#FFF1F3")
+    body = ParagraphStyle("AnongBody", parent=styles["BodyText"], fontName="Helvetica", fontSize=9.2, leading=13, textColor=ink)
+    small = ParagraphStyle("AnongSmall", parent=body, fontSize=7.8, leading=10.5, textColor=colors.HexColor("#735E69"))
+    title = ParagraphStyle("AnongTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=20, leading=24, textColor=rose, spaceAfter=5)
+    heading = ParagraphStyle("AnongHeading", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=12, leading=15, textColor=rose, spaceBefore=10, spaceAfter=6)
+    center_small = ParagraphStyle("AnongCenter", parent=small, alignment=TA_CENTER)
+
+    def p(value: Any, style=body):
+        return Paragraph(_pdf_safe(value), style)
+
+    def section_table(rows):
+        formatted = [[p(label, small), p(value)] for label, value in rows]
+        table = Table(formatted, colWidths=[43 * mm, 116 * mm], hAlign="LEFT")
+        table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BACKGROUND", (0, 0), (0, -1), cream),
+            ("GRID", (0, 0), (-1, -1), 0.45, line),
+            ("LEFTPADDING", (0, 0), (-1, -1), 7),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        return table
+
+    def page_frame(canvas: Canvas, doc):
+        canvas.saveState()
+        canvas.setStrokeColor(line)
+        canvas.line(17 * mm, 15 * mm, 193 * mm, 15 * mm)
+        canvas.setFillColor(colors.HexColor("#735E69"))
+        canvas.setFont("Helvetica", 7.5)
+        canvas.drawString(17 * mm, 10 * mm, "ANONG | RESEARCH PRE-SCREEN | NOT A FINAL DIAGNOSIS")
+        canvas.drawRightString(193 * mm, 10 * mm, f"Page {doc.page}")
+        canvas.setFillColor(colors.Color(0.66, 0.25, 0.39, alpha=0.07))
+        canvas.setFont("Helvetica-Bold", 28)
+        canvas.translate(105 * mm, 145 * mm)
+        canvas.rotate(35)
+        canvas.drawCentredString(0, 0, "RESEARCH USE ONLY")
+        canvas.restoreState()
+
+    probability = top.get("prob", clinical.get("confidence", 0))
+    try:
+        probability_text = f"{float(probability) * 100:.1f}%"
+    except (TypeError, ValueError):
+        probability_text = str(probability)
+    symptom_labels = {
+        "intermenstrual_bleeding": "Bleeding between periods",
+        "postcoital_bleeding": "Bleeding after sex",
+        "postmenopausal_bleeding": "Bleeding after menopause",
+        "unusual_discharge": "Unusual or foul-smelling discharge",
+        "persistent_pelvic_back_leg_pain": "Persistent pelvic, back, or leg pain",
+        "weight_loss_fatigue_appetite_loss": "Unexplained weight loss, fatigue, or appetite loss",
+    }
+    specimen_labels = {"thinprep_lbc": "ThinPrep / liquid-based cytology", "conventional_pap": "Conventional Pap smear", "unknown": "Unknown"}
+    screening_labels = {"never": "Never screened", "within_3_years": "Within 3 years", "3_to_5_years": "3-5 years ago", "over_5_years": "Over 5 years ago", "unknown": "Unknown"}
+    symptoms = [symptom_labels.get(item, str(item).replace("_", " ")) for item in context.get("symptoms") or []]
+    blockers = patient.get("blockers") or report_data.get("release_gates") or []
+    koil = analysis.get("koil_assessment") or {}
+
+    story = [
+        Paragraph("ANONG | CerviCo-Pilot", small),
+        Paragraph("Reviewed Cervical Cytology Research Pre-screen", title),
+        p(f"Case {case_id} | Generated {generated}", small),
+        Spacer(1, 5 * mm),
+        Table([[p("DECISION-SUPPORT OUTPUT ONLY. Not a final diagnosis, not an HPV DNA/RNA test, and not a regulated clinical report.")]], colWidths=[159 * mm], style=TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), warn), ("BOX", (0, 0), (-1, -1), 0.8, rose),
+            ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ])),
+        Paragraph("Case and clinical context", heading),
+        section_table([
+            ("Case identifier", case_id),
+            ("Age", f"{context.get('age_years')} years" if context.get("age_years") else "Not entered"),
+            ("Specimen", specimen_labels.get(context.get("specimen_type"), context.get("specimen_type", "Unknown"))),
+            ("Reported symptoms", "; ".join(symptoms + ([context.get("other_symptoms")] if context.get("other_symptoms") else [])) if (symptoms or context.get("other_symptoms")) else "None entered"),
+            ("Last screening", screening_labels.get(context.get("last_screening"), context.get("last_screening", "Unknown"))),
+            ("HPV laboratory test", f"{context.get('hpv_test', 'not performed')}{'; genotype ' + str(context.get('hpv_genotype')) if context.get('hpv_genotype') else ''}"),
+            ("Other risk context", ", ".join(name for name, present in [
+                ("prior abnormal result", context.get("prior_abnormal_result")),
+                ("immunocompromised", context.get("immunocompromised")),
+                ("pregnant", context.get("pregnant")),
+            ] if present) or "None entered"),
+        ]),
+        p("Clinical context is report-only. It was not used to alter the image model prediction.", small),
+        Paragraph("AI pre-screen and reviewed interpretation", heading),
+        section_table([
+            ("AI suggestion", f"{top.get('key', clinical.get('bethesda', 'UNKNOWN'))} ({probability_text})"),
+            ("Reviewed category", clinical.get("bethesda", top.get("key", "UNKNOWN"))),
+            ("Uncertainty", (analysis.get("uncertainty") or analysis.get("uncertainty_viz") or {}).get("level", "unknown")),
+            ("Image quality", clinical.get("quality_status", "unknown")),
+            ("Grade XAI", clinical.get("xai_method", "unavailable")),
+            ("KOIL morphology", f"{koil.get('status', 'not assessed')} ({float(koil.get('probability', 0)) * 100:.1f}%)" if koil else "Not assessed"),
+            ("Triage", clinical.get("triage", "Not generated")),
+            ("Recommended action", clinical.get("recommended_action", "Not generated")),
+        ]),
+        Paragraph("Safety and release status", heading),
+        section_table([
+            ("Clinician review", clinical.get("review_status", "pending")),
+            ("Patient-facing release", patient.get("release_status", "blocked")),
+            ("Release blockers", ", ".join(blockers) if blockers else "None"),
+            ("Symptom safety", clinical.get("context_note", "No context note")),
+        ]),
+        Paragraph("Image evidence and limitations", title),
+    ]
+
+    original_image = _pdf_image(analysis.get("image"), 75 * mm, 68 * mm)
+    heatmap_image = _pdf_image(analysis.get("heatmap") or report_data.get("xai_embed"), 75 * mm, 68 * mm)
+    if original_image or heatmap_image:
+        cells = []
+        if original_image:
+            cells.append([original_image, p("Original image", center_small)])
+        if heatmap_image:
+            cells.append([heatmap_image, p("Class-activation map (post-hoc; not segmentation)", center_small)])
+        image_table = Table([[cell[0] for cell in cells], [cell[1] for cell in cells]], colWidths=[78 * mm] * len(cells))
+        image_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (0, 0), (-1, -1), "CENTER"), ("BOX", (0, 0), (-1, -1), 0.45, line)]))
+        story.append(image_table)
+    else:
+        story.append(p("No embeddable image evidence was supplied to the PDF renderer.", small))
+    story.extend([
+        Paragraph("Interpretive boundaries", heading),
+        p("The grade model estimates cervical cytology morphology. The independent KOIL endpoint estimates koilocytotic morphology from SIPaKMeD conventional Pap-smear crops. Neither endpoint detects HPV DNA, HPV RNA, viral genotype, persistence, or infection status."),
+        Spacer(1, 3 * mm),
+        p("A class-activation map shows image regions that contributed to a model score. It is a post-hoc explanation and must not be presented as a validated nucleus/cell segmentation or causal proof."),
+        Spacer(1, 3 * mm),
+        p("The system has not completed external clinical validation on Thai ThinPrep cohorts and must not be used for autonomous diagnosis, treatment selection, or reassurance of a symptomatic patient."),
+        Paragraph("Workflow record", heading),
+        section_table([
+            ("Model mode", analysis.get("mode", "unknown")),
+            ("Export version", payload.get("export_version", "unknown")),
+            ("Generated at", generated),
+            ("Report source", report_data.get("source", "controlled template")),
+        ]),
+        Spacer(1, 6 * mm),
+        p("Reviewer name: ____________________________________    License/role: __________________________"),
+        Spacer(1, 4 * mm),
+        p("Signature: _________________________________________    Date/time: ______________________________"),
+        Spacer(1, 6 * mm),
+        p("This unsigned export documents a research workflow demonstration. A clinical pilot requires governance, identity and access controls, de-identification, validated signatures, retention policy, and applicable ethics/PDPA approval.", small),
+    ])
+    document.build(story, onFirstPage=page_frame, onLaterPages=page_frame)
+    SERVER_COUNTERS["report_exports"] += 1
+    filename = f"{case_id}-anong-research-prescreen.pdf"
+    return Response(
+        content=stream.getvalue(), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.post("/api/report/export/html", response_class=HTMLResponse)
@@ -926,77 +1187,6 @@ def _patient_layer(bethesda: str, prob: float, koil: bool, uncertain: bool) -> d
         "action": "Continue screening according to the applicable program and clinician advice.",
         "why": "This reviewed pre-screen does not replace routine clinical screening processes.",
         "simple": "Continue guideline-based screening.",
-        "why": "ไม่พบลักษณะผิดปกติชัดเจนในภาพนี้",
-        "simple": "ปกติดีค่ะ มาตรวจตามโปรแกรมปกติ",
-    }
-
-
-def _patient_layer_advanced(bethesda: str, prob: float, koil: bool, uncertain: bool,
-                            quality_ok: bool = True,
-                            conformal: Optional[dict] = None,
-                            evidential: Optional[dict] = None) -> dict:
-    """
-    Enhanced 2-layer patient explanation.
-    Incorporates quality, conformal set size, and evidential vacuity/dissonance.
-    """
-    if not quality_ok:
-        return {
-            "result": "ภาพคุณภาพไม่ดีพอสำหรับวิเคราะห์",
-            "action": "กรุณาถ่ายหรือสแกนสไลด์ใหม่ หรือส่งให้แพทย์อ่านโดยตรง",
-            "why": "ภาพมืด/เบลอ/เซลล์น้อยเกินไป — AI ไม่สามารถให้ผลที่น่าเชื่อถือได้",
-            "simple": "ภาพไม่ชัดพอ ต้องถ่ายใหม่นะคะ",
-            "level": "warn",
-        }
-    if uncertain:
-        parts = ["AI ไม่มั่นใจ 100%"]
-        if conformal and isinstance(conformal, dict) and conformal.get("size", 1) > 1:
-            parts.append("มีหลายผลลัพธ์ที่เป็นไปได้")
-        if evidential and isinstance(evidential, dict) and evidential.get("vacuity", 0) > 0.35:
-            parts.append("ข้อมูลในภาพยังไม่พอ (vacuity สูง)")
-        return {
-            "result": "ระบบขอให้แพทย์ตรวจเพิ่ม",
-            "action": "กรุณารอผลยืนยันจากแพทย์ อย่าตกใจ",
-            "why": " | ".join(parts),
-            "simple": "ต้องให้คุณหมอเช็คอีกทีนะคะ",
-            "level": "high",
-        }
-    if bethesda in ("HSIL", "SCC"):
-        return {
-            "result": "พบเซลล์ผิดปกติระดับสูง",
-            "action": "ควรพบแพทย์โดยเร็ว (ภายใน 1-2 สัปดาห์) เพื่อตรวจยืนยัน",
-            "why": "เซลล์มีรูปร่างผิดปกติชัด อาจเป็นระยะก่อนมะเร็งหรือมะเร็งระยะต้น (ต้องยืนยันด้วยวิธีอื่น) — HPV 52/58 พบบ่อยในไทย",
-            "simple": "พบเซลล์ไม่ปกติแบบรุนแรง ต้องรีบไปหาหมอตรวจต่อ",
-            "level": "high",
-        }
-    if bethesda == "LSIL":
-        msg = "พบเซลล์ผิดปกติระดับต่ำ"
-        why = "ส่วนใหญ่หายได้เอง แต่บางส่วนอาจพัฒนาได้ ต้องเฝ้าดู"
-        simple = "มีเซลล์ผิดปกติเล็กน้อย ต้องตรวจและติดตาม"
-        if koil:
-            msg += " + koilocytic morphology"
-            why += " โดย morphology finding นี้ไม่ใช่ผลยืนยันเชื้อ HPV"
-            simple = "มีเซลล์ผิดปกติและลักษณะ koilocytic morphology ต้องให้ผู้เชี่ยวชาญทบทวน"
-        return {
-            "result": msg,
-            "action": "ส่งตรวจ HPV + มาตรวจซ้ำตามนัด (6-12 เดือน)",
-            "why": why,
-            "simple": simple,
-            "level": "moderate",
-        }
-    if koil:
-        return {
-            "result": "พบลักษณะ koilocytic morphology จาก endpoint แยกต่างหาก",
-            "action": "ให้ผู้เชี่ยวชาญทบทวน และพิจารณา HPV DNA/RNA testing แยกตามแนวทางที่ใช้",
-            "why": "ลักษณะเซลล์อาจสัมพันธ์กับ HPV-related change แต่ไม่ยืนยันการติดเชื้อหรือชนิดเชื้อ",
-            "simple": "พบลักษณะเซลล์ที่ควรตรวจทบทวนเพิ่มเติม แต่ยังไม่ใช่ผลตรวจเชื้อ HPV",
-            "level": "moderate",
-        }
-    return {
-        "result": "ผลปกติ",
-        "action": "ตรวจคัดกรองต่อเนื่องทุก 3-5 ปี (หรือตามอายุ/ความเสี่ยง)",
-        "why": "ไม่พบลักษณะผิดปกติชัดเจนในภาพนี้",
-        "simple": "ปกติดีค่ะ มาตรวจตามโปรแกรมปกติ",
-        "level": "low",
     }
 
 

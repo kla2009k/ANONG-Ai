@@ -1,5 +1,5 @@
 // CerviCo-Pilot — shared data: Bethesda classes, real metrics, sample types.
-import { API_BASE } from "@/lib/api";
+import { API_BASE, API_IS_CONFIGURED } from "@/lib/api";
 
 export type Kind = "normal" | "low" | "high" | "cancer" | "hpv";
 
@@ -19,7 +19,7 @@ export const CLASSES: ClassInfo[] = [
   { key: "SCC", en: "Squamous Cell Carcinoma", kind: "cancer", color: "var(--color-scc)", icon: "⛔",
     desc: "Cellular features warranting urgent confirmatory assessment.", triage: "Urgent specialist assessment and confirmatory work-up." },
   { key: "KOIL", en: "Koilocyte", kind: "hpv", color: "var(--color-koil)", icon: "◆",
-    desc: "Koilocyte morphology is a Phase 2 target and is not validated in Phase 1.", triage: "Consider confirmatory HPV testing when clinically indicated." },
+    desc: "Independent koilocytotic-morphology endpoint; not an HPV infection test.", triage: "Expert morphology review and separate HPV testing when clinically indicated." },
 ];
 
 export const VERSION = { name: "Phase 1.6 dual endpoint", date: "2026-07", model: "EfficientNet-B0 x2" };
@@ -102,11 +102,15 @@ export const METRICS = {
     sensitivity: "0.9624", sensitivityCi: "0.9167-0.9921",
     specificity: "0.9764", specificityCi: "0.9583-0.9916",
     auroc: "0.9912", auprc: "0.9810", f1: "0.9377", ece: "0.0134",
+    multiclassAccuracy: "0.9750", multiclassMacroF1: "0.9753",
     threshold: "0.3367", confusion: { TP: 128, TN: 496, FP: 12, FN: 5 },
   },
 };
 
 export async function analyzeReal(imageDataUrl: string) {
+  if (!API_IS_CONFIGURED) {
+    throw new Error("Uploaded-image analysis is unavailable in this static deployment because no production API is configured. Use a precomputed evidence case or run the local FastAPI server.");
+  }
   let r: Response;
   try {
     r = await fetch(API_BASE + "/api/analyze", {

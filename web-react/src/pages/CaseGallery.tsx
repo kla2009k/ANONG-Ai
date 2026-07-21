@@ -24,6 +24,13 @@ const BUCKET_LABEL: Record<string, string> = {
   high_confidence_miss: "High-confidence miss",
 };
 
+const EVIDENCE_FIGURES = [
+  { file: "evidence/koil_test_performance.png", title: "Locked-test discrimination", detail: "ROC, precision-recall, and locked-threshold confusion evidence for the independent KOIL one-vs-rest endpoint." },
+  { file: "evidence/koil_calibration.png", title: "Probability calibration", detail: "Reliability evidence after validation-only temperature scaling; external clinical calibration is still required." },
+  { file: "evidence/koil_error_gallery.png", title: "KOIL error gallery", detail: "False positives and false negatives are shown deliberately to expose failure modes rather than cherry-pick favorable cells." },
+  { file: "evidence/koil_gradcam_paper.png", title: "KOIL class-activation audit", detail: "Representative class-specific Grad-CAM examples. Attention evidence is not cell segmentation or proof of HPV infection." },
+] as const;
+
 export default function CaseGallery() {
   const [cases, setCases] = useState<GalleryCase[]>([]);
   const [filter, setFilter] = useState("ALL");
@@ -54,7 +61,30 @@ export default function CaseGallery() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-1" role="tablist" aria-label="Filter cases">
+      <section className="mt-8" aria-labelledby="koil-evidence-title">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="kicker mb-2">Independent KOIL evidence</div>
+            <h2 id="koil-evidence-title" className="font-display text-2xl font-semibold text-ink">Real SIPaKMeD evaluation figures</h2>
+          </div>
+          <div className="font-mono text-xs text-mut">4,049 cells · 966 source clusters · locked test n=641</div>
+        </div>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">
+          These figures were generated from the official SIPaKMeD cropped-cell dataset. It contains 825 koilocytotic cells, but no paired molecular HPV DNA/RNA result. The endpoint therefore validates koilocytotic morphology only, in conventional Pap-smear crops rather than ThinPrep.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {EVIDENCE_FIGURES.map((figure) => (
+            <figure key={figure.file} className="card overflow-hidden">
+              <a href={`${BASE}${figure.file}`} target="_blank" rel="noreferrer" className="block bg-white">
+                <img src={`${BASE}${figure.file}`} alt={figure.title} loading="lazy" className="aspect-[16/10] w-full object-contain" />
+              </a>
+              <figcaption className="p-4"><h3 className="font-display text-base font-semibold text-ink">{figure.title}</h3><p className="mt-1 text-xs leading-5 text-mut">{figure.detail}</p></figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <div className="mt-10 flex flex-wrap gap-1" role="tablist" aria-label="Filter cases">
         {["ALL", ...CLASS_KEYS, ...buckets].map((k) => (
           <button
             key={k}

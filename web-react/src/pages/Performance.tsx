@@ -229,6 +229,9 @@ export default function Performance() {
         <Stat label="AUROC / AUPRC" value={`${k.auroc} / ${k.auprc}`} sub={`F1 ${k.f1}`} />
         <Stat label="Calibration ECE" value={k.ece} sub={`locked threshold ${k.threshold}`} />
       </div>
+      <div className="blush-panel mt-4 rounded-lg border p-5 text-sm text-mut">
+        <b className="text-ink">Where the project legitimately exceeds 97%:</b> the SIPaKMeD five-morphology auxiliary task reached <b className="font-mono text-teal">{k.multiclassAccuracy}</b> locked-test accuracy and <b className="font-mono text-teal">{k.multiclassMacroF1}</b> macro F1. This number belongs only to SIPaKMeD morphology classification. It must not be presented as Herlev Bethesda-grade accuracy, Thai ThinPrep performance, clinical diagnostic accuracy, or HPV detection accuracy.
+      </div>
       <div className="mt-4 grid grid-cols-4 gap-2 text-center">
         {Object.entries(k.confusion).map(([label, value]) => <div key={label} className="card p-3"><div className="font-mono text-xl font-semibold text-ink">{value}</div><div className="text-[10px] text-mut">{label}</div></div>)}
       </div>

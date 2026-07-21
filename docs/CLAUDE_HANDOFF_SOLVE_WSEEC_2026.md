@@ -1,5 +1,14 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Critical update 2026-07-21:** Read
+> `docs/CLINICAL_CONTEXT_PDF_GALLERY_UPDATE_2026-07-21.md` before continuing.
+> Analyze now has report-only age/symptom/HPV-lab context, a symptom
+> acknowledgement release gate, a real two-page server PDF, backend readiness
+> state, and a SIPaKMeD evidence gallery. The legitimate 97% metric is the
+> SIPaKMeD five-morphology locked-test accuracy (0.9750), not Herlev grade
+> accuracy, Thai ThinPrep accuracy, clinical diagnostic accuracy, or HPV
+> detection accuracy.
+
 > **Critical update 2026-07-13:** Statements below that call KOIL a zero-support
 > placeholder are historical. Read `docs/KOIL_REAL_DATA_VALIDATION_2026.md`
 > first. The live architecture separates four-class grade from an independent
@@ -780,7 +789,7 @@ npm.cmd run build
 
 อย่าทำให้ project ดูเกินจริง จุดแข็งของ CerviCo-Pilot คือมันจริงใจและรับผิดชอบ:
 
-- มี 5-class output ที่เป็น clinical-style product
+- มี 4-class grade output (NILM/LSIL/HSIL/SCC) และ independent KOIL morphology endpoint
 - มี safety triage layer ที่เน้นไม่พลาด abnormal/high-risk cases
 - มี Grad-CAM ให้แพทย์ท้าทาย reasoning ได้
 - มี MC Dropout เพื่อยอมรับความไม่แน่นอน
@@ -790,4 +799,4 @@ npm.cmd run build
 
 ข้อความสุดท้ายที่ควรยึด:
 
-> CerviCo-Pilot is not a diagnosis machine. It is a cervical screening co-pilot: it reads ThinPrep/Pap cytology images, suggests a Bethesda-style grade, estimates HPV-related visual risk, explains where it looked, flags uncertainty, and keeps the clinician in control.
+> CerviCo-Pilot is not a diagnosis machine. It is a cervical screening co-pilot: it suggests a cytology morphology grade, separately estimates koilocytotic morphology, explains where the model responded, flags uncertainty, and keeps the clinician in control. It does not detect HPV DNA/RNA, and Thai ThinPrep clinical validation remains future work.
