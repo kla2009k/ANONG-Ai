@@ -1022,7 +1022,7 @@ def report_export_pdf(req: ReportExportReq):
         story.append(p("No embeddable image evidence was supplied to the PDF renderer.", small))
     story.extend([
         Paragraph("Interpretive boundaries", heading),
-        p("The grade model estimates cervical cytology morphology. The independent KOIL endpoint was trained on SIPaKMeD conventional Pap-smear crops and challenged on 20 expert-labelled CCCID liquid-based koilocyte images. Neither endpoint detects HPV DNA, HPV RNA, viral genotype, persistence, or infection status."),
+        p("The grade model estimates cervical cytology morphology. The independent KOIL endpoint was trained on SIPaKMeD conventional Pap-smear crops and challenged on 20 expert-labelled CCCID liquid-based koilocyte images. No endpoint in this system is an HPV DNA/RNA assay or establishes viral genotype, persistence, or infection status."),
         Spacer(1, 3 * mm),
         p("A class-activation map shows image regions that contributed to a model score. It is a post-hoc explanation and must not be presented as a validated nucleus/cell segmentation or causal proof."),
         Spacer(1, 3 * mm),
