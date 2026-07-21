@@ -24,6 +24,10 @@ class CricReferenceGalleryTests(unittest.TestCase):
 
         counts = Counter(item["class"] for item in payload["items"])
         self.assertEqual(counts, Counter({"NILM": 20, "LSIL": 20, "HSIL": 20, "SCC": 20}))
+        self.assertEqual(
+            [item["class"] for item in payload["items"][:8]],
+            ["NILM", "LSIL", "HSIL", "SCC"] * 2,
+        )
 
         sources_by_class = defaultdict(set)
         for item in payload["items"]:

@@ -34,6 +34,7 @@ CLASS_MAP = {
     "HSIL": "HSIL",
     "SCC": "SCC",
 }
+CLASS_ORDER = {label: index for index, label in enumerate(CLASS_MAP.values())}
 
 
 def request_bytes(url: str, attempts: int = 4) -> bytes:
@@ -156,6 +157,9 @@ def main() -> int:
             "license": "CC BY 4.0",
             "domain": "conventional Pap-smear annotated cell crop",
         })
+
+    # Interleave classes so the default gallery viewport is representative.
+    items.sort(key=lambda item: (int(item["id"].rsplit("-", 1)[1]), CLASS_ORDER[item["class"]]))
 
     manifest = {
         "dataset": "CRIC Cervix Cell Classification",
