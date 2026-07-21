@@ -23,4 +23,6 @@ ml/*.err
 ml/*.json
 models/*
 !models/best_cervical.pt
+!models/koil_sipakmed/
+!models/koil_sipakmed/best_koil_model.pt
 server/*.log

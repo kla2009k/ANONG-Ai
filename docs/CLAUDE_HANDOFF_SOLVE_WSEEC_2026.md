@@ -800,3 +800,21 @@ npm.cmd run build
 ข้อความสุดท้ายที่ควรยึด:
 
 > CerviCo-Pilot is not a diagnosis machine. It is a cervical screening co-pilot: it suggests a cytology morphology grade, separately estimates koilocytotic morphology, explains where the model responded, flags uncertainty, and keeps the clinician in control. It does not detect HPV DNA/RNA, and Thai ThinPrep clinical validation remains future work.
+# 2026-07-21 deployment and gallery update
+
+- The public Case Gallery now includes a reproducible 80-cell CRIC Cervix
+  reference atlas: 20 NILM, 20 LSIL, 20 HSIL, and 20 SCC crops under CC BY 4.0.
+- Treat the CRIC atlas only as external morphology reference material. It is
+  not model evaluation, external validation, ThinPrep evidence, or HPV testing.
+- KOIL remains a separate SIPaKMeD locked-test evidence track. Do not bulk
+  republish SIPaKMeD images until explicit redistribution terms are documented.
+- `scripts/build_cric_reference_gallery.py` regenerates the atlas and records
+  per-image DOI provenance plus SHA-256 hashes.
+- Docker now includes both `models/best_cervical.pt` and
+  `models/koil_sipakmed/best_koil_model.pt`; a deployment contract test guards
+  this packaging requirement.
+- Render `starter` is too small. The loaded local backend measured about 804 MiB
+  RSS, so `render.yaml` now uses `standard` in Singapore with `/api/ready`.
+- Read `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md` before deployment.
+  GitHub Pages needs repository variable `VITE_API_URL` set to the final Render
+  origin before uploads and server-generated PDF reports work there.

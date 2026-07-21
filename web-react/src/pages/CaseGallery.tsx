@@ -17,6 +17,31 @@ interface GalleryCase {
   expert_review_status: string;
 }
 
+interface CricCase {
+  id: string;
+  image: string;
+  class: string;
+  source_label: string;
+  source_image_id: number;
+  source_cell_id: number;
+  source_doi: string;
+  license: string;
+  domain: string;
+}
+
+interface CricManifest {
+  dataset: string;
+  dataset_doi: string;
+  dataset_url: string;
+  license: string;
+  license_url: string;
+  attribution: string;
+  intended_use: string;
+  count: number;
+  counts: Record<string, number>;
+  items: CricCase[];
+}
+
 const BUCKET_LABEL: Record<string, string> = {
   correct_reference_sample: "Correct reference",
   severity_overcall: "Severity overcall",
@@ -33,17 +58,28 @@ const EVIDENCE_FIGURES = [
 
 export default function CaseGallery() {
   const [cases, setCases] = useState<GalleryCase[]>([]);
+  const [cric, setCric] = useState<CricManifest | null>(null);
+  const [section, setSection] = useState<"atlas" | "audit" | "koil">("atlas");
   const [filter, setFilter] = useState("ALL");
+  const [atlasFilter, setAtlasFilter] = useState("ALL");
+  const [visibleAtlas, setVisibleAtlas] = useState(24);
   const [showCam, setShowCam] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch(`${BASE}samples/error_cases.json`).then((r) => r.json()).then(setCases).catch(() => setCases([]));
+    fetch(`${BASE}cric-gallery/index.json`).then((r) => r.json()).then(setCric).catch(() => setCric(null));
   }, []);
 
   const filtered = useMemo(() => (
     cases.filter((c) => filter === "ALL" || c.true_label === filter || c.predicted_label === filter || c.error_bucket === filter)
   ), [cases, filter]);
   const buckets = Array.from(new Set(cases.map((c) => c.error_bucket)));
+  const atlasCases = (cric?.items || []).filter((item) => atlasFilter === "ALL" || item.class === atlasFilter);
+
+  function changeAtlasFilter(next: string) {
+    setAtlasFilter(next);
+    setVisibleAtlas(24);
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-14">
@@ -55,13 +91,80 @@ export default function CaseGallery() {
             Review Herlev cases processed by the evaluated model, including correct outputs, errors, and high-uncertainty examples. The gallery intentionally avoids cherry-picking only favorable results.
           </p>
         </div>
-        <div className="rounded-2xl border border-line bg-surface p-4 text-sm">
-          <div className="font-mono text-2xl font-semibold text-teal">{cases.length || 0}</div>
-          <div className="text-xs text-mut">review cases · not pathologist-reviewed</div>
+        <div className="rounded-lg border border-line bg-surface p-4 text-sm">
+          <div className="font-mono text-2xl font-semibold text-teal">{cric?.count || 0} + {cases.length || 0}</div>
+          <div className="text-xs text-mut">external references + model-audit cases</div>
         </div>
       </div>
 
-      <section className="mt-8" aria-labelledby="koil-evidence-title">
+      <div className="mt-7 grid gap-2 sm:grid-cols-3" role="tablist" aria-label="Gallery view">
+        {([
+          ["atlas", "External reference atlas", "80 CRIC cells · CC BY 4.0"],
+          ["audit", "Herlev model audit", "Predictions, errors, and Grad-CAM"],
+          ["koil", "KOIL evidence", "Performance, calibration, and XAI"],
+        ] as const).map(([key, label, detail]) => (
+          <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)}
+            className={"rounded-lg border p-4 text-left transition " + (section === key ? "border-teal bg-teal text-white" : "border-line bg-surface text-ink hover:border-teal")}>
+            <div className="text-sm font-semibold">{label}</div>
+            <div className={"mt-1 text-xs " + (section === key ? "text-white/80" : "text-mut")}>{detail}</div>
+          </button>
+        ))}
+      </div>
+
+      {section === "atlas" && (
+        <section className="mt-8" aria-labelledby="cric-atlas-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="kicker mb-2">External morphology reference</div>
+              <h2 id="cric-atlas-title" className="font-display text-2xl font-semibold text-ink">CRIC Cervix Bethesda reference atlas</h2>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">
+                Twenty annotated cells per displayed category, each selected from a different source image within that category. These are real conventional Pap-smear references and have not been used to claim model performance.
+              </p>
+            </div>
+            <div className="font-mono text-xs text-mut">{cric?.count || 0} cells · 20 per category</div>
+          </div>
+
+          <div className="blush-panel mt-4 rounded-lg border p-4 text-xs leading-5 text-mut">
+            <b className="text-ink">Attribution:</b> {cric?.attribution || "Rezende et al., CRIC Cervix Cell Classification (2020)"}. Licensed under{" "}
+            <a className="text-teal underline" href={cric?.license_url || "https://creativecommons.org/licenses/by/4.0/"} target="_blank" rel="noreferrer">CC BY 4.0</a>.{" "}
+            <a className="text-teal underline" href={cric?.dataset_url || "https://figshare.com/collections/CRIC_Cervix_Cell_Classification/4960286"} target="_blank" rel="noreferrer">Official Figshare collection</a>.
+            This atlas is external reference material, not an external-validation result and not evidence of HPV infection.
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-1" role="tablist" aria-label="Filter CRIC reference cells">
+            {["ALL", "NILM", "LSIL", "HSIL", "SCC"].map((key) => (
+              <button key={key} onClick={() => changeAtlasFilter(key)} type="button"
+                className={"rounded-full border px-3 py-1 text-xs transition " + (atlasFilter === key ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}>
+                {key === "ALL" ? `All (${cric?.count || 0})` : `${key} (${cric?.counts?.[key] || 0})`}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {atlasCases.slice(0, visibleAtlas).map((item) => {
+              const info = classInfo(item.class);
+              return (
+                <figure key={item.id} className="card overflow-hidden">
+                  <a href={`${BASE}${item.image}`} target="_blank" rel="noreferrer" className="block bg-paper">
+                    <img src={`${BASE}${item.image}`} alt={`${item.class} reference cell ${item.id} from CRIC Cervix`} loading="lazy" width="256" height="256" className="aspect-square w-full object-cover" />
+                  </a>
+                  <figcaption className="p-3">
+                    <div className="flex items-center justify-between gap-2"><b style={{ color: info.color }}>{info.icon} {item.class}</b><span className="font-mono text-[10px] text-mut">{item.id}</span></div>
+                    <div className="mt-1 text-[10px] text-mut">Source image {item.source_image_id} · cell {item.source_cell_id}</div>
+                    <a href={`https://doi.org/${item.source_doi}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[10px] text-teal underline">Source DOI</a>
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+          {!cric && <div className="mt-5 rounded-lg border border-dashed border-line p-8 text-center text-sm text-mut">The CRIC reference manifest could not be loaded.</div>}
+          {visibleAtlas < atlasCases.length && (
+            <div className="mt-6 text-center"><button type="button" onClick={() => setVisibleAtlas((value) => value + 24)} className="rounded-full border border-teal px-5 py-2 text-sm text-teal hover:bg-teal hover:text-white">Load more references ({atlasCases.length - visibleAtlas} remaining)</button></div>
+          )}
+        </section>
+      )}
+
+      {section === "koil" && <section className="mt-8" aria-labelledby="koil-evidence-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="kicker mb-2">Independent KOIL evidence</div>
@@ -82,9 +185,9 @@ export default function CaseGallery() {
             </figure>
           ))}
         </div>
-      </section>
+      </section>}
 
-      <div className="mt-10 flex flex-wrap gap-1" role="tablist" aria-label="Filter cases">
+      {section === "audit" && <><div className="mt-10 flex flex-wrap gap-1" role="tablist" aria-label="Filter cases">
         {["ALL", ...CLASS_KEYS, ...buckets].map((k) => (
           <button
             key={k}
@@ -162,6 +265,7 @@ export default function CaseGallery() {
           </div>
         )}
       </div>
+      </>}
     </div>
   );
 }

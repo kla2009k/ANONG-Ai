@@ -2,8 +2,11 @@ services:
   - type: web
     name: anong-ai
     runtime: docker
-    plan: starter
+    plan: standard
+    region: singapore
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /api/ready
+    autoDeployTrigger: checksPass
     envVars:
       - key: PORT
         value: 8003

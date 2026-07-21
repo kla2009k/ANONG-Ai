@@ -27,7 +27,10 @@ Then open `http://127.0.0.1:8003`. The repository also includes a Dockerfile,
 `docker-compose.yml`, a Render blueprint, CI, and GitHub Pages deployment. GitHub
 Pages serves the static evidence/demo experience; live uploads require the
 FastAPI model backend. Set the Pages repository variable `VITE_API_URL` to the
-public backend URL when one is deployed.
+public backend URL when one is deployed. The Render deployment needs at least
+the Standard 2 GB instance because Starter's 512 MB is below the measured model
+process footprint. See `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md` for
+the complete deployment, smoke-test, troubleshooting, and rollback runbook.
 
 ## Web Brand (2026-07-11)
 

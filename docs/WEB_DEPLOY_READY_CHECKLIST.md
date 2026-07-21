@@ -1,5 +1,11 @@
 # Web Deploy-Ready Checklist
 
+> 2026-07-21: The authoritative full-stack Render + GitHub Pages runbook is
+> `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md`. It includes the measured
+> memory requirement, both-checkpoint Docker contract, CRIC gallery provenance,
+> production smoke tests, failure diagnosis, and rollback steps. Render Starter
+> is not sufficient; use Standard (2 GB) as the single-user demo minimum.
+
 Last updated: 2026-07-07
 
 ## Build
