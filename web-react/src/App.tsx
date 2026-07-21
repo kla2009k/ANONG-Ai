@@ -15,6 +15,8 @@ import ReportPreview from "@/pages/ReportPreview";
 import ResearchReport from "@/pages/ResearchReport";
 import DemoMode from "@/pages/DemoMode";
 import Deployment from "@/pages/Deployment";
+import KoilEvidence from "@/pages/KoilEvidence";
+import HpvContext from "@/pages/HpvContext";
 
 function NotFound() {
   return (
@@ -32,6 +34,8 @@ export default function App() {
         <Route path="/" component={Landing} />
         <Route path="/analyze" component={Analyze} />
         <Route path="/gallery" component={CaseGallery} />
+        <Route path="/koil" component={KoilEvidence} />
+        <Route path="/hpv" component={HpvContext} />
         <Route path="/workflow" component={Workflow} />
         <Route path="/reports" component={ReportPreview} />
         <Route path="/research-report" component={ResearchReport} />

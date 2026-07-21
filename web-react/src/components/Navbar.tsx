@@ -3,9 +3,11 @@ import { Link, useLocation } from "wouter";
 import {
   BarChart3,
   BookOpen,
+  Dna,
   Home,
   Images,
   Info,
+  Microscope,
   Menu,
   Moon,
   Route,
@@ -21,6 +23,8 @@ type NavItem = { href: string; label: string; icon: LucideIcon };
 const NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: Home },
   { href: "/analyze", label: "Analyze", icon: ScanLine },
+  { href: "/koil", label: "KOIL Evidence", icon: Microscope },
+  { href: "/hpv", label: "HPV Context", icon: Dna },
   { href: "/gallery", label: "Case Gallery", icon: Images },
   { href: "/workflow", label: "Clinical Workflow", icon: Route },
   { href: "/performance", label: "Performance", icon: BarChart3 },

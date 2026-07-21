@@ -1,5 +1,19 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Web KOIL/HPV information architecture update 2026-07-21:** The English
+> Anong frontend now has two first-class routes: `/koil` and `/hpv`. `/koil`
+> reads the existing locked SIPaKMeD metrics and CCCID positive-challenge JSON,
+> joins challenge probabilities to prespecified reference cases by ID, shows
+> KOIL-specific evidence figures, and states the negative-inclusive external
+> validation gap. `/hpv` explicitly separates image morphology, a manually
+> entered external laboratory HPV result, and report-only clinical context. It
+> also explains that age/symptoms do not alter image probabilities. The primary
+> navigation intentionally increased from seven to nine items because the team
+> requested dedicated KOIL and HPV pages. Overview links to both pages. Build,
+> all 43 unit tests, and `python tools/audit_claims.py --all` passed. Browser
+> screenshot inspection was not available in this Codex session, so visual QA
+> still needs a real-browser desktop/mobile pass before claiming it complete.
+
 > **Critical KOIL/HPV update 2026-07-21:** Read
 > `docs/KOIL_REAL_DATA_VALIDATION_2026.md` and
 > `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md` first. The Case Gallery

@@ -1,57 +1,68 @@
-# DermaTrace AI — Frontend (React + Vite + Tailwind + shadcn-style)
+# Anong frontend
 
-ฟรอนต์เอนด์ React สำหรับ DermaTrace AI ออกแบบธีม **dark clinical** (charcoal + teal/violet)
-เรียก Python FastAPI backend เดิม (REST) ไม่มี login — เปิดใช้ได้ทันที
+React 19 + Vite 7 + Tailwind 4 frontend for the Anong user interface of the
+CerviCo-Pilot cervical-cytology research prototype.
 
-ต้นแบบ pattern/UX มาจากเว็บ DermaVision (Manus) แต่ปรับเป็น stack เบา ไม่ผูก platform:
-- ❌ ไม่มี OAuth / tRPC / MySQL / forge proxy (ของ Manus)
-- ✅ React 19 + Vite 7 + Tailwind 4 + shadcn-style components (Radix) + lucide icons
+## Current public behavior
 
-## โครงสร้าง
+- GitHub Pages is a static evidence deployment.
+- A configured `VITE_API_URL` enables uploaded-image analysis and server PDF
+  requests against the FastAPI backend.
+- Without a configured API, uploaded-image analysis must fail explicitly. The
+  user can still inspect precomputed evidence cases and the public galleries.
+- The interface is research decision support. It is not a diagnosis and no
+  endpoint is an HPV DNA/RNA assay.
+
+## Main routes
+
+- `/` overview and evidence readiness
+- `/analyze` image workflow, clinical context, XAI, uncertainty and report gate
+- `/koil` independent KOIL endpoint, validation evidence and reference cells
+- `/hpv` separation of morphology, laboratory HPV results and clinical context
+- `/gallery` external reference atlas and model error audit
+- `/workflow` clinician-in-the-loop workflow
+- `/performance` grade, triage and KOIL metrics
+- `/research-report` research documents and supporting views
+- `/about` intended use and limitations
+
+Secondary routes remain available through contextual links.
+
+## Local development
+
+From `web-react`:
+
+```powershell
+npm.cmd install
+npm.cmd run dev
 ```
-web-react/
-├── src/
-│   ├── App.tsx              # หน้าเดียว: header + hero + uploader + results
-│   ├── index.css            # ธีม dark clinical (oklch tokens)
-│   ├── lib/api.ts           # fetch /api/health, /api/analyze + types
-│   ├── lib/utils.ts         # cn()
-│   └── components/
-│       ├── Uploader.tsx     # drag-drop อัปโหลดภาพ
-│       ├── ResultView.tsx   # advisory + tabs (ภาพรวม/ภาพวิเคราะห์) + 7-class bars
-│       └── ui/              # button, card, badge, tabs (shadcn-style)
-└── vite.config.ts           # build → ../web  ·  dev proxy /api → :8002
+
+Vite proxies `/api` to `http://127.0.0.1:8003` during development.
+
+## Production build
+
+```powershell
+npm.cmd run build
 ```
 
-## พัฒนา (dev)
-```bash
-# terminal 1 — backend
-cd ../server && py -m uvicorn app:app --port 8002
-# terminal 2 — frontend (hot reload, proxy /api → 8002)
-cd web-react && npm run dev    # เปิด http://localhost:5173
+The build output is written to `../web-dist` and can be served by the FastAPI
+application or deployed through the GitHub Pages workflow.
+
+GitHub Pages build variables:
+
+- `VITE_BASE_PATH=/ANONG-Ai/`
+- `VITE_ROUTER_BASE=/ANONG-Ai`
+- `VITE_API_URL=<public backend origin>` when live inference is enabled
+
+## Verification
+
+From the project root:
+
+```powershell
+python -m unittest discover -s tests -v
+python tools\audit_claims.py --all
+cd web-react
+npm.cmd run build
 ```
 
-## Build (โปรดักชัน — FastAPI เสิร์ฟเอง)
-```bash
-cd web-react && npm run build  # output → ../web
-cd ../server && py -m uvicorn app:app --port 8002
-# เปิด http://localhost:8002
-```
-> `npm run build` เขียนทับโฟลเดอร์ `../web` (เวอร์ชัน vanilla เดิม backup ไว้ที่ `web-vanilla-backup/`)
-
-## API ที่เรียก
-- `GET /api/health` → `{ ok, segmentation, classification, classes, gemini }`
-- `POST /api/analyze { image: dataURL }` → `{ segmentation{overlay,heatmap,area_pct,found}, classification[], top, advisory, classification_mode, disclaimer }`
-- `POST /api/report { image, analysis }` → รายงาน AI จาก **Gemini (multimodal)** วิเคราะห์ภาพจริง
-  → `{ status: "ok"|"no_key"|"quota"|"error", report?{findings,impression,recommendation,risk}(2 ภาษา), message? }`
-
-## Gemini AI Report (ฟีเจอร์ใหม่ — ดีกว่า AMRG ของ DermaVision)
-- ส่ง **ภาพจริง** ให้ Gemini ดู (multimodal) → รายงาน 4 ส่วน ไทย/อังกฤษ — เป็น LLM-vision จริง ไม่ใช่อ่านแค่ text
-- key อยู่ `server/.env` (`GEMINI_API_KEY`, `GEMINI_MODEL=gemini-2.5-flash`) — **ไม่ commit** (ใน .gitignore)
-- รายงานมีหัวข้อ **MODEL VIEW** (โมเดลเห็นอะไร/เพราะอะไร) — ส่ง Grad-CAM + ผล 7 คลาส ให้ Gemini grounded
-- โควต้าแยกตาม model: ถ้า model ไหน 429 ลองเปลี่ยน `GEMINI_MODEL` (2.5-flash / 2.0-flash / flash-lite)
-- ⚠️ รัน server แบบ **persistent** (ไม่ใช่ detached ที่ตายเมื่อ shell ปิด) ไม่งั้นเว็บจะ "Failed to fetch"
-- จัดการ error ครบ: ไม่มี key → `no_key` · โควต้าหมด (429) → `quota` · อื่นๆ → `error` (UI แสดงข้อความ ไม่ crash)
-- ⚠️ ถ้า key เคยแชร์ในแชท/log → **rotate ใหม่**; ถ้าเจอ `quota` ต้องเปิด billing หรือรอ quota รายวัน reset
-
-ป้ายกำกับตรงตามจริยธรรมโปรเจกต์: segmentation = "CV จริง", classification = "เดโม"
-จนกว่าจะเสียบ ResNet จริง (`classification_mode === "model"` → ป้ายเปลี่ยนเป็น "โมเดลจริง")
+The claim audit is mandatory before publishing changes involving accuracy,
+HPV, KOIL, diagnosis, validation, or clinical-readiness language.

@@ -3,8 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
-// Build output goes to ../web so the FastAPI backend serves it (WEB = ROOT/"web").
-// In dev, proxy /api to the Python server on :8002.
+// Build output goes to ../web-dist for FastAPI or static deployment.
+// In development, proxy /api to the local Python server on :8003.
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || "./",
   plugins: [react(), tailwindcss()],

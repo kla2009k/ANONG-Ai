@@ -83,6 +83,25 @@ export default function Landing() {
           <Reveal as="div" className="mt-5 text-right">
             <Link href="/workflow" className="text-sm font-medium text-teal hover:text-teal-d">View the complete clinical workflow →</Link>
           </Reveal>
+
+          <Reveal as="section" className="mt-10 border-t border-line pt-8" aria-labelledby="endpoint-guides-title">
+            <div className="kicker mb-2">Understand the two endpoints</div>
+            <h2 id="endpoint-guides-title" className="font-display text-2xl font-semibold text-ink">Inspect the evidence before interpreting a result</h2>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <Link href="/koil" className="group rounded-lg border border-line bg-surface p-5 transition hover:border-teal">
+                <div className="font-mono text-[10px] uppercase tracking-[.16em] text-teal">Independent model</div>
+                <h3 className="mt-2 font-display text-xl font-semibold text-ink">KOIL morphology evidence</h3>
+                <p className="mt-2 text-sm leading-6 text-mut">Review the training domain, locked internal test, liquid-based positive challenge, visual examples, Grad-CAM and limitations.</p>
+                <div className="mt-4 text-sm font-semibold text-teal">Open KOIL evidence <span aria-hidden>→</span></div>
+              </Link>
+              <Link href="/hpv" className="group rounded-lg border border-line bg-surface p-5 transition hover:border-teal">
+                <div className="font-mono text-[10px] uppercase tracking-[.16em] text-teal">Clinical boundary</div>
+                <h3 className="mt-2 font-display text-xl font-semibold text-ink">HPV context, not HPV detection</h3>
+                <p className="mt-2 text-sm leading-6 text-mut">See how image morphology, a separate laboratory HPV result and clinician-entered context remain distinct in analysis and reporting.</p>
+                <div className="mt-4 text-sm font-semibold text-teal">Open HPV context <span aria-hidden>→</span></div>
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </header>
 
