@@ -1,5 +1,35 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Performance visualization update 2026-07-22:** `/performance` now exposes
+> KOIL in its tables and charts without inserting it as a fifth Herlev grade.
+> The top endpoint map identifies each output, dataset, test support and metric;
+> the recall chart has an explicit Herlev/SIPaKMeD boundary; and the KOIL
+> section includes a labelled 2x2 matrix plus ROC/PR and calibration evidence.
+> HPV infection remains visibly `Not developed` with zero paired assay cases.
+
+## Performance visualization update (2026-07-22)
+
+`web-react/src/pages/Performance.tsx` now provides the requested cross-endpoint
+view while preserving valid evaluation boundaries:
+
+- Endpoint map: four-class grade, binary safety triage, KOIL morphology, CCCID
+  positive-only KOIL challenge, and future molecular HPV endpoint.
+- Cross-endpoint recall chart: NILM/LSIL/HSIL/SCC use the Herlev held-out set;
+  KOIL uses the independent SIPaKMeD locked test. A visual separator and test
+  support labels prevent the bars from implying a shared five-class model.
+- KOIL 2x2 matrix: TN=496, FP=12, FN=5, TP=128; positive support 133,
+  negative support 508, locked threshold 0.3367, test n=641.
+- KOIL metric cards: sensitivity 0.9624, specificity 0.9764, AUROC 0.9912,
+  AUPRC 0.9810, F1 0.9377, and ECE 0.0134.
+- Existing canonical figures `evidence/koil_test_performance.png` and
+  `evidence/koil_calibration.png` are now visible directly on Performance.
+- HPV is included in the endpoint table only as a missing paired molecular
+  endpoint. It has zero paired test cases and no performance claim.
+
+Do not replace the two valid confusion matrices with a single matrix containing
+NILM/LSIL/HSIL/SCC/KOIL. KOIL can coexist with a grade, and the current grade
+and KOIL evidence comes from different test datasets.
+
 > **Frontend consolidation update 2026-07-22:** The public navigation now
 > centers on six core destinations. KOIL Evidence, HPV Context, and Clinical
 > Workflow are combined at `/clinical-evidence`; legacy routes still render the
