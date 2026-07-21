@@ -52,16 +52,27 @@ const EVIDENCE = [
 export default function KoilEvidence() {
   const [manifest, setManifest] = useState<KoilManifest | null>(null);
   const [challenge, setChallenge] = useState<KoilChallenge | null>(null);
+  const [caseFilter, setCaseFilter] = useState<"all" | "intermediate" | "superficial" | "detected" | "missed">("all");
+  const [showAll, setShowAll] = useState(false);
+  const [evidenceError, setEvidenceError] = useState("");
 
   useEffect(() => {
-    fetch(`${BASE}koil-gallery/index.json`).then((r) => r.json()).then(setManifest).catch(() => setManifest(null));
-    fetch(`${BASE}evidence/cccid_koil_20_case_challenge.json`).then((r) => r.json()).then(setChallenge).catch(() => setChallenge(null));
+    fetch(`${BASE}koil-gallery/index.json`).then((r) => r.ok ? r.json() : Promise.reject()).then(setManifest).catch(() => { setManifest(null); setEvidenceError("KOIL reference manifest could not be loaded."); });
+    fetch(`${BASE}evidence/cccid_koil_20_case_challenge.json`).then((r) => r.ok ? r.json() : Promise.reject()).then(setChallenge).catch(() => { setChallenge(null); setEvidenceError("KOIL challenge results could not be loaded."); });
   }, []);
 
   const examples = useMemo(() => {
     const result = new Map(challenge?.rows.map((row) => [row.id, row]) || []);
-    return (manifest?.items || []).slice(0, 8).map((item) => ({ ...item, result: result.get(item.id) }));
-  }, [manifest, challenge]);
+    const joined = (manifest?.items || []).map((item) => ({ ...item, result: result.get(item.id) }));
+    const filtered = joined.filter((item) => {
+      if (caseFilter === "intermediate") return item.subtype.toLowerCase().includes("intermediate");
+      if (caseFilter === "superficial") return item.subtype.toLowerCase().includes("superficial");
+      if (caseFilter === "detected") return item.result?.positive === true;
+      if (caseFilter === "missed") return item.result?.positive === false;
+      return true;
+    });
+    return showAll || caseFilter !== "all" ? filtered : filtered.slice(0, 8);
+  }, [manifest, challenge, caseFilter, showAll]);
 
   const k = METRICS.koil;
   return (
@@ -131,7 +142,13 @@ export default function KoilEvidence() {
             <div><div className="kicker mb-2">External positive challenge</div><h2 id="cases-title" className="font-display text-3xl font-semibold text-ink">Prespecified liquid-based reference cells</h2></div>
             <div className="font-mono text-xs text-mut">{challenge ? `${challenge.true_positive}/${challenge.support_positive} detected` : "Loading evidence..."}</div>
           </div>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-mut">These are the first eight of 20 expert-labelled CCCID v2 KOIL-positive center-focus images selected before model inference. They are not patient-level cases and are not a representative screening cohort.</p>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-mut">The explorer contains 20 expert-labelled CCCID v2 KOIL-positive center-focus images selected before model inference. It opens with eight examples for scanning; use the filters to inspect every detection and the visible false negative. These are not patient-level cases or a representative screening cohort.</p>
+          <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Filter external KOIL challenge cases">
+            {(["all", "intermediate", "superficial", "detected", "missed"] as const).map((filter) => <button key={filter} type="button" onClick={() => { setCaseFilter(filter); setShowAll(true); }} className={"rounded-lg border px-3 py-1.5 text-xs font-semibold capitalize " + (caseFilter === filter ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal")}>{filter}</button>)}
+            {caseFilter === "all" && <button type="button" onClick={() => setShowAll((value) => !value)} className="ml-auto rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-teal hover:border-teal">{showAll ? "Show first 8" : "View all 20"}</button>}
+            <a href={`${BASE}evidence/cccid_koil_20_case_challenge.json`} download className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-teal hover:border-teal">Download challenge JSON</a>
+          </div>
+          {evidenceError && <div className="mt-4 rounded-lg border border-scc/40 p-4 text-sm text-scc" role="alert">{evidenceError} Reload the page to retry.</div>}
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             {examples.map((item) => (
               <figure key={item.id} className="overflow-hidden rounded-lg border border-line bg-surface">
@@ -139,11 +156,12 @@ export default function KoilEvidence() {
                 <figcaption className="p-3">
                   <div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-ink">{item.id.replace("CCCID-KOIL-", "")}</span>{item.result && <CheckCircle2 size={15} className={item.result.positive ? "text-[var(--nilm)]" : "text-[var(--scc)]"} aria-label={item.result.positive ? "Detected" : "Missed"} />}</div>
                   <div className="mt-1 text-[11px] text-mut">{item.subtype}</div>
-                  {item.result && <div className="mt-2 font-mono text-xs text-teal">p={item.result.koil_probability.toFixed(4)}</div>}
+                  {item.result && <><div className="mt-2 flex items-center justify-between font-mono text-[10px] text-mut"><span>p={item.result.koil_probability.toFixed(4)}</span><span>t={item.result.locked_threshold.toFixed(4)}</span></div><div className="relative mt-1 h-2 rounded-full bg-line"><div className="h-2 rounded-full bg-[var(--koil)]" style={{ width: `${Math.max(2, item.result.koil_probability * 100)}%` }} /><span className="absolute -top-1 h-4 w-px bg-scc" style={{ left: `${item.result.locked_threshold * 100}%` }} /></div><div className={"mt-1 text-[10px] font-semibold " + (item.result.positive ? "text-nilm" : "text-scc")}>{item.result.positive ? "Detected above locked threshold" : "Missed below locked threshold"}</div></>}
                 </figcaption>
               </figure>
             ))}
           </div>
+          {!examples.length && !evidenceError && <div className="mt-5 rounded-lg border border-dashed border-line p-6 text-center text-sm text-mut">No cases match this filter.</div>}
           <p className="mt-3 text-[11px] leading-5 text-mut">{manifest?.attribution || "CCCID v2"}. <a href={manifest?.dataset_url} target="_blank" rel="noreferrer" className="text-teal underline">Dataset record</a> · <a href={manifest?.license_url} target="_blank" rel="noreferrer" className="text-teal underline">{manifest?.license || "CC BY-NC 4.0"}</a>.</p>
         </section>
 

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AlertCircle, ArrowRight, ClipboardPlus, Dna, Eye, FileCheck2, TestTube2 } from "lucide-react";
 
@@ -24,6 +25,11 @@ const ROADMAP = [
 ] as const;
 
 export default function HpvContext() {
+  const [grade, setGrade] = useState("NILM");
+  const [koil, setKoil] = useState("negative");
+  const [lab, setLab] = useState("not_performed");
+  const [symptoms, setSymptoms] = useState(false);
+  const guide = useMemo(() => interpretState(grade, koil, lab, symptoms), [grade, koil, lab, symptoms]);
   return (
     <div className="pb-16">
       <section className="brand-band">
@@ -71,6 +77,30 @@ export default function HpvContext() {
           <div className="mt-6 overflow-x-auto rounded-lg border border-line bg-surface"><table className="w-full min-w-[760px] border-collapse text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4 text-ink">Observed state</th><th className="p-4 text-ink">Meaning inside Anong</th><th className="p-4 text-ink">Required interpretation</th></tr></thead><tbody className="divide-y divide-line">{INTERPRETATION.map(([state, meaning, action]) => <tr key={state}><th className="p-4 align-top font-semibold text-ink">{state}</th><td className="p-4 align-top leading-6 text-mut">{meaning}</td><td className="p-4 align-top leading-6 text-mut">{action}</td></tr>)}</tbody></table></div>
         </section>
 
+        <section className="grid gap-7 border-y border-line py-12 lg:grid-cols-[.8fr_1.2fr]" aria-labelledby="interpreter-title">
+          <div>
+            <div className="kicker mb-2">Educational state explorer</div>
+            <h2 id="interpreter-title" className="font-display text-3xl font-semibold text-ink">Compare morphology with an independent laboratory result</h2>
+            <p className="mt-3 text-sm leading-6 text-mut">This guide uses fixed safety language. It does not calculate patient risk, change model probabilities, recommend treatment, or replace the applicable screening guideline.</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <SelectField label="Reviewed cytology grade" value={grade} onChange={setGrade} options={["NILM", "LSIL", "HSIL", "SCC"]} />
+              <SelectField label="KOIL morphology endpoint" value={koil} onChange={setKoil} options={["negative", "positive", "unavailable"]} />
+              <SelectField label="Separate laboratory HPV result" value={lab} onChange={setLab} options={["not_performed", "negative", "positive", "unknown"]} />
+              <label className="flex items-center gap-3 rounded-lg border border-line bg-surface p-3 text-sm text-mut"><input type="checkbox" checked={symptoms} onChange={(event) => setSymptoms(event.target.checked)} className="accent-[var(--teal)]" />Symptoms reported</label>
+            </div>
+          </div>
+          <div className="rounded-lg border border-line bg-surface p-6" aria-live="polite">
+            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-teal">Interpretation guide, not a diagnosis</div>
+            <h3 className="mt-2 font-display text-2xl font-semibold text-ink">{guide.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-mut">{guide.morphology}</p>
+            <dl className="mt-5 divide-y divide-line border-y border-line text-sm">
+              <div className="grid gap-2 py-4 sm:grid-cols-[9rem_1fr]"><dt className="font-semibold text-ink">Laboratory evidence</dt><dd className="leading-6 text-mut">{guide.lab}</dd></div>
+              <div className="grid gap-2 py-4 sm:grid-cols-[9rem_1fr]"><dt className="font-semibold text-ink">Safety action</dt><dd className="leading-6 text-mut">{guide.action}</dd></div>
+              <div className="grid gap-2 py-4 sm:grid-cols-[9rem_1fr]"><dt className="font-semibold text-ink">What is unknown</dt><dd className="leading-6 text-mut">Viral genotype, viral load, persistence and infection status cannot be inferred from this image state.</dd></div>
+            </dl>
+          </div>
+        </section>
+
         <section className="blush-panel rounded-lg border p-6" aria-labelledby="clinical-fields-title">
           <div className="flex items-start gap-3"><FileCheck2 className="mt-1 shrink-0 text-teal" size={22} aria-hidden /><div><h2 id="clinical-fields-title" className="font-display text-2xl font-semibold text-ink">Age, symptoms and HPV results are report context</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-mut">The Analyze page accepts age, specimen type, screening history, symptoms, a separately reported HPV result/genotype, prior abnormal result, immune status and pregnancy. They are included for review safety and documentation, but they do not change the image prediction in the current prototype. Direct identifiers must not be entered.</p></div></div>
           <div className="mt-5 flex flex-wrap gap-3"><Link href="/analyze" className="rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-d">Open Analyze</Link><Link href="/reports" className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:border-teal">Review report structure</Link></div>
@@ -96,4 +126,30 @@ export default function HpvContext() {
 
 function FlowStep({ number, title, detail }: { number: string; title: string; detail: string }) {
   return <div className="grid gap-2 rounded-lg border border-line bg-surface p-4 sm:grid-cols-[2.5rem_12rem_1fr]"><span className="font-mono text-sm text-teal">{number}</span><h3 className="font-semibold text-ink">{title}</h3><p className="text-sm leading-6 text-mut">{detail}</p></div>;
+}
+
+function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) {
+  return <label className="text-xs text-mut">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink">{options.map((option) => <option key={option} value={option}>{option.replaceAll("_", " ")}</option>)}</select></label>;
+}
+
+function interpretState(grade: string, koil: string, lab: string, symptoms: boolean) {
+  const title = symptoms ? "Symptoms require a separate clinical pathway" : grade === "HSIL" || grade === "SCC" ? "High-risk cytology remains the primary image finding" : koil === "positive" ? "Koilocytotic morphology was flagged" : "No prominent koilocytotic morphology was flagged";
+  const morphology = koil === "positive"
+    ? `The independent KOIL endpoint is positive alongside a reviewed ${grade} cytology category. This supports morphology review but does not establish HPV infection.`
+    : koil === "negative"
+      ? `The independent KOIL endpoint is negative alongside a reviewed ${grade} category. Absence of this morphology does not rule out HPV.`
+      : `The KOIL endpoint is unavailable, so no morphology statement should be inferred from it. The reviewed cytology category remains ${grade}.`;
+  const labText = lab === "positive"
+    ? "A separately reported positive molecular result is the relevant HPV evidence; it must not be re-labelled as an AI image prediction."
+    : lab === "negative"
+      ? "A separately reported negative molecular result remains distinct from the cytology and KOIL outputs."
+      : lab === "unknown"
+        ? "No interpretable laboratory HPV result is available in the current context."
+        : "No laboratory HPV assay has been reported in this demonstration state.";
+  const action = symptoms
+    ? "Evaluate reported symptoms independently. Do not use a NILM, low-confidence, or KOIL-negative image result for reassurance."
+    : grade === "HSIL" || grade === "SCC"
+      ? "Prioritize qualified review and the applicable confirmatory pathway based on the cytology finding; HPV status is not established by the image model."
+      : "Use qualified review and the applicable screening pathway. Molecular testing decisions remain separate from this educational guide.";
+  return { title, morphology, lab: labText, action };
 }

@@ -1,5 +1,25 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Static evidence hardening update 2026-07-21:** The public frontend now
+> distinguishes static evidence from live API mode before upload; static mode
+> never maps a canned prediction to a new upload. `ReportPreview` uses only
+> `GRADE_CLASS_KEYS` for Bethesda-style grade and carries KOIL separately. Five
+> de-identified PDFs in `web-react/public/reports/` were generated from real
+> local dual-model runs by `tools/generate_public_demo_reports.py`; their
+> manifest stores SHA-256 hashes and exposes two clinician-edited grade cases.
+> KOIL has a filterable all-20 external challenge explorer, and HPV has a
+> deterministic educational state explorer. XAI now supports compare, overlay,
+> opacity, zoom, boundary, and download views for separate grade and KOIL
+> endpoints. Gallery references have a keyboard/lightbox viewer. GitHub Pages
+> generates per-route `index.html` files so deep links return HTTP 200.
+>
+> Dataset reporting policy: `web-react/public/evidence/dataset_registry.json`
+> catalogues ten sources but counts only Herlev + SIPaKMeD (4,966 images) as
+> current model-development data. CCCID is a 20-positive external challenge;
+> CRIC is a reference atlas; all other records are unused candidates. Never add
+> candidate/repository counts to the model training total. No current source
+> supplies paired molecular HPV ground truth for a validated HPV endpoint.
+
 > **Web KOIL/HPV information architecture update 2026-07-21:** The English
 > Anong frontend now has two first-class routes: `/koil` and `/hpv`. `/koil`
 > reads the existing locked SIPaKMeD metrics and CCCID positive-challenge JSON,

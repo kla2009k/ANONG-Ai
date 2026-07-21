@@ -1,0 +1,83 @@
+{
+  "generated_by": "tools/generate_public_demo_reports.py",
+  "generation_mode": "real_local_dual_model_inference",
+  "contains_patient_identifiers": false,
+  "regulated_medical_report": false,
+  "reports": [
+    {
+      "case_id": "ANONG-DEMO-NILM",
+      "file": "reports/anong-demo-nilm.pdf",
+      "grade": "NILM",
+      "model_grade": "NILM",
+      "reference_grade": "NILM",
+      "prediction_correct": true,
+      "koil_status": "positive",
+      "koil_probability": 0.7807,
+      "review_status": "confirmed",
+      "source_image": "samples/s00_NILM.jpg",
+      "model_mode": "model",
+      "sha256": "5d9cbececec94aabf969ceff13dd7885b53178921c38b7ec7ed2e3edee6ea2e2",
+      "bytes": 788318
+    },
+    {
+      "case_id": "ANONG-DEMO-LSIL",
+      "file": "reports/anong-demo-lsil.pdf",
+      "grade": "LSIL",
+      "model_grade": "LSIL",
+      "reference_grade": "LSIL",
+      "prediction_correct": true,
+      "koil_status": "positive",
+      "koil_probability": 0.9853,
+      "review_status": "confirmed",
+      "source_image": "samples/s02_LSIL.jpg",
+      "model_mode": "model",
+      "sha256": "c607634e418b5fa3615d8f6e8124914c96d56968cb281e8d4693b7d7f2af6149",
+      "bytes": 704776
+    },
+    {
+      "case_id": "ANONG-DEMO-HSIL",
+      "file": "reports/anong-demo-hsil.pdf",
+      "grade": "HSIL",
+      "model_grade": "SCC",
+      "reference_grade": "HSIL",
+      "prediction_correct": false,
+      "koil_status": "positive",
+      "koil_probability": 0.5958,
+      "review_status": "edited",
+      "source_image": "samples/s04_HSIL.jpg",
+      "model_mode": "model",
+      "sha256": "3091a5ff7d08bab020e2964a51fea88f75e5508aab6667ad40bc53d6ca085887",
+      "bytes": 537451
+    },
+    {
+      "case_id": "ANONG-DEMO-SCC",
+      "file": "reports/anong-demo-scc.pdf",
+      "grade": "SCC",
+      "model_grade": "HSIL",
+      "reference_grade": "SCC",
+      "prediction_correct": false,
+      "koil_status": "positive",
+      "koil_probability": 0.8856,
+      "review_status": "edited",
+      "source_image": "samples/s06_SCC.jpg",
+      "model_mode": "model",
+      "sha256": "b61199c8ce5ed31e7aac266e3bdacf211ae4d222cf6f660f006086d2ebffeaf9",
+      "bytes": 629445
+    },
+    {
+      "case_id": "ANONG-DEMO-KOIL",
+      "file": "reports/anong-demo-koil.pdf",
+      "grade": "NILM",
+      "model_grade": "NILM",
+      "reference_grade": null,
+      "prediction_correct": true,
+      "koil_status": "positive",
+      "koil_probability": 0.9831,
+      "review_status": "confirmed",
+      "source_image": "koil-gallery/koil-superficial-01.jpg",
+      "model_mode": "model",
+      "sha256": "599882cf6573e7ae36890736007f1fb2d4c06e13f8a55248bde522638a7543a2",
+      "bytes": 879793
+    }
+  ]
+}

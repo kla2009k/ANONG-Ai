@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 
 const STEPS = [
@@ -24,20 +25,34 @@ const STEPS = [
   },
   {
     n: "4",
+    title: "Separate KOIL evidence",
+    path: "/koil",
+    action: "Show the locked SIPaKMeD test, the 20-positive CCCID challenge, threshold, and the visible false negative.",
+    proof: "KOIL is an independent morphology endpoint with explicit domain and external-evidence limitations.",
+  },
+  {
+    n: "5",
+    title: "Explain the HPV boundary",
+    path: "/hpv",
+    action: "Use the state explorer to contrast image morphology with a separately reported laboratory HPV result.",
+    proof: "No image endpoint claims viral DNA/RNA, genotype, persistence, or infection status.",
+  },
+  {
+    n: "6",
     title: "Prove it is not cherry-picked",
     path: "/gallery",
     action: "Open the case gallery and show correct, incorrect, and high-uncertainty cases.",
     proof: "Reviewers can inspect real errors and explicit limitations.",
   },
   {
-    n: "5",
-    title: "Explain the workflow",
-    path: "/workflow",
-    action: "Walk through the safety gates from image to AI, human review, report, and follow-up.",
-    proof: "The product is a controlled clinical workflow rather than an isolated classifier.",
+    n: "7",
+    title: "Download a reviewed report",
+    path: "/reports",
+    action: "Open a frozen PDF generated from a real local model run and point out clinician edits and the KOIL section.",
+    proof: "Static evidence includes reproducible PDF artifacts; live generation remains available through the local backend.",
   },
   {
-    n: "6",
+    n: "8",
     title: "Open evidence package",
     path: "/research-report",
     action: "Show the research report, bibliography, model card, and validation roadmap.",
@@ -46,12 +61,14 @@ const STEPS = [
 ];
 
 export default function DemoMode() {
+  const [step, setStep] = useState(0);
+  const active = STEPS[step];
   return (
     <div className="mx-auto max-w-6xl px-6 py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="kicker mb-2">Judge demo mode</div>
-          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Six-step demonstration script for reviewers</h1>
+          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Eight-step demonstration script for reviewers</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">
             Use this page as a teleprompter for a live demonstration, moving from current evidence to analysis,
             clinician sign-off, the honest gallery, workflow controls, and the evidence package.
@@ -62,13 +79,18 @@ export default function DemoMode() {
         </Link>
       </div>
 
+      <section className="butter-panel mt-8 rounded-lg border p-6" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div className="font-mono text-xs uppercase tracking-[.16em] text-teal">Presentation mode · {step + 1} of {STEPS.length}</div><div className="flex gap-2"><button type="button" disabled={step === 0} onClick={() => setStep((value) => value - 1)} className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-mut disabled:opacity-40">Previous</button><button type="button" disabled={step === STEPS.length - 1} onClick={() => setStep((value) => value + 1)} className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-mut disabled:opacity-40">Next</button></div></div>
+        <h2 className="mt-4 font-display text-3xl font-semibold text-ink">{active.n}. {active.title}</h2><p className="mt-3 text-base leading-7 text-ink">{active.action}</p><p className="mt-2 text-sm leading-6 text-mut"><b className="text-ink">Evidence to point out:</b> {active.proof}</p><Link href={active.path} className="mt-5 inline-block rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white">Open this step</Link>
+      </section>
+
       <div className="mt-8 grid gap-4">
         {STEPS.map((s) => (
-          <section key={s.n} className="card p-5">
+          <section key={s.n} className={"card p-5 " + (s.n === active.n ? "border-teal" : "")}>
             <div className="grid gap-4 md:grid-cols-[72px_1fr_auto] md:items-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-teal font-mono text-xl font-semibold text-white">
-                {s.n}
-              </div>
+                <button type="button" onClick={() => setStep(Number(s.n) - 1)} aria-label={`Select demo step ${s.n}`} className="grid h-14 w-14 place-items-center rounded-lg bg-teal font-mono text-xl font-semibold text-white">
+                  {s.n}
+                </button>
               <div>
                 <h2 className="font-display text-xl font-semibold text-ink">{s.title}</h2>
                 <p className="mt-1 text-sm text-ink">{s.action}</p>

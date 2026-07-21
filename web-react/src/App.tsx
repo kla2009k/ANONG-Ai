@@ -1,22 +1,25 @@
+import { lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
 import { Layout } from "@/components/Layout";
 import Landing from "@/pages/Landing";
-import Analyze from "@/pages/Analyze";
-import Performance from "@/pages/Performance";
-import Knowledge from "@/pages/Knowledge";
-import ModelCard from "@/pages/ModelCard";
-import About from "@/pages/About";
-import Settings from "@/pages/Settings";
-import History from "@/pages/History";
-import Ask from "@/pages/Ask";
-import CaseGallery from "@/pages/CaseGallery";
-import Workflow from "@/pages/Workflow";
-import ReportPreview from "@/pages/ReportPreview";
-import ResearchReport from "@/pages/ResearchReport";
-import DemoMode from "@/pages/DemoMode";
-import Deployment from "@/pages/Deployment";
-import KoilEvidence from "@/pages/KoilEvidence";
-import HpvContext from "@/pages/HpvContext";
+
+const Analyze = lazy(() => import("@/pages/Analyze"));
+const Performance = lazy(() => import("@/pages/Performance"));
+const Knowledge = lazy(() => import("@/pages/Knowledge"));
+const ModelCard = lazy(() => import("@/pages/ModelCard"));
+const About = lazy(() => import("@/pages/About"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const History = lazy(() => import("@/pages/History"));
+const Ask = lazy(() => import("@/pages/Ask"));
+const CaseGallery = lazy(() => import("@/pages/CaseGallery"));
+const Workflow = lazy(() => import("@/pages/Workflow"));
+const ReportPreview = lazy(() => import("@/pages/ReportPreview"));
+const ResearchReport = lazy(() => import("@/pages/ResearchReport"));
+const DemoMode = lazy(() => import("@/pages/DemoMode"));
+const Deployment = lazy(() => import("@/pages/Deployment"));
+const KoilEvidence = lazy(() => import("@/pages/KoilEvidence"));
+const HpvContext = lazy(() => import("@/pages/HpvContext"));
+const DatasetRegistry = lazy(() => import("@/pages/DatasetRegistry"));
 
 function NotFound() {
   return (
@@ -30,12 +33,14 @@ function NotFound() {
 export default function App() {
   return (
     <Layout>
-      <Switch>
+      <Suspense fallback={<div className="mx-auto max-w-6xl px-6 py-20" role="status"><div className="h-3 w-32 animate-pulse rounded bg-line" /><div className="mt-4 h-10 max-w-xl animate-pulse rounded bg-line" /><div className="mt-6 h-48 animate-pulse rounded-lg border border-line bg-surface" /></div>}>
+        <Switch>
         <Route path="/" component={Landing} />
         <Route path="/analyze" component={Analyze} />
         <Route path="/gallery" component={CaseGallery} />
         <Route path="/koil" component={KoilEvidence} />
         <Route path="/hpv" component={HpvContext} />
+        <Route path="/datasets" component={DatasetRegistry} />
         <Route path="/workflow" component={Workflow} />
         <Route path="/reports" component={ReportPreview} />
         <Route path="/research-report" component={ResearchReport} />
@@ -49,7 +54,8 @@ export default function App() {
         <Route path="/about" component={About} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
-      </Switch>
+        </Switch>
+      </Suspense>
     </Layout>
   );
 }

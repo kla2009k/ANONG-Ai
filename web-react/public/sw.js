@@ -1,7 +1,7 @@
 // Anong / CerviCo-Pilot — minimal service worker.
 // Strategy: network-first for /api (never cache predictions), cache-first for the
 // app shell + static assets so the UI loads offline. AI features still need network.
-const CACHE = "anong-en-v8";
+const CACHE = "anong-en-v9";
 const SHELL = ["./", "./manifest.webmanifest", "./icon-192.svg", "./icon-512.svg"];
 
 self.addEventListener("install", (e) => {

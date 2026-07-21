@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, FileDown, Info, LoaderCircle, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, FileDown, Info, LoaderCircle, RotateCcw, ShieldCheck, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { XaiReviewPanel, type XaiState } from "@/components/XaiReviewPanel";
 import { GRADE_CLASS_KEYS, classInfo, analyzeReal, type Sample } from "@/lib/data";
@@ -70,6 +70,7 @@ function htmlEscape(value: string) {
 }
 export default function Analyze() {
   const [samples, setSamples] = useState<Sample[]>([]);
+  const [samplesState, setSamplesState] = useState<"loading" | "ready" | "error">("loading");
   const [sampleFilter, setSampleFilter] = useState("ALL");
   const [res, setRes] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
@@ -83,7 +84,10 @@ export default function Analyze() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch(`${BASE}samples/samples.json`).then((r) => r.json()).then(setSamples).catch(() => setSamples([]));
+    fetch(`${BASE}samples/samples.json`).then((r) => {
+      if (!r.ok) throw new Error("Sample manifest unavailable.");
+      return r.json();
+    }).then((data) => { setSamples(data); setSamplesState("ready"); }).catch(() => { setSamples([]); setSamplesState("error"); });
     backendStatus().then(setBackend);
     const reference = new URLSearchParams(window.location.search).get("reference");
     if (reference?.startsWith("koil-gallery/") && /^[a-z0-9/_-]+\.jpg$/i.test(reference)) {
@@ -117,6 +121,15 @@ export default function Analyze() {
       xai: { ok: Boolean(s.cam), provenance: "precomputed", primaryMethod: "gradcam" },
       source: "Real Herlev example processed by the evaluated model (held-out; not used for training).",
     });
+  }
+
+  function clearCase() {
+    setUpImg(null);
+    setFileName("");
+    setRes(null);
+    setErr("");
+    setClinicalContext(EMPTY_CLINICAL_CONTEXT);
+    if (fileRef.current) fileRef.current.value = "";
   }
 
   function onFile(f: File) {
@@ -201,6 +214,17 @@ export default function Analyze() {
       </p>
       <ClinicalContextPanel value={clinicalContext} onChange={setClinicalContext} />
 
+      <section className={"mt-5 rounded-lg border p-4 " + (backend.ready ? "border-nilm/50 bg-surface" : "blush-panel")} aria-labelledby="deployment-mode-title">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-teal">{backend.ready ? "Live model mode" : "Static evidence mode"}</div>
+            <h2 id="deployment-mode-title" className="mt-1 font-display text-lg font-semibold text-ink">{backend.ready ? "Uploaded images are processed by the configured dual-model API" : "New uploads can be previewed, but are not analyzed on this deployment"}</h2>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-mut">{backend.ready ? "The image is sent to the configured inference service for quality checks, four-class grade inference, KOIL morphology, uncertainty and XAI." : "Select a validated Herlev reference below to inspect a real precomputed grade result. Static mode never attaches a reference result to a newly uploaded image."}</p>
+          </div>
+          <span className={"rounded-full border px-3 py-1 text-xs font-semibold " + (backend.ready ? "border-nilm text-nilm" : "border-teal text-teal")}>{backend.ready ? "API ready" : "Evidence only"}</span>
+        </div>
+      </section>
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(260px,.75fr)_minmax(0,1.25fr)]">
         <div>
           <label
@@ -215,6 +239,7 @@ export default function Analyze() {
             )}
           </label>
           {fileName && <div className="mt-2 truncate text-xs text-mut">Selected: <span className="text-ink">{fileName}</span></div>}
+          {(upImg || res) && <button type="button" onClick={clearCase} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-teal hover:text-teal-d"><RotateCcw size={13} aria-hidden />Clear case and clinical context</button>}
           <button disabled={!upImg || busy || !backend.ready} onClick={runUpload}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-teal py-3 font-medium text-white transition hover:bg-teal-d disabled:cursor-not-allowed disabled:opacity-40" aria-busy={busy}>
             {busy && <LoaderCircle className="animate-spin" size={17} aria-hidden />}
@@ -226,7 +251,7 @@ export default function Analyze() {
             <span>{backend.detail} {!backend.ready && "Precomputed evidence cases remain available below."}</span>
           </div>
           {/* privacy note (S11) */}
-          <p className="mt-2 text-[11px] text-mut">🔒 Uploaded images are processed by the local server on port 8003 and are not permanently stored. Precomputed examples work offline.</p>
+          <p className="mt-2 text-[11px] text-mut">{backend.ready ? "Privacy: the image is sent to the configured inference service. The prototype does not intentionally persist image payloads, but deployment-specific privacy controls are still required before real patient data." : "Privacy: static mode keeps the selected preview in this browser session and does not send it for inference. Do not enter direct patient identifiers."}</p>
           {err && <p className="mt-3 flex items-start gap-2 rounded-lg p-3 text-xs" role="alert" style={{ background: "color-mix(in srgb,var(--hsil) 12%,transparent)", color: "var(--hsil)" }}><AlertTriangle className="mt-0.5 shrink-0" size={15} aria-hidden />{err}</p>}
         </div>
 
@@ -258,6 +283,8 @@ export default function Analyze() {
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {samplesState === "loading" && Array.from({ length: 4 }, (_, index) => <div key={index} className="aspect-square animate-pulse rounded-lg border border-line bg-surface" aria-hidden />)}
+        {samplesState === "error" && <div className="col-span-full rounded-lg border border-scc/40 p-5 text-sm text-scc" role="alert">Validated sample manifest could not be loaded. Reload the page or use the Case Gallery.</div>}
         {samples.filter((s) => sampleFilter === "ALL" || s.top === sampleFilter || s.true_label === sampleFilter).map((s) => {
           const I = classInfo(s.top);
           return (
@@ -451,6 +478,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
         activationCoverage={res.activationCoverage}
         activationThreshold={res.activationThreshold}
         xai={res.xai}
+        endpointLabel="Four-class grade endpoint"
       />
 
       {res.quality && (
@@ -514,12 +542,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
           </div>
         )}
       </div>
-      {res.koilCam && (
-        <figure className="mt-3 rounded-lg border border-line p-3">
-          <img src={res.koilCam} className="mx-auto max-h-80 rounded-lg object-contain" alt="KOIL-specific Grad-CAM heatmap" />
-          <figcaption className="mt-2 text-xs text-mut"><b className="text-ink">KOIL-specific Grad-CAM.</b> This map targets the independent koilocytotic-morphology output. It is attention evidence, not cell segmentation and not proof of HPV infection.</figcaption>
-        </figure>
-      )}
+      {res.koilCam && <div className="mt-3"><XaiReviewPanel image={res.image} cam={res.koilCam} camSource="koil_specific_gradcam" xai={{ ok: Boolean(res.koilXaiOk), provenance: "live", primaryMethod: "gradcam" }} endpointLabel="Independent KOIL morphology endpoint" /></div>}
       {res.trueLabel && (
         <div className="mt-1 text-xs text-mut">True label: <b style={{ color: classInfo(res.trueLabel).color }}>{classInfo(res.trueLabel).icon} {res.trueLabel}</b>
           {res.correct ? <span style={{ color: "var(--nilm)" }}> · Correct prediction</span> : <span style={{ color: "var(--scc)" }}> · Incorrect prediction</span>}</div>

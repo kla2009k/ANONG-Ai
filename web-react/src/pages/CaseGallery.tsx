@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
+import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { CLASS_KEYS, classInfo } from "@/lib/data";
 
 const BASE = import.meta.env.BASE_URL;
@@ -79,6 +80,8 @@ export default function CaseGallery() {
   const [atlasFilter, setAtlasFilter] = useState("ALL");
   const [visibleAtlas, setVisibleAtlas] = useState(24);
   const [showCam, setShowCam] = useState<Record<string, boolean>>({});
+  const [selectedRef, setSelectedRef] = useState<ReferenceCase | null>(null);
+  const [viewerZoom, setViewerZoom] = useState(1);
 
   useEffect(() => {
     fetch(`${BASE}samples/error_cases.json`).then((r) => r.json()).then(setCases).catch(() => setCases([]));
@@ -86,6 +89,17 @@ export default function CaseGallery() {
     fetch(`${BASE}koil-gallery/index.json`).then((r) => r.json()).then(setKoil).catch(() => setKoil(null));
     fetch(`${BASE}evidence/cccid_koil_20_case_challenge.json`).then((r) => r.json()).then(setKoilChallenge).catch(() => setKoilChallenge(null));
   }, []);
+
+  useEffect(() => {
+    if (!selectedRef) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedRef(null);
+      if (event.key === "ArrowLeft") moveReference(-1);
+      if (event.key === "ArrowRight") moveReference(1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   const filtered = useMemo(() => (
     cases.filter((c) => filter === "ALL" || c.true_label === filter || c.predicted_label === filter || c.error_bucket === filter)
@@ -104,6 +118,14 @@ export default function CaseGallery() {
   function changeAtlasFilter(next: string) {
     setAtlasFilter(next);
     setVisibleAtlas(24);
+  }
+
+  function moveReference(delta: number) {
+    if (!selectedRef || !atlasCases.length) return;
+    const index = atlasCases.findIndex((item) => item.id === selectedRef.id);
+    const next = (index + delta + atlasCases.length) % atlasCases.length;
+    setSelectedRef(atlasCases[next]);
+    setViewerZoom(1);
   }
 
   return (
@@ -177,9 +199,10 @@ export default function CaseGallery() {
               const info = classInfo(item.class);
               return (
                 <figure key={item.id} className="card overflow-hidden">
-                  <a href={`${BASE}${item.image}`} target="_blank" rel="noreferrer" className="block bg-paper">
+                  <button type="button" onClick={() => { setSelectedRef(item); setViewerZoom(1); }} className="group relative block w-full bg-paper text-left">
                     <img src={`${BASE}${item.image}`} alt={`${item.class} reference cell ${item.id}`} loading="lazy" width={item.class === "KOIL" ? 384 : 256} height={item.class === "KOIL" ? 384 : 256} className="aspect-square w-full object-cover" />
-                  </a>
+                    <span className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-lg bg-ink/80 text-white opacity-0 transition group-hover:opacity-100"><ZoomIn size={15} aria-hidden /></span>
+                  </button>
                   <figcaption className="p-3">
                     <div className="flex items-center justify-between gap-2"><b style={{ color: info.color }}>{info.icon} {item.class}</b><span className="font-mono text-[10px] text-mut">{item.id}</span></div>
                     <div className="mt-1 text-[10px] text-mut">{item.subtype || `Source image ${item.source_image_id} · cell ${item.source_cell_id}`}</div>
@@ -306,6 +329,23 @@ export default function CaseGallery() {
         )}
       </div>
       </>}
+
+      {selectedRef && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label={`Reference viewer ${selectedRef.id}`} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedRef(null); }}>
+        <div className="grid max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-lg border border-line bg-surface lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="relative grid min-h-[55vh] place-items-center overflow-auto bg-black p-3">
+            <img src={`${BASE}${selectedRef.image}`} alt={`${selectedRef.class} reference cell ${selectedRef.id}, enlarged`} className="max-h-[82vh] max-w-full object-contain transition-transform" style={{ transform: `scale(${viewerZoom})` }} />
+            <button type="button" onClick={() => moveReference(-1)} className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg bg-black/70 text-white" aria-label="Previous reference"><ChevronLeft aria-hidden /></button>
+            <button type="button" onClick={() => moveReference(1)} className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg bg-black/70 text-white" aria-label="Next reference"><ChevronRight aria-hidden /></button>
+          </div>
+          <aside className="overflow-y-auto p-5">
+            <div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] uppercase text-teal">External morphology reference</div><h2 className="mt-1 font-display text-xl font-semibold text-ink">{selectedRef.class} · {selectedRef.id}</h2></div><button type="button" onClick={() => setSelectedRef(null)} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-mut" aria-label="Close reference viewer"><X size={17} aria-hidden /></button></div>
+            <dl className="mt-5 divide-y divide-line border-y border-line text-xs"><div className="py-3"><dt className="text-mut">Subtype/source</dt><dd className="mt-1 text-ink">{selectedRef.subtype || `Image ${selectedRef.source_image_id}, cell ${selectedRef.source_cell_id}`}</dd></div><div className="py-3"><dt className="text-mut">Domain</dt><dd className="mt-1 leading-5 text-ink">{selectedRef.domain}</dd></div><div className="py-3"><dt className="text-mut">License</dt><dd className="mt-1 text-ink">{selectedRef.license}</dd></div><div className="py-3"><dt className="text-mut">Focus plane</dt><dd className="mt-1 text-ink">{selectedRef.focus_plane ?? "Not applicable"}</dd></div></dl>
+            <label className="mt-5 block text-xs text-mut">Zoom {viewerZoom.toFixed(1)}×<input type="range" min="1" max="4" step="0.25" value={viewerZoom} onChange={(event) => setViewerZoom(Number(event.target.value))} className="mt-2 w-full accent-[var(--teal)]" /></label>
+            <div className="mt-5 flex flex-wrap gap-2"><a href={`${BASE}${selectedRef.image}`} download className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-teal">Download image</a><a href={`https://doi.org/${selectedRef.source_doi}`} target="_blank" rel="noreferrer" className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-teal">Source DOI</a></div>
+            <p className="mt-5 text-[11px] leading-5 text-mut">Reference material only. This viewer does not create a model prediction and does not establish HPV infection status.</p>
+          </aside>
+        </div>
+      </div>}
     </div>
   );
 }

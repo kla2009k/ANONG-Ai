@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeInfo, BookOpen, FileText, MessageCircleQuestion, PlayCircle, ServerCog } from "lucide-react";
+import { ArrowRight, BadgeInfo, BookOpen, Database, FileText, MessageCircleQuestion, PlayCircle, ServerCog } from "lucide-react";
 import { Link } from "wouter";
 
 const BASE = import.meta.env.BASE_URL;
@@ -72,7 +72,8 @@ const EVIDENCE = [
 ];
 
 const PROJECT_TOOLS = [
-  { href: "/reports", title: "Report preview", detail: "Review clinician and patient report states.", icon: FileText },
+  { href: "/reports", title: "Report preview", detail: "Review clinician and patient report states and download model-generated PDF examples.", icon: FileText },
+  { href: "/datasets", title: "Dataset registry", detail: "Separate current model evidence, external references, and candidate datasets with source links.", icon: Database },
   { href: "/model", title: "Model card", detail: "Inspect intended use, provenance, and limitations.", icon: BadgeInfo },
   { href: "/knowledge", title: "Knowledge guide", detail: "Review cytology terms and responsible interpretation.", icon: BookOpen },
   { href: "/demo", title: "Judge demo", detail: "Run the guided six-step presentation.", icon: PlayCircle },
