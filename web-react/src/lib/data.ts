@@ -71,10 +71,12 @@ export const METRICS = {
   cricGrade: {
     dataset: "CRIC Cervix Cell Classification",
     cells: 10003, parents: 395,
-    accuracy: "0.8883", accuracyMeanSd: "0.8883 ± 0.0288", accuracyCi: "0.8628–0.9109",
+    accuracy: "0.8883", accuracyMeanSd: "0.8883 ± 0.0288", accuracyCi: "0.8619–0.9110",
     macroF1: "0.7410", sccRecall: "0.5031", hsilRecall: "0.8467",
-    selectiveThreshold: "0.60", selectiveAccuracy: "0.9166", selectiveAccuracyCi: "0.8954–0.9346",
-    selectiveCoverage: "0.9408", selectiveCoverageCi: "0.9276–0.9528", accepted: 9411, abstained: 592,
+    highGradeCapture: "0.9056", highGradeCaptured: 1688, highGradeSupport: 1864,
+    sccHighGradeCapture: "0.9627", sccHighGradeCaptured: 155, sccSupport: 161,
+    selectiveThreshold: "0.60", selectiveAccuracy: "0.9166", selectiveAccuracyCi: "0.8960–0.9349",
+    selectiveCoverage: "0.9408", selectiveCoverageCi: "0.9278–0.9529", accepted: 9411, abstained: 592,
     classMetrics: {
       NILM: { support: 6779, precision: 0.942466, recall: 0.944830, f1: 0.943646 },
       LSIL: { support: 1360, precision: 0.721386, recall: 0.704412, f1: 0.712798 },

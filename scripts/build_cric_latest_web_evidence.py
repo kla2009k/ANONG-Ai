@@ -238,11 +238,14 @@ def save_charts(labels: np.ndarray, probabilities: np.ndarray, fold_accuracy: li
     figures.append({"file": f"evidence/cric-latest/{path.name}", "title": "Selective accuracy versus coverage", "detail": "At threshold 0.60, accuracy is 91.7% at 94.1% coverage. The rejected 5.9% require human review."})
 
     fig, ax = plt.subplots(figsize=(7.8, 4.8))
-    names = [*CLASSES, "KOIL*"]; values = [class_metrics[name]["recall"] for name in CLASSES] + [0.9624]
-    bars = ax.barh(names, values, color=[*COLORS, "#7D6FB2"])
+    scc_mask = labels == 3
+    scc_high_grade_capture = float((predicted[scc_mask] >= 2).mean())
+    names = ["NILM exact", "LSIL exact", "HSIL exact", "SCC exact", "SCC→high-grade", "KOIL*"]
+    values = [class_metrics[name]["recall"] for name in CLASSES] + [scc_high_grade_capture, 0.9624]
+    bars = ax.barh(names, values, color=[*COLORS, "#E78A83", "#7D6FB2"])
     ax.bar_label(bars, labels=[f"{value:.1%}" for value in values], padding=4)
     ax.set_xlim(0, 1.08); ax.set_xlabel("Recall / sensitivity"); ax.set_title("Recall by evaluated endpoint", weight="bold"); ax.grid(axis="x", alpha=.2)
-    ax.text(.01, -.20, "* KOIL is a separate SIPaKMeD morphology endpoint, not a fifth CRIC grade.", transform=ax.transAxes, fontsize=9, color=MUTED)
+    ax.text(.01, -.23, "SCC→high-grade counts SCC predicted as HSIL or SCC. * KOIL uses separate SIPaKMeD data.", transform=ax.transAxes, fontsize=9, color=MUTED)
     fig.tight_layout(); path = EVIDENCE / "cric_recall_by_endpoint.png"; fig.savefig(path, dpi=180, bbox_inches="tight"); plt.close(fig)
     figures.append({"file": f"evidence/cric-latest/{path.name}", "title": "Recall by endpoint", "detail": "CRIC grade recalls and the independent SIPaKMeD KOIL sensitivity share a scale but not a dataset or label ontology."})
     return figures
@@ -283,6 +286,18 @@ def main() -> int:
         "fold_accuracy": fold_accuracy,
         "confusion_matrix": confusion_matrix(labels, predicted, labels=range(4)).tolist(),
         "class_metrics": class_metrics,
+        "grouped_endpoints": {
+            "high_grade_hsil_or_scc": {
+                "captured": int(((labels >= 2) & (predicted >= 2)).sum()),
+                "support": int((labels >= 2).sum()),
+                "recall": float((predicted[labels >= 2] >= 2).mean()),
+            },
+            "scc_captured_as_high_grade": {
+                "captured": int(((labels == 3) & (predicted >= 2)).sum()),
+                "support": int((labels == 3).sum()),
+                "recall": float((predicted[labels == 3] >= 2).mean()),
+            },
+        },
         "selective_curve": selective,
         "figures": figures,
         "limitations": ["Research candidate, not the deployed upload checkpoint.", "Conventional Pap-smear cells, not Thai ThinPrep clinical validation.", "SCC recall remains 50.3%.", "No molecular HPV endpoint."],

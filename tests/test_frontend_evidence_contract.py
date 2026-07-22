@@ -39,7 +39,7 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
 
         self.assertIn("CRIC research model · not deployed", source)
-        self.assertIn("Every grade graph now uses the latest OOF model", source)
+        self.assertIn("Every grade graph uses the latest parent-image-disjoint OOF model", source)
         self.assertNotIn("Research v3", source)
         self.assertNotIn("Historical Herlev grade view", source)
         self.assertNotIn("Binary screening view", source)
@@ -54,6 +54,9 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertAlmostEqual(evidence["selective_accuracy"], 0.9165869726915312)
         self.assertAlmostEqual(evidence["selective_coverage"], 0.940817754673598)
         self.assertLess(evidence["pooled_accuracy"], 0.90)
+        self.assertEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["captured"], 155)
+        self.assertEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["support"], 161)
+        self.assertAlmostEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["recall"], 0.9627329192546584)
 
     def test_latest_cric_web_figures_and_heatmaps_are_auditable(self):
         evidence = json.loads((ROOT / "web-react" / "public" / "evidence" / "cric-latest" / "index.json").read_text(encoding="utf-8"))
@@ -61,6 +64,9 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertEqual(evidence["cells"], 10003)
         self.assertEqual(evidence["parent_images"], 395)
         self.assertEqual(len(evidence["figures"]), 5)
+        self.assertEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["captured"], 155)
+        self.assertEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["support"], 161)
+        self.assertAlmostEqual(evidence["grouped_endpoints"]["scc_captured_as_high_grade"]["recall"], 0.9627329192546584)
         self.assertEqual(gallery["count"], 20)
         self.assertIn("parent-image-disjoint OOF", gallery["protocol"])
         for grade in ("NILM", "LSIL", "HSIL", "SCC"):

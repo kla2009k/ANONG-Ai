@@ -64,6 +64,18 @@
       "support": 161
     }
   },
+  "grouped_endpoints": {
+    "high_grade_hsil_or_scc": {
+      "captured": 1688,
+      "support": 1864,
+      "recall": 0.9055793991416309
+    },
+    "scc_captured_as_high_grade": {
+      "captured": 155,
+      "support": 161,
+      "recall": 0.9627329192546584
+    }
+  },
   "selective_curve": [
     {
       "threshold": 0.4,

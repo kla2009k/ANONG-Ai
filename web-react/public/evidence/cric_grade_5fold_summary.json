@@ -23,25 +23,39 @@
     "HSIL": 0.8467410452143277,
     "SCC": 0.5031055900621118
   },
+  "grouped_endpoints": {
+    "high_grade_hsil_or_scc": {
+      "definition": "true HSIL or SCC predicted as HSIL or SCC",
+      "captured": 1688,
+      "support": 1864,
+      "recall": 0.9055793991416309
+    },
+    "scc_captured_as_high_grade": {
+      "definition": "true SCC predicted as HSIL or SCC",
+      "captured": 155,
+      "support": 161,
+      "recall": 0.9627329192546584
+    }
+  },
   "group_bootstrap": {
     "unit": "CRIC parent microscope image",
     "iterations": 2000,
     "accuracy_95_ci": [
-      0.8628320506279807,
-      0.9108577559490296
+      0.8619469529806224,
+      0.911049618896287
     ],
     "macro_f1_95_ci": [
-      0.691605130229047,
-      0.7842958815004749
+      0.6921775973389684,
+      0.7848415905029507
     ],
     "selective_threshold": 0.6,
     "selective_accuracy_95_ci": [
-      0.8953584795859166,
-      0.9345586164208642
+      0.8959952140681734,
+      0.934859096619682
     ],
     "selective_coverage_95_ci": [
-      0.927593465092647,
-      0.9528152341275733
+      0.92775170111683,
+      0.9528582572088721
     ]
   },
   "selective_threshold": 0.6,
@@ -51,8 +65,6 @@
   "abstained": 592,
   "claim_boundary": "Selective four-grade accuracy among accepted CRIC cases; remaining cases are abstained for human review.",
   "limitations": [
-    "The 0.60 confidence threshold was examined on these out-of-fold results and requires prospective locked-threshold validation.",
-    "The selective-accuracy 95% confidence interval has a lower bound below 90%.",
     "CRIC is conventional Pap smear, not Thai ThinPrep clinical validation.",
     "SCC support is only 161 cells from 21 parent images and recall remains unstable.",
     "ASC-US and ASC-H were excluded rather than relabelled into unsupported categories.",

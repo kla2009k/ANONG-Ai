@@ -78,6 +78,21 @@ def main() -> int:
     if len(np.unique(groups_array)) != 395:
         raise RuntimeError("expected every CRIC parent image exactly once across OOF test folds")
     pooled = metrics_from_predictions(labels_array, probabilities_array, triage_array, high_risk_array)
+    predicted_array = probabilities_array.argmax(1)
+    grouped_endpoints = {
+        "high_grade_hsil_or_scc": {
+            "definition": "true HSIL or SCC predicted as HSIL or SCC",
+            "captured": int(((labels_array >= 2) & (predicted_array >= 2)).sum()),
+            "support": int((labels_array >= 2).sum()),
+            "recall": float((predicted_array[labels_array >= 2] >= 2).mean()),
+        },
+        "scc_captured_as_high_grade": {
+            "definition": "true SCC predicted as HSIL or SCC",
+            "captured": int(((labels_array == 3) & (predicted_array >= 2)).sum()),
+            "support": int((labels_array == 3).sum()),
+            "recall": float((predicted_array[labels_array == 3] >= 2).mean()),
+        },
+    }
     numeric = ("accuracy", "balanced_accuracy", "macro_f1", "high_risk_exact_recall", "triage_head_recall_at_0_5")
     mean_sd = {
         metric: {
@@ -97,6 +112,7 @@ def main() -> int:
         "folds": fold_metrics,
         "mean_sd": mean_sd,
         "pooled_oof": pooled,
+        "grouped_endpoints": grouped_endpoints,
         "group_bootstrap": bootstrap,
         "claim_assessment": {
             "full_cohort_accuracy_above_90": pooled["accuracy"] >= 0.90,
@@ -129,6 +145,7 @@ def main() -> int:
         "pooled_accuracy": pooled["accuracy"],
         "pooled_macro_f1": pooled["macro_f1"],
         "pooled_per_class_recall": pooled["per_class_recall"],
+        "grouped_endpoints": grouped_endpoints,
         "group_bootstrap": bootstrap,
         "selective_threshold": selective_60["threshold"],
         "selective_accuracy": selective_60["selective_accuracy"],

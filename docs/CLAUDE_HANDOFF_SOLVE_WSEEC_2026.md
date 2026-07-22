@@ -1177,10 +1177,10 @@ descriptions above.
   and the explanatory "What each table and graph measures" block were removed.
 - The latest CRIC candidate was evaluated on 10,003 cells from 395 parent
   microscope images with five parent-image-disjoint out-of-fold splits. Its
-  full-cohort four-grade accuracy is 88.8% (95% CI 0.8628-0.9109).
+  full-cohort four-grade accuracy is 88.8% (95% CI 0.8619-0.9110).
 - At the pre-reported confidence threshold of 0.60, 9,411 cells are accepted
   and 592 are abstained for human review: selective accuracy is 91.7% at 94.1%
-  coverage (95% CI 0.8954-0.9346). Never shorten this to "the model is 91.7%
+  coverage (95% CI 0.8960-0.9349). Never shorten this to "the model is 91.7%
   accurate" without stating both selective evaluation and coverage.
 - CRIC per-class recall is NILM 94.5%, LSIL 70.4%, HSIL 84.7%, and SCC 50.3%.
   The weak SCC result, with 161 cells from only 21 parent images, remains
@@ -1212,3 +1212,31 @@ descriptions above.
 - Verification for this release: 66 unit/contract tests passed, the production
   frontend build completed, claim audit passed, and responsive browser checks
   showed no horizontal overflow at 390 px on Performance or Case Gallery.
+
+## 2026-07-22 SCC interpretation and clean Performance UI
+
+- The SCC exact-label recall remains 50.3%: 81 of 161 true SCC cells were
+  labelled SCC. This metric was not changed or hidden.
+- The confusion matrix shows that 74 additional SCC cells were labelled HSIL.
+  Therefore, 155 of 161 SCC cells (96.3%) were still captured in the combined
+  HSIL-or-SCC high-grade group. Across all true HSIL and SCC cells, high-grade
+  capture is 1,688 of 1,864 (90.6%).
+- Always distinguish these endpoints: 50.3% measures exact SCC subtyping;
+  96.3% measures whether SCC entered the high-grade review queue. The latter
+  does not justify autonomous grading or a claim that SCC classification is
+  96.3% accurate.
+- A post-hoc global SCC logit-bias sweep was explored locally and rejected. It
+  raised SCC recall only by sharply reducing SCC precision and macro F1, and it
+  was not validation-selected. No model checkpoint or headline result changed.
+- `/performance` now uses progressive disclosure. Four screening-level cards,
+  an SCC exact-versus-high-grade explanation, and a compact recall view appear
+  first. Exact precision/recall/F1, all five research charts, endpoint
+  provenance, and the KOIL confusion matrix remain available in expandable
+  sections.
+- `ml/scripts/aggregate_cric_grade_cv.py` and
+  `scripts/build_cric_latest_web_evidence.py` now write auditable grouped
+  endpoints. The recall chart displays SCC exact recall and SCC high-grade
+  capture separately.
+- Improving exact SCC grading requires more independent SCC parent images,
+  validation-selected cost-sensitive training, and external ThinPrep
+  evaluation. UI wording cannot repair this endpoint.
