@@ -2,18 +2,16 @@
 
 ## Current information architecture (2026-07-22)
 
-- `/` evidence-aware overview
+- `/` project overview
 - `/analyze` model or precomputed-case review
-- `/clinical-evidence` combined KOIL, HPV, Bethesda co-finding roadmap, and
-  clinician workflow
 - `/gallery` real reference and error cases
-- `/performance` grade, triage, and independent KOIL metrics
-- `/research-report` formal evidence package
+- `/performance` grade, triage, independent KOIL metrics, and current HPV handling
 - `/login` local demonstration reviewer profile
 
-`/koil`, `/hpv`, and `/workflow` are backward-compatible aliases for the
-combined page. The reviewer profile uses localStorage and is not secure
-production authentication. Never enter patient identifiers or passwords.
+The former `/clinical-evidence`, `/koil`, `/hpv`, `/workflow`, and
+`/research-report` pages were removed to keep the public interface focused.
+The reviewer profile uses localStorage and is not secure production
+authentication. Never enter patient identifiers or passwords.
 
 React 19 + Vite 7 + Tailwind 4 frontend for the Anong user interface of the
 CerviCo-Pilot cervical-cytology research prototype.
@@ -32,13 +30,9 @@ CerviCo-Pilot cervical-cytology research prototype.
 
 - `/` overview and evidence readiness
 - `/analyze` image workflow, clinical context, XAI, uncertainty and report gate
-- `/koil` independent KOIL endpoint, validation evidence and reference cells
-- `/hpv` separation of morphology, laboratory HPV results and clinical context
 - `/datasets` source-linked registry separating current evidence from candidates
 - `/gallery` external reference atlas and model error audit
-- `/workflow` clinician-in-the-loop workflow
-- `/performance` grade, triage and KOIL metrics
-- `/research-report` research documents and supporting views
+- `/performance` grade, triage, KOIL metrics, and current HPV workflow status
 - `/about` intended use and limitations
 
 Secondary routes remain available through contextual links.

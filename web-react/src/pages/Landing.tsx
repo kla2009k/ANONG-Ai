@@ -24,16 +24,19 @@ export default function Landing() {
                 Anong
               </Reveal>
               <Reveal as="p" className="mt-3 max-w-2xl font-display text-2xl font-semibold text-teal md:text-3xl">
-                AI-assisted cervical cytology screening
+                Cervical cytology screening and HPV-associated cytomorphology risk assessment
               </Reveal>
               <Reveal as="p" className="mt-5 max-w-2xl text-lg leading-8 text-mut">
                 Anong is the user-facing identity of the CerviCo-Pilot research system. It suggests a
                 Bethesda-style grade from Pap/ThinPrep-style images, shows Grad-CAM and uncertainty,
                 and keeps the clinician responsible for review and sign-off.
               </Reveal>
+              <Reveal as="div" className="butter-panel mt-6 max-w-2xl rounded-lg border p-4 text-sm leading-6 text-mut">
+                <b className="text-ink">What “HPV risk” means here:</b> Anong assesses HPV-associated cytomorphology, including independent koilocytic-morphology evidence. It <b className="text-scc">does not detect or confirm HPV infection</b>, HPV DNA/RNA, genotype, viral load, or persistence. Molecular confirmation remains a separate laboratory test.
+              </Reveal>
               <Reveal as="div" className="mt-8 flex flex-wrap gap-3">
                 <Link href="/analyze" className="rounded-full bg-teal px-6 py-3 text-sm font-medium text-white transition hover:bg-teal-d">Analyze an image</Link>
-                <Link href="/research-report" className="rounded-full border border-teal px-6 py-3 text-sm font-medium text-teal transition hover:bg-teal hover:text-white">View research evidence</Link>
+                <Link href="/performance" className="rounded-full border border-teal px-6 py-3 text-sm font-medium text-teal transition hover:bg-teal hover:text-white">View model performance</Link>
               </Reveal>
             </div>
             <Reveal as="div" className="card butter-panel p-5">
@@ -63,7 +66,7 @@ export default function Landing() {
                 </div>
               </div>
               <div className="mt-4 rounded-lg border border-dashed border-line p-3 text-xs leading-5 text-mut">
-                The 4,049 SIPaKMeD cells and 917 Herlev images belong to different endpoints and are not combined into one training count. HPV context means morphology risk, not HPV DNA/RNA detection.
+                The 4,049 SIPaKMeD cells and 917 Herlev images belong to different endpoints and are not combined into one training count. The image output is HPV-associated cytomorphology risk, not an HPV DNA/RNA result.
               </div>
             </Reveal>
           </div>
@@ -79,18 +82,6 @@ export default function Landing() {
                 <p className="mt-1 text-xs leading-5 text-mut">{body}</p>
               </div>
             ))}
-          </Reveal>
-          <Reveal as="div" className="mt-5 text-right">
-            <Link href="/clinical-evidence" className="text-sm font-medium text-teal hover:text-teal-d">View the complete clinical evidence workflow →</Link>
-          </Reveal>
-
-          <Reveal as="section" className="mt-10 border-t border-line pt-8" aria-labelledby="endpoint-guides-title">
-            <div className="kicker mb-2">Understand the two endpoints</div>
-            <h2 id="endpoint-guides-title" className="font-display text-2xl font-semibold text-ink">One place for the evidence and safety boundary</h2>
-            <Link href="/clinical-evidence" className="group mt-5 grid gap-5 rounded-lg border border-line bg-surface p-5 transition hover:border-teal md:grid-cols-[1fr_auto] md:items-center">
-              <div><div className="font-mono text-[10px] uppercase tracking-[.16em] text-teal">KOIL · HPV · Bethesda · workflow</div><h3 className="mt-2 font-display text-xl font-semibold text-ink">Clinical evidence</h3><p className="mt-2 max-w-3xl text-sm leading-6 text-mut">Review the KOIL training domain and metrics, understand why morphology is not an HPV assay, inspect future Bethesda-aligned co-findings, and follow the clinician release path.</p></div>
-              <div className="text-sm font-semibold text-teal">Open clinical evidence <span aria-hidden>→</span></div>
-            </Link>
           </Reveal>
         </div>
       </header>

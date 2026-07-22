@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   BarChart3,
-  BookOpen,
   Home,
   Images,
-  Microscope,
   Menu,
   Moon,
   ScanLine,
@@ -22,10 +20,8 @@ type NavItem = { href: string; label: string; icon: LucideIcon };
 const NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: Home },
   { href: "/analyze", label: "Analyze", icon: ScanLine },
-  { href: "/clinical-evidence", label: "Clinical Evidence", icon: Microscope },
   { href: "/gallery", label: "Case Gallery", icon: Images },
   { href: "/performance", label: "Performance", icon: BarChart3 },
-  { href: "/research-report", label: "Evidence", icon: BookOpen },
 ];
 
 export function Navbar() {
@@ -90,7 +86,7 @@ function NavList({ loc, dark, setDark, profile, onNavigate, mobile = false }: {
   return (
     <nav className={mobile ? "grid max-h-[calc(100vh-3.5rem)] content-start gap-0.5 overflow-y-auto border-t border-line bg-surface p-3" : "mt-4 grid min-h-0 flex-1 auto-rows-min content-start gap-0.5 overflow-y-auto pr-1"} aria-label="Primary navigation">
       {NAV.map((n) => {
-        const active = loc === n.href || (n.href === "/clinical-evidence" && ["/koil", "/hpv", "/workflow"].includes(loc));
+        const active = loc === n.href;
         const Icon = n.icon;
         return (
           <Link

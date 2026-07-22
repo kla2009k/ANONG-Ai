@@ -26,15 +26,15 @@ const STEPS = [
   {
     n: "4",
     title: "Separate KOIL evidence",
-    path: "/koil",
+    path: "/performance",
     action: "Show the locked SIPaKMeD test, the 20-positive CCCID challenge, threshold, and the visible false negative.",
     proof: "KOIL is an independent morphology endpoint with explicit domain and external-evidence limitations.",
   },
   {
     n: "5",
     title: "Explain the HPV boundary",
-    path: "/hpv",
-    action: "Use the state explorer to contrast image morphology with a separately reported laboratory HPV result.",
+    path: "/analyze",
+    action: "Enter a separately reported laboratory HPV result as clinical context and contrast it with the image morphology result.",
     proof: "No image endpoint claims viral DNA/RNA, genotype, persistence, or infection status.",
   },
   {
@@ -53,10 +53,10 @@ const STEPS = [
   },
   {
     n: "8",
-    title: "Open evidence package",
-    path: "/research-report",
-    action: "Show the research report, bibliography, model card, and validation roadmap.",
-    proof: "The package includes submission-ready evidence and explicit claim boundaries.",
+    title: "Review measured performance",
+    path: "/performance",
+    action: "Show endpoint-specific metrics, error analysis, and the status of current HPV handling.",
+    proof: "The page separates measured model results from capabilities that still require paired clinical data.",
   },
 ];
 

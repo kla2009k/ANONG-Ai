@@ -29,7 +29,7 @@ export default function ReportPreview() {
     `Final label: ${label} (${info.en})`,
     `KOIL morphology: ${koilPositive ? "Positive (independent endpoint)" : "Not prominent / not assessed"}`,
     `Interpretation: ${info.desc}`,
-    "HPV note: HPV-related morphology risk only; confirmatory HPV DNA/RNA testing remains separate.",
+    "HPV note: HPV-associated cytomorphology risk assessment only; this does not confirm HPV infection, and HPV DNA/RNA testing remains separate.",
     `Recommended action: ${info.triage}`,
     `Sign-off: ${signed ? "confirmed by clinician (demo)" : "pending clinician review"}`,
     "Disclaimer: Decision-support output. Not a final diagnosis.",
@@ -122,7 +122,7 @@ export default function ReportPreview() {
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-3">
               <dt className="text-mut">HPV note</dt>
-              <dd>HPV-related morphology risk only; confirmatory HPV DNA/RNA testing remains separate.</dd>
+              <dd>HPV-associated cytomorphology risk assessment only; this does not confirm HPV infection, and HPV DNA/RNA testing remains separate.</dd>
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-3">
               <dt className="text-mut">KOIL morphology</dt>

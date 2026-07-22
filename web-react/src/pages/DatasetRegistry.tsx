@@ -36,6 +36,8 @@ const STATUS_LABEL: Record<string, string> = {
   candidate_provenance_review: "Provenance review",
   candidate_segmentation: "Segmentation candidate",
   candidate_different_stain: "Different-stain candidate",
+  candidate_thinprep: "ThinPrep candidate",
+  candidate_different_modality: "Different modality",
 };
 
 export default function DatasetRegistry() {

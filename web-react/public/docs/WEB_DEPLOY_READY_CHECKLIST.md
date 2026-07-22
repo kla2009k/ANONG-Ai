@@ -164,9 +164,8 @@ Smoke-test these routes:
 - `/demo`
 - `/analyze`
 - `/gallery`
-- `/workflow`
+- `/datasets`
 - `/reports`
-- `/research-report`
 - `/history`
 - `/performance`
 - `/model`
@@ -202,7 +201,8 @@ still works in a separate Vite static build, but uploads and server PDF export d
 
 - [ ] No console errors.
 - [ ] No failed network requests for static assets.
-- [ ] `/research-report` download links return 200 in static build.
+- [ ] `/datasets` loads the 15-source registry and keeps current development images at 4,966.
+- [ ] `/performance` explains that paired molecular HPV cases are zero in this repository, not globally absent.
 - [ ] `/demo` links navigate correctly.
 - [ ] `/analyze` sample flow works without backend.
 - [ ] `/analyze` upload flow shows server-offline error if backend is not running.

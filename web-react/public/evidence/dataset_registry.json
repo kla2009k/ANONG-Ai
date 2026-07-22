@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "updated": "2026-07-21",
+  "updated": "2026-07-22",
   "current_evidence_sources": 4,
-  "catalogued_sources": 10,
+  "catalogued_sources": 15,
   "current_model_development_images": 4966,
   "warning": "Candidate and reference datasets are not model-development data and must not be added to the current training or validation total.",
   "records": [
@@ -129,6 +129,69 @@
       "current_use": "Out-of-scope staining domain; catalogued for future detection research only",
       "paired_hpv": "not_reported",
       "source_url": "https://data.mendeley.com/datasets/wg4bpm33hj/2"
+    },
+    {
+      "id": "bmt-thinprep",
+      "name": "Brown Multicellular ThinPrep (BMT)",
+      "status": "candidate_thinprep",
+      "modality": "ThinPrep multicellular fields, NILM / LSIL / HSIL",
+      "available_count": 600,
+      "available_parent_count": 180,
+      "current_use_count": 0,
+      "unit": "images",
+      "current_use": "Strong candidate for ThinPrep domain training and external grade evaluation. HPV testing helped confirm source slide identities, but patient-linked HPV results are not exposed in the public image release.",
+      "paired_hpv": "not_exposed_per_image",
+      "source_url": "https://doi.org/10.7303/syn55259257"
+    },
+    {
+      "id": "zhang-thinprep-2025",
+      "name": "Large annotated ThinPrep cytology dataset",
+      "status": "candidate_segmentation",
+      "modality": "ThinPrep 2048x2048 fields with abnormal-cell annotations",
+      "available_count": 8037,
+      "available_parent_count": 129,
+      "current_use_count": 0,
+      "unit": "images",
+      "current_use": "Candidate for field-level detection and segmentation after slide-disjoint split review; no public molecular HPV endpoint is documented.",
+      "paired_hpv": "not_reported",
+      "source_url": "https://springernature.figshare.com/articles/dataset/27901206"
+    },
+    {
+      "id": "nci-pap-cohort",
+      "name": "NCI HPV Persistence and Progression (PaP) Cohort",
+      "status": "candidate_restricted",
+      "modality": "Residual cervical specimens linked to cytology, histology, and HPV assays",
+      "available_count": 110000,
+      "current_use_count": 0,
+      "unit": "stored specimens",
+      "current_use": "Scientifically relevant paired HPV cohort requiring investigator collaboration, governance, and confirmation that suitable digitized cytology images can be produced or accessed. It is not a public image download.",
+      "paired_hpv": "yes_restricted_cohort_no_public_images",
+      "source_url": "https://dceg.cancer.gov/research/cancer-types/cervix/hpv-pap-cohort"
+    },
+    {
+      "id": "swedish-screening-cohort",
+      "name": "Swedish Cervical Screening Cohort",
+      "status": "candidate_restricted",
+      "modality": "Registry and biobank linkage across HPV, cytology, and histopathology",
+      "available_count": null,
+      "current_use_count": 0,
+      "unit": "linked screening records/specimens",
+      "current_use": "Potential institutional validation partnership. Public downloadable, patient-linked digital cytology images are not supplied; ethics, data access, and imaging agreements are required.",
+      "paired_hpv": "yes_restricted_registry_no_public_images",
+      "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11208431/"
+    },
+    {
+      "id": "hycervix-hyperspectral",
+      "name": "HyCervix hyperspectral cohort",
+      "status": "candidate_different_modality",
+      "modality": "In-vivo hyperspectral colposcopy, not Pap or ThinPrep microscopy",
+      "available_count": 77,
+      "available_parent_count": 77,
+      "current_use_count": 0,
+      "unit": "hyperspectral cubes",
+      "current_use": "Useful only for a separate hardware-specific research track. It cannot train the current cytology upload model because the acquisition modality and anatomical scale are different.",
+      "paired_hpv": "clinical_metadata_reported_different_modality",
+      "source_url": "https://zenodo.org/records/18208664"
     }
   ]
 }

@@ -8,6 +8,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class FrontendEvidenceContractTests(unittest.TestCase):
+    def test_public_copy_defines_hpv_risk_without_claiming_infection_detection(self):
+        landing = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
+        analyze = (ROOT / "web-react" / "src" / "pages" / "Analyze.tsx").read_text(encoding="utf-8")
+        report = (ROOT / "web-react" / "src" / "pages" / "ReportPreview.tsx").read_text(encoding="utf-8")
+
+        for source in (landing, analyze, report):
+            self.assertIn("HPV-associated cytomorphology", source)
+        self.assertIn("does not detect or confirm HPV infection", landing)
+        self.assertIn("does not detect HPV DNA/RNA", analyze)
+        self.assertIn("does not confirm HPV infection", report)
+
+    def test_research_grade_result_is_shown_with_coverage_and_not_deployed(self):
+        source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
+
+        self.assertIn("Research candidate — not deployed", source)
+        self.assertIn("78.8%", source)
+        self.assertIn("97.3%", source)
+        self.assertIn("53.3% coverage", source)
+        self.assertIn("HSIL recall fell", source)
+
+    def test_dataset_registry_separates_public_images_from_paired_hpv_cohorts(self):
+        registry = json.loads((ROOT / "web-react" / "public" / "evidence" / "dataset_registry.json").read_text(encoding="utf-8"))
+        records = {record["id"]: record for record in registry["records"]}
+
+        self.assertEqual(registry["current_model_development_images"], 4966)
+        self.assertEqual(records["bmt-thinprep"]["paired_hpv"], "not_exposed_per_image")
+        self.assertEqual(records["nci-pap-cohort"]["current_use_count"], 0)
+        self.assertEqual(records["nci-pap-cohort"]["paired_hpv"], "yes_restricted_cohort_no_public_images")
+        self.assertEqual(records["hycervix-hyperspectral"]["status"], "candidate_different_modality")
+        self.assertFalse(any(record["paired_hpv"] == "yes_public_image_assay_pairs" for record in records.values()))
+
     def test_report_preview_uses_grade_classes_and_separates_koil(self):
         source = (ROOT / "web-react" / "src" / "pages" / "ReportPreview.tsx").read_text(encoding="utf-8")
 
@@ -34,8 +65,10 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
 
         self.assertIn("mkdir -p \"web-dist/$route\"", workflow)
-        for route in ("analyze", "koil", "hpv", "datasets", "gallery", "reports"):
+        for route in ("analyze", "datasets", "gallery", "reports", "performance"):
             self.assertIn(route, workflow)
+        for removed_route in ("clinical-evidence", "koil", "hpv", "workflow", "research-report"):
+            self.assertNotIn(f" {removed_route} ", workflow)
 
 
 if __name__ == "__main__":

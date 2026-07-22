@@ -3,11 +3,8 @@ import { useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
 
 const META: Record<string, [string, string]> = {
-  "/": ["Anong | Explainable Cervical Cytology Screening", "Evidence-oriented cervical cytology screening-support research prototype with XAI, uncertainty, and clinician review."],
-  "/analyze": ["Analyze | Anong", "Review four-class cervical cytology grade, independent KOIL morphology, uncertainty, XAI, and report release gates."],
-  "/koil": ["KOIL Evidence | Anong", "Inspect locked SIPaKMeD evidence, the CCCID positive challenge, threshold behavior, Grad-CAM, and limitations."],
-  "/hpv": ["HPV Context | Anong", "Understand the boundary between cytology morphology, a separate laboratory HPV assay, and clinical context."],
-  "/clinical-evidence": ["Clinical Evidence | Anong", "Review KOIL evidence, HPV claim boundaries, Bethesda-aligned future co-findings, and clinician workflow in one place."],
+  "/": ["Anong | Cervical Cytology and HPV-Associated Morphology Risk", "Cervical cytology screening and HPV-associated cytomorphology risk assessment. This research system does not confirm HPV infection."],
+  "/analyze": ["Analyze | Anong", "Review cervical cytology grade, independent KOIL morphology, HPV-associated cytomorphology risk, uncertainty, XAI, and report release gates."],
   "/login": ["Reviewer Sign-in | Anong", "Create or delete a local demonstration reviewer profile on this device."],
   "/datasets": ["Dataset Registry | Anong", "Trace current model-development data, external references, and unused candidate cervical cytology datasets."],
   "/gallery": ["Case Gallery | Anong", "Inspect real morphology references, model errors, uncertainty, provenance, and KOIL evidence."],
@@ -17,7 +14,7 @@ const META: Record<string, [string, string]> = {
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   useEffect(() => {
-    const [title, description] = META[location] || ["Anong | CerviCo-Pilot", "Cervical cytology screening-support research evidence and workflow."];
+    const [title, description] = META[location] || ["Anong | CerviCo-Pilot", "Cervical cytology screening and HPV-associated cytomorphology risk assessment; not HPV infection confirmation."];
     document.title = title;
     const descriptionMeta = document.querySelector('meta[name="description"]');
     descriptionMeta?.setAttribute("content", description);

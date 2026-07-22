@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/Reveal";
 import { METRICS, classInfo } from "@/lib/data";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 
 const CK = ["NILM", "LSIL", "HSIL", "SCC"];
 const BASE = import.meta.env.BASE_URL;
@@ -206,7 +207,7 @@ export default function Performance() {
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="kicker mb-2">Performance · measured evidence</div>
       <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Evaluation results</h1>
-      <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-mut">Two trained endpoints are evaluated here without mixing their test sets: four-class grade and binary safety use Herlev; KOIL morphology uses SIPaKMeD and a limited CCCID liquid-based positive challenge. HPV infection has no model endpoint or paired molecular test set.</p>
+      <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-mut">One image request returns five visible outputs: four mutually exclusive grade probabilities plus an independent KOIL morphology probability. A separately reported HPV molecular result can be recorded in the same review and PDF workflow, but it is not inferred from image pixels.</p>
 
       <Reveal as="section" className="mt-8" aria-labelledby="endpoint-map-title">
         <div className="kicker mb-3">Endpoint map</div>
@@ -219,9 +220,42 @@ export default function Performance() {
               <tr><th className="p-4 text-ink">Safety triage</th><td className="p-4 text-mut">Normal / abnormal</td><td className="p-4 text-mut">Herlev</td><td className="p-4 font-mono text-ink">137 images</td><td className="p-4 text-mut">Sensitivity {t.held.sensitivity}</td></tr>
               <tr><th className="p-4 text-ink">KOIL morphology</th><td className="p-4 text-mut">Negative / positive</td><td className="p-4 text-mut">SIPaKMeD locked test</td><td className="p-4 font-mono text-ink">641 cells</td><td className="p-4 text-mut">Sensitivity {k.sensitivity}; AUROC {k.auroc}</td></tr>
               <tr><th className="p-4 text-ink">KOIL LBC challenge</th><td className="p-4 text-mut">Positive detection only</td><td className="p-4 text-mut">CCCID v2 BD SurePath</td><td className="p-4 font-mono text-ink">20 positives</td><td className="p-4 text-mut">{k.externalDetected}; specificity not estimable</td></tr>
-              <tr><th className="p-4 text-ink">HPV infection</th><td className="p-4 text-mut">Molecular positive / negative</td><td className="p-4 text-mut">Paired assay cohort required</td><td className="p-4 font-mono text-scc">0 paired cases</td><td className="p-4 font-semibold text-scc">Not developed</td></tr>
+              <tr><th className="p-4 text-ink">Current HPV handling</th><td className="p-4 text-mut">Recorded molecular positive / negative + genotype when reported</td><td className="p-4 text-mut">External laboratory result entered by the reviewer</td><td className="p-4 font-mono text-ink">Workflow field</td><td className="p-4 text-mut">Included in review and PDF; never inferred from pixels</td></tr>
+              <tr><th className="p-4 text-ink">Future image-to-HPV research</th><td className="p-4 text-mut">Molecular HPV prediction from cytology</td><td className="p-4 text-mut">Paired image + assay cohort required</td><td className="p-4 font-mono text-scc">0 in this repository</td><td className="p-4 font-semibold text-scc">Not trained</td></tr>
             </tbody>
           </table>
+        </div>
+        <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
+          <b className="text-ink">Why this row is zero:</b> public cytology datasets exist and HPV-tested clinical cohorts exist, but the current repository has no same-patient microscopy image + molecular assay pairs. This does not mean HPV data does not exist. It means those linked labels require a governed cohort or research partnership. <Link href="/datasets" className="font-semibold text-teal underline">Review the dataset audit</Link>.
+        </div>
+      </Reveal>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="bethesda-expansion-title">
+        <div className="kicker mb-3">Bethesda expansion</div>
+        <h2 id="bethesda-expansion-title" className="font-display text-2xl font-semibold text-ink">One report, separate clinical questions</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Mutually exclusive grade:</b> the current supported head is NILM / LSIL / HSIL / SCC. ASC-US and ASC-H are valid future categories after label and patient-split review. They should not be invented from current Herlev labels.</div>
+          <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Independent findings:</b> KOIL morphology, specified organism-consistent findings, and a molecular HPV laboratory result can coexist with a grade. They require separate heads or report fields, not one forced five-class grade table.</div>
+        </div>
+      </Reveal>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="research-candidate-title">
+        <div className="kicker mb-3">Research v3 · locked-test experiment</div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="research-candidate-title" className="font-display text-2xl font-semibold text-ink">Mask-guided hierarchical grade model</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">A four-grade EfficientNet-B0 experiment using Herlev masks, hierarchical safety heads, ordinal loss, hard-example weighting, and 320 px inputs.</p>
+          </div>
+          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research candidate — not deployed</span>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Exact grade accuracy" value="78.8%" sub="locked test n=137; baseline 69.3%" color="var(--teal)" />
+          <Stat label="Selective accuracy" value="97.3%" sub="confidence ≥ 0.90; 53.3% coverage" color="var(--navy)" />
+          <Stat label="Triage sensitivity" value="98.0%" sub="baseline 100%; safety regression" color="var(--scc)" />
+          <Stat label="HSIL recall" value="63.3%" sub="baseline 86.7%; safety regression" color="var(--scc)" />
+        </div>
+        <div className="blush-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
+          <b className="text-ink">Why this is not the headline model:</b> exact accuracy improved, but HSIL recall fell by 23.4 percentage points and triage sensitivity no longer matched the zero-miss held-out baseline. The 97.3% result applies only after abstaining on 46.7% of cases. It is shown for transparent research comparison and has not replaced the deployed checkpoint.
         </div>
       </Reveal>
 

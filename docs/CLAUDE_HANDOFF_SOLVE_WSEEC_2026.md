@@ -1,5 +1,60 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+> **Slide visual asset update 2026-07-22:** A reproducible 17-image,
+> presentation-ready evidence set now exists under
+> `presentation/slide_assets_2026/`. Every PNG is 1920x1080, uses canonical
+> metrics and carries dataset/claim boundaries. The complete local archive is
+> `presentation/slide_assets_2026.zip`. Rebuild with
+> `python tools/build_slide_visuals.py`.
+
+The same generator also creates
+`presentation/slide_assets_2026/ANONG_Evidence_Visuals_2026.pptx`, a 16:9
+PowerPoint containing the 17 PNGs as full-slide images. It is a visual asset
+deck for selection/reordering, not the final competition narrative deck.
+
+## Slide-ready evidence visuals (2026-07-22)
+
+The generator `tools/build_slide_visuals.py` reads canonical JSON and produces:
+
+1. system evidence map;
+2. dataset provenance and missing-evidence statement;
+3. Herlev binary triage evidence;
+4. recall comparison with explicit Herlev/SIPaKMeD separation;
+5. four-class Herlev grade confusion matrix;
+6. independent binary KOIL confusion matrix;
+7. SIPaKMeD five-morphology matrix;
+8. KOIL ROC and precision-recall curves reconstructed from 641 locked-test
+   predictions;
+9. KOIL calibration plot;
+10. four-category Herlev Grad-CAM examples;
+11. KOIL Grad-CAM audit with TP, near-threshold, FN and FP;
+12. every KOIL FN plus the five highest-scoring FPs;
+13. CCCID v2 19/20 positive-only LBC challenge;
+14. HPV image/laboratory/context claim boundary;
+15. clinician-in-the-loop report release workflow;
+16. validation roadmap;
+17. closing evidence summary.
+
+`00_contact_sheet.jpg` is for asset selection only. `manifest.json` stores
+dimensions, byte size, SHA-256, canonical sources and non-negotiable claim
+boundaries. `README.md` separates recommended main-deck visuals from appendix
+visuals. Do not remove dataset names, sample sizes or limitation captions when
+cropping these images.
+
+Canonical quantitative inputs:
+
+- `models/triage_metrics.json`
+- `models/cv_results.json`
+- `models/koil_sipakmed/test_metrics.json`
+- `models/koil_sipakmed/locked_test_predictions.json`
+- `models/koil_sipakmed/evaluation/error_analysis.json`
+- `models/koil_sipakmed/evaluation/cccid_koil_20_case_challenge.json`
+
+Visual QA was performed on the contact sheet and full-resolution Grad-CAM,
+error-analysis, CCCID and HPV-boundary slides. The CCCID layout was regenerated
+after detecting and removing an overlap between the 20-case glyphs and summary
+metrics.
+
 > **Performance visualization update 2026-07-22:** `/performance` now exposes
 > KOIL in its tables and charts without inserting it as a fifth Herlev grade.
 > The top endpoint map identifies each output, dataset, test support and metric;
@@ -978,3 +1033,74 @@ npm.cmd run build
 - Read `web-react/public/docs/WEB_DEPLOY_READY_CHECKLIST.md` before deployment.
   GitHub Pages needs repository variable `VITE_API_URL` set to the final Render
   origin before uploads and server-generated PDF reports work there.
+
+## 2026-07-22 standalone chart and heatmap library
+
+For manual slide authoring, use `presentation/standalone_visual_assets_2026/`
+rather than cropping the full-slide PNG files. The package contains 27
+individual visual elements with no slide header or footer:
+
+- grade recall and precision/recall/F1 charts;
+- binary-triage five-fold trends and mean ± SD summary;
+- binary triage, four-grade, KOIL binary and five-morphology confusion matrices;
+- separate KOIL ROC, precision-recall and calibration curves;
+- KOIL probability distribution at the locked threshold;
+- KOIL outcome and false-positive source charts;
+- individual NILM, LSIL, HSIL and SCC Grad-CAM pairs;
+- KOIL Grad-CAM audit, all five false negatives and five highest-scoring false positives;
+- CCCID positive-only challenge graphic;
+- system evidence, HPV/KOIL boundary, clinician workflow, validation roadmap and evidence summary diagrams.
+
+Files:
+
+- Contact sheet: `presentation/standalone_visual_assets_2026/00_contact_sheet.jpg`
+- Usage and claim boundaries: `presentation/standalone_visual_assets_2026/README.md`
+- Integrity metadata: `presentation/standalone_visual_assets_2026/manifest.json`
+- Archive: `presentation/standalone_visual_assets_2026.zip`
+- Rebuild command: `python tools/build_standalone_visual_assets.py`
+
+Do not combine Herlev and SIPaKMeD counts into one cohort, place KOIL inside
+the Bethesda grade confusion matrix, describe Grad-CAM as segmentation, or
+describe KOIL morphology as molecular HPV confirmation.
+
+## 2026-07-22 HPV paired-data and grade-v3 continuation
+
+This section supersedes earlier route and HPV wording in this handoff.
+
+- The public `/clinical-evidence`, `/koil`, `/hpv`, `/workflow`, and
+  `/research-report` routes were removed. The focused public navigation is
+  Overview, Analyze, Case Gallery, and Performance. Dataset audit remains at
+  `/datasets` and is linked from Performance.
+- Read `docs/HPV_PAIRED_DATA_AND_BETHESDA_FEASIBILITY_2026.md` before changing
+  any HPV, KOIL, Bethesda, organism, or dataset claim.
+- The repository contains zero same-patient microscopy-image + molecular-assay
+  pairs. This is not a claim that HPV cohorts do not exist. NCI PaP and the
+  Swedish screening cohort are relevant governed resources; BMT is a strong
+  public ThinPrep image candidate but does not expose HPV status per image.
+- The defensible report structure is grade + independent KOIL + independent
+  organism findings + externally reported molecular HPV field + uncertainty.
+  Do not force these into one mutually exclusive five-class softmax.
+- A future Bethesda grade expansion may use NILM / ASC-US / ASC-H / LSIL / HSIL
+  / SCC after data review. An interim ASC merge loses a clinically relevant
+  distinction and must be disclosed. Glandular abnormalities require their own
+  support and must not be silently mapped to squamous classes.
+- `web-react/public/evidence/dataset_registry.json` now catalogues 15 sources
+  while keeping the current model-development count fixed at 4,966.
+- `ml/grade_research_v3.py` and
+  `ml/scripts/train_grade_research_v3.py` implement a valid four-grade research
+  model with mask, hierarchy, ordinal, hard-example, stain, and selective
+  prediction support.
+- Read `docs/GRADE_RESEARCH_V3_EXPERIMENTS_2026_07_22.md` before promoting any
+  research checkpoint. Experiment A reached 0.7883 locked-test accuracy but
+  reduced HSIL recall and triage sensitivity. Experiment B recovered 1.0000
+  triage recall but had only 0.4667 HSIL recall. Neither is deployment-approved;
+  `models/best_cervical.pt` remains canonical.
+- The production web build and full project suite passed on 2026-07-22:
+  `55 passed`; `npm.cmd run build` completed successfully; `git diff --check`
+  was clean; and the local static preview returned HTTP 200 at
+  `http://127.0.0.1:4174/`. The only test warning was Albumentations being
+  unable to perform its optional online version check in the restricted
+  environment.
+- The two grade-v3 checkpoints are experiment artefacts only. They have not
+  been wired into `server/predictor.py`, copied over `models/best_cervical.pt`,
+  committed, pushed, or deployed.

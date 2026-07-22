@@ -517,7 +517,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
       <div className="mt-3 rounded-lg border border-line p-3 text-sm">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
           <div>
-            <div className="font-semibold text-ink">HPV-related morphology risk</div>
+            <div className="font-semibold text-ink">HPV-associated cytomorphology risk assessment</div>
             <div className="mt-1 text-xs text-mut">{hpv.detail}</div>
           </div>
           <span className="shrink-0 rounded-full border px-2 py-1 text-[11px]" style={{ borderColor: hpv.tone, color: hpv.tone }}>
@@ -525,7 +525,7 @@ ${patientSection}<div class="sign"><b>Review status:</b> ${htmlEscape(status)} (
           </span>
         </div>
         <div className="mt-2 text-[10px] text-mut">
-          This assessment uses cellular morphology in the image only. It does not detect HPV DNA/RNA.
+          This assessment uses cellular morphology in the image only. It does not detect HPV DNA/RNA or confirm HPV infection.
         </div>
         {res.koilAssessment && (
           <div className="mt-3 grid gap-2 border-t border-line pt-3 sm:grid-cols-3">

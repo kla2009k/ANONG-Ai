@@ -12,9 +12,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const History = lazy(() => import("@/pages/History"));
 const Ask = lazy(() => import("@/pages/Ask"));
 const CaseGallery = lazy(() => import("@/pages/CaseGallery"));
-const ClinicalEvidence = lazy(() => import("@/pages/ClinicalEvidence"));
 const ReportPreview = lazy(() => import("@/pages/ReportPreview"));
-const ResearchReport = lazy(() => import("@/pages/ResearchReport"));
 const DemoMode = lazy(() => import("@/pages/DemoMode"));
 const Deployment = lazy(() => import("@/pages/Deployment"));
 const DatasetRegistry = lazy(() => import("@/pages/DatasetRegistry"));
@@ -37,13 +35,8 @@ export default function App() {
         <Route path="/" component={Landing} />
         <Route path="/analyze" component={Analyze} />
         <Route path="/gallery" component={CaseGallery} />
-        <Route path="/clinical-evidence" component={ClinicalEvidence} />
-        <Route path="/koil" component={ClinicalEvidence} />
-        <Route path="/hpv" component={ClinicalEvidence} />
         <Route path="/datasets" component={DatasetRegistry} />
-        <Route path="/workflow" component={ClinicalEvidence} />
         <Route path="/reports" component={ReportPreview} />
-        <Route path="/research-report" component={ResearchReport} />
         <Route path="/demo" component={DemoMode} />
         <Route path="/deployment" component={Deployment} />
         <Route path="/performance" component={Performance} />
