@@ -1,14 +1,13 @@
 import { Link } from "wouter";
 import { Reveal } from "@/components/Reveal";
-import { METRICS } from "@/lib/data";
 
 const READINESS = [
-  ["Upload models", "Done", "Separate Herlev grade and SIPaKMeD KOIL endpoints"],
-  ["Binary safety", "Strong P1", `${METRICS.triage.cv.sensitivity} sensitivity`],
-  ["Deployed 4-class grade", "Baseline", `${METRICS.fiveClass.acc} accuracy on Herlev 5-fold CV`],
-  ["CRIC 4-class research", "Candidate", "91.7% selective at 94.1% coverage; 88.8% full cohort"],
-  ["KOIL morphology", "Internally validated", `${METRICS.koil.sensitivity} sensitivity on SIPaKMeD`],
-  ["Calibration", "P1 improved", "Temperature scaling on Herlev only"],
+  ["Upload workflow", "Deployed baseline", "Herlev four-grade model plus a separate SIPaKMeD KOIL model"],
+  ["Herlev binary triage", "Measured", "98.7% ± 0.9% sensitivity in five-fold CV; specificity 69.1% ± 11.5%"],
+  ["Herlev exact grading", "Baseline", "69.0% ± 6.2% four-grade accuracy in five-fold CV"],
+  ["CRIC exact grading", "Research only", "88.8% all-cell accuracy; 91.7% on accepted cells at 94.1% coverage"],
+  ["KOIL morphology", "Separate endpoint", "96.2% sensitivity and 97.6% specificity on the SIPaKMeD locked test"],
+  ["External LBC transfer", "Blocked", "28.4% balanced accuracy on APCData; domain adaptation is required"],
 ];
 
 export default function Landing() {
@@ -41,31 +40,26 @@ export default function Landing() {
             <Reveal as="div" className="card butter-panel p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-mono text-xs uppercase tracking-[.2em] text-teal">Current evidence</div>
-                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Multi-dataset research prototype</h2>
+                  <div className="font-mono text-xs uppercase tracking-[.2em] text-teal">Evidence map</div>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Three tasks, three result sets</h2>
                 </div>
-                <span className="rounded-full border border-teal px-3 py-1 text-xs text-teal">Herlev + SIPaKMeD + CRIC</span>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-line p-3">
-                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-teal sm:text-xl">{METRICS.koil.total.toLocaleString()}</div>
-                  <div className="text-xs text-mut">real KOIL-task cells</div>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-lg border border-line bg-surface p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><b className="text-sm text-ink">Deployed upload baseline</b><span className="text-xs text-mut">Herlev · 917 images</span></div>
+                  <div className="mt-2 grid grid-cols-2 gap-3"><div><div className="font-mono text-xl font-semibold text-teal">98.7%</div><div className="text-[11px] text-mut">binary sensitivity · 5-fold mean</div></div><div><div className="font-mono text-xl font-semibold text-navy">69.0%</div><div className="text-[11px] text-mut">four-grade accuracy · 5-fold mean</div></div></div>
                 </div>
-                <div className="rounded-lg border border-line p-3">
-                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-navy sm:text-xl">{METRICS.dataset.total}</div>
-                  <div className="text-xs text-mut">real grade-task images</div>
+                <div className="rounded-lg border border-line bg-surface p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><b className="text-sm text-ink">Research candidate · not deployed</b><span className="text-xs text-mut">CRIC · 10,003 cells</span></div>
+                  <div className="mt-2 grid grid-cols-2 gap-3"><div><div className="font-mono text-xl font-semibold text-teal">91.7%</div><div className="text-[11px] text-mut">accepted-case accuracy</div></div><div><div className="font-mono text-xl font-semibold text-navy">94.1%</div><div className="text-[11px] text-mut">coverage · 88.8% on all cells</div></div></div>
                 </div>
-                <div className="rounded-lg border border-line p-3">
-                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-hsil sm:text-xl">{METRICS.koil.auroc}</div>
-                  <div className="text-xs text-mut">KOIL locked AUROC</div>
-                </div>
-                <div className="rounded-lg border border-line p-3">
-                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-scc sm:text-xl">91.7%</div>
-                  <div className="text-xs text-mut">CRIC selective accuracy</div>
+                <div className="rounded-lg border border-line bg-surface p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><b className="text-sm text-ink">Independent morphology endpoint</b><span className="text-xs text-mut">SIPaKMeD · locked n=641</span></div>
+                  <div className="mt-2 grid grid-cols-2 gap-3"><div><div className="font-mono text-xl font-semibold text-teal">96.2%</div><div className="text-[11px] text-mut">KOIL sensitivity</div></div><div><div className="font-mono text-xl font-semibold text-hsil">97.6%</div><div className="text-[11px] text-mut">KOIL specificity · not HPV status</div></div></div>
                 </div>
               </div>
               <div className="mt-4 rounded-lg border border-dashed border-line p-3 text-xs leading-5 text-mut">
-                The 917 Herlev images, 4,049 SIPaKMeD cells, and 10,003 CRIC cells belong to separate development datasets and are not one patient cohort. The CRIC result is 91.7% selective accuracy at 94.1% coverage; full-cohort accuracy is 88.8%. It is not the deployed upload checkpoint or an HPV DNA/RNA result.
+                These sample counts belong to separate datasets, tasks, and evaluation protocols. They are not one cohort and must not be added together. The CRIC result is not the deployed upload checkpoint; KOIL morphology is not an HPV DNA/RNA result.
               </div>
             </Reveal>
           </div>
@@ -94,7 +88,7 @@ export default function Landing() {
               <Reveal key={area} className="card p-5">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-display font-semibold text-ink">{area}</h3>
-                  <span className={"rounded-full border px-2 py-1 text-[10px] " + (status.includes("Missing") || status.includes("Not") ? "border-scc text-scc" : "border-teal text-teal")}>{status}</span>
+                  <span className={"rounded-full border px-2 py-1 text-[10px] " + (status === "Blocked" ? "border-scc text-scc" : status.includes("Research") || status === "Baseline" ? "border-hsil text-hsil" : "border-teal text-teal")}>{status}</span>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-mut">{note}</p>
               </Reveal>

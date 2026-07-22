@@ -22,14 +22,14 @@ export const CLASSES: ClassInfo[] = [
     desc: "Independent koilocytotic-morphology endpoint; not an HPV infection test.", triage: "Expert morphology review and separate HPV testing when clinically indicated." },
 ];
 
-export const VERSION = { name: "Phase 1.8 evidence package", date: "2026-07-22", model: "EfficientNet-B0 endpoints" };
+export const VERSION = { name: "Phase 1.9 evidence package", date: "2026-07-23", model: "Endpoint-specific EfficientNet-B0 models" };
 
 export const MODEL_CARD = {
   name: "CerviCo-Pilot — Cervical Cytology Screening Model",
   intendedUse: "Assist medical personnel in screening Pap/ThinPrep-style cervical cytology images to support triage and referral prioritization.",
   users: "Clinicians, pathologists, and cytotechnologists",
   decisionPoint: "Pre-screen triage before confirmatory colposcopy or HPV testing",
-  data: "Deployed baseline: 917 Herlev grade/triage images. KOIL endpoint: 4,049 SIPaKMeD cells from 966 source clusters plus a 20-positive CCCID LBC challenge. Separate CRIC research: 10,003 cells from 395 parent images for parent-image-disjoint four-grade evaluation. These are not one combined cohort.",
+  data: "Deployed baseline: 917 Herlev grade/triage images. KOIL development: 4,049 SIPaKMeD cells from 966 source clusters; CCCID contributes only a 20-positive external challenge. Separate CRIC research: 10,003 cells from 395 parent images for parent-image-disjoint four-grade evaluation. These are not one combined cohort.",
   training: "The upload workflow retains separate Herlev grade and SIPaKMeD KOIL EfficientNet-B0 checkpoints. A separate CRIC four-grade candidate was evaluated across five parent-image-disjoint folds and is not deployed.",
   doNotUse: [
     "Final diagnosis without qualified clinician review",
@@ -39,9 +39,9 @@ export const MODEL_CARD = {
   ],
   limitations: [
     "KOIL has a 20-positive CCCID liquid-based challenge, but no negative-inclusive external ThinPrep validation",
-    "Moderate specificity (about 0.70) may cause over-referral",
+    "Herlev binary-triage specificity was 69.1% ± 11.5% in five-fold CV, so the deployed screening baseline may over-refer",
     "Post-hoc temperature scaling was evaluated on Herlev only; external Thai calibration is still required",
-    "The small public dataset creates domain-shift risk for Thai clinical images",
+    "Herlev and CRIC are conventional Pap datasets; APCData testing shows major transfer failure on an external liquid-based domain",
     "CRIC selective grade accuracy is 91.7% at 94.1% coverage, but full-cohort accuracy is 88.8% and SCC recall is 50.3%",
   ],
 };
@@ -56,17 +56,23 @@ export interface Sample {
   uncertainty: { entropy: number; std: number; level: string; flag: boolean };
 }
 
-// ── honest metrics (best_cervical.pt, real Herlev held-out + 5-fold CV) ──
+// Endpoint-specific measured evidence. These datasets and protocols must never
+// be combined into one sample count or a single model-performance claim.
 export const METRICS = {
-  dataset: { name: "Herlev (public)", total: 917, test: 137 },
-  triage: {
-    held: { sensitivity: "1.00", auroc: "0.964", accuracy: "0.927", specificity: "0.722", ci_auroc: "0.925–0.991" },
-    cv: { sensitivity: "0.987 ± 0.009", auroc: "0.944 ± 0.045", auprc: "0.976 ± 0.022", specificity: "0.691 ± 0.115", mcc: "0.756 ± 0.092", bacc: "0.839 ± 0.059" },
-    highRisk: "100%",
-  },
-  fiveClass: {
-    acc: "0.690 ± 0.062", qwk: "0.698 ± 0.087", recall_hs: "0.686 ± 0.055",
-    bacc: "0.701 ± 0.058", mcc: "0.600 ± 0.079", auc: "0.727 ± 0.025",
+  herlevBaseline: {
+    dataset: "Herlev Pap Smear Dataset",
+    role: "Deployed upload baseline",
+    images: 917,
+    heldOut: 137,
+    binaryTriage: {
+      held: { sensitivity: "100.0%", auroc: "0.964", accuracy: "92.7%", specificity: "72.2%", aurocCi: "0.925–0.991" },
+      cv: { sensitivity: "98.7% ± 0.9%", auroc: "0.944 ± 0.045", auprc: "0.976 ± 0.022", specificity: "69.1% ± 11.5%", mcc: "0.756 ± 0.092", balancedAccuracy: "83.9% ± 5.9%" },
+    },
+    fourGrade: {
+      accuracy: "69.0% ± 6.2%",
+      qwk: "0.698 ± 0.087",
+      highGradeRecall: "0.686 ± 0.055",
+    },
   },
   cricGrade: {
     dataset: "CRIC Cervix Cell Classification",
@@ -84,36 +90,6 @@ export const METRICS = {
       SCC: { support: 161, precision: 0.417526, recall: 0.503106, f1: 0.456338 },
     },
   },
-  perClass: [
-    { k: "NILM", recall: 0.72 }, { k: "LSIL", recall: 0.61 },
-    { k: "HSIL", recall: 0.87 }, { k: "SCC", recall: 0.59 },
-  ],
-  folds: [
-    ["1", "0.587", "0.553", "0.978", "0.861"],
-    ["2", "0.701", "0.700", "0.985", "0.952"],
-    ["3", "0.667", "0.678", "0.993", "0.940"],
-    ["4", "0.727", "0.743", "0.978", "0.978"],
-    ["5", "0.771", "0.817", "1.000", "0.986"],
-    ["μ ± SD", "0.690±.06", "0.698±.09", "0.987±.01", "0.944±.04"],
-  ],
-  // numeric per-fold for charts: [acc, qwk, sens, auroc]
-  foldNum: [
-    { fold: 1, acc: 0.587, qwk: 0.553, sens: 0.978, auroc: 0.861 },
-    { fold: 2, acc: 0.701, qwk: 0.700, sens: 0.985, auroc: 0.952 },
-    { fold: 3, acc: 0.667, qwk: 0.678, sens: 0.993, auroc: 0.940 },
-    { fold: 4, acc: 0.727, qwk: 0.743, sens: 0.978, auroc: 0.978 },
-    { fold: 5, acc: 0.771, qwk: 0.817, sens: 1.000, auroc: 0.986 },
-  ],
-  // Historical matrix storage. The supported grade display uses the first 4x4;
-  // KOIL had zero Herlev support and is now evaluated by a separate endpoint.
-  confusion: [
-    [26, 1, 7, 2, 0],
-    [1, 30, 16, 2, 0],
-    [1, 0, 26, 3, 0],
-    [0, 0, 9, 13, 0],
-    [0, 0, 0, 0, 0],
-  ],
-  binaryConfusion: { TP: 101, TN: 26, FP: 10, FN: 0 },
   koil: {
     dataset: "SIPaKMeD official cropped cells",
     total: 4049, clusters: 966, test: 641, positive: 133, negative: 508,

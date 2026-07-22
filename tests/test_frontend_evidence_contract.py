@@ -127,6 +127,23 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertIn("not deployed", files["model"])
         self.assertIn("not the deployed upload checkpoint", files["overview"])
 
+    def test_public_metrics_are_grouped_by_endpoint_and_deployment_status(self):
+        data = (ROOT / "web-react" / "src" / "lib" / "data.ts").read_text(encoding="utf-8")
+        overview = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
+        model = (ROOT / "web-react" / "src" / "pages" / "ModelCard.tsx").read_text(encoding="utf-8")
+
+        self.assertIn("herlevBaseline", data)
+        self.assertNotIn("fiveClass", data)
+        self.assertIn("Deployed upload baseline", overview)
+        self.assertIn("Research candidate · not deployed", overview)
+        self.assertIn("Independent morphology endpoint", overview)
+        self.assertIn("Deployed upload baseline · Herlev", model)
+        self.assertIn("Research candidate · CRIC · not deployed", model)
+        self.assertIn("Independent KOIL endpoint · SIPaKMeD", model)
+        self.assertIn("91.7% accepted-case accuracy", model)
+        self.assertIn("94.1% coverage", model)
+        self.assertIn("88.8% all-cell accuracy", model)
+
     def test_dataset_registry_separates_public_images_from_paired_hpv_cohorts(self):
         registry = json.loads((ROOT / "web-react" / "public" / "evidence" / "dataset_registry.json").read_text(encoding="utf-8"))
         records = {record["id"]: record for record in registry["records"]}

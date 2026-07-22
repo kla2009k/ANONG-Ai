@@ -31,7 +31,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <Navbar />
       <main className="min-w-0 flex-1">{children}</main>
       <footer className="border-t border-line py-6 text-center text-xs text-mut">
-        <span className="font-display font-semibold text-teal">Anong</span> · <span className="font-mono">CerviCo-Pilot</span> · Research decision support · Clinician sign-off required · No HPV DNA/RNA endpoint · Evidence version 2026-07-22
+        <span className="font-display font-semibold text-teal">Anong</span> · <span className="font-mono">CerviCo-Pilot</span> · Research decision support · Clinician sign-off required · No HPV DNA/RNA endpoint · Evidence version 2026-07-23
       </footer>
     </div>
   );

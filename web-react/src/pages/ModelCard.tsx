@@ -13,9 +13,9 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function ModelCard() {
-  const t = METRICS.triage;
-  const f = METRICS.fiveClass;
+  const hb = METRICS.herlevBaseline;
   const cg = METRICS.cricGrade;
+  const koil = METRICS.koil;
   return (
     <div className="mx-auto max-w-4xl px-6 py-14">
       <div className="kicker mb-2">Model Card</div>
@@ -37,7 +37,7 @@ export default function ModelCard() {
         <Row label="Intended use" value={MODEL_CARD.intendedUse} />
         <Row label="Intended users" value={MODEL_CARD.users} />
         <Row label="Decision point" value={MODEL_CARD.decisionPoint} />
-        <Row label="Training data" value={MODEL_CARD.data} />
+        <Row label="Evidence datasets" value={MODEL_CARD.data} />
         <Row label="Training method" value={MODEL_CARD.training} />
       </div>
 
@@ -91,83 +91,37 @@ export default function ModelCard() {
         </div>
       </div>
 
-      {/* metrics summary with CI */}
-      <div className="card mt-6 p-5">
-        <div className="mb-1 font-semibold text-ink">Performance summary — {METRICS.dataset.total} real Herlev images</div>
-        <p className="mb-4 text-xs text-mut">
-          Reports the held-out test (n={METRICS.dataset.test}) and 5-fold cross-validation (mean ± SD), including the available 95% confidence interval.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-line text-left text-mut">
-                <th className="py-2 pr-4 font-medium">Metric</th>
-                <th className="py-2 pr-4 font-medium">Held-out (n={METRICS.dataset.test})</th>
-                <th className="py-2 font-medium">5-fold CV (mean ± SD)</th>
-              </tr>
-            </thead>
-            <tbody className="text-ink">
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">Triage sensitivity</td>
-                <td className="py-2 pr-4 font-mono">{t.held.sensitivity}</td>
-                <td className="py-2 font-mono">{t.cv.sensitivity}</td>
-              </tr>
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">Triage AUROC <span className="text-xs text-mut">(95% CI {t.held.ci_auroc})</span></td>
-                <td className="py-2 pr-4 font-mono">{t.held.auroc}</td>
-                <td className="py-2 font-mono">{t.cv.auroc}</td>
-              </tr>
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">Triage specificity</td>
-                <td className="py-2 pr-4 font-mono">{t.held.specificity}</td>
-                <td className="py-2 font-mono">{t.cv.specificity}</td>
-              </tr>
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">MCC (triage)</td>
-                <td className="py-2 pr-4 font-mono text-mut">—</td>
-                <td className="py-2 font-mono">{t.cv.mcc}</td>
-              </tr>
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">Supported-grade accuracy (4-class)</td>
-                <td className="py-2 pr-4 font-mono text-mut">—</td>
-                <td className="py-2 font-mono">{f.acc}</td>
-              </tr>
-              <tr className="border-b border-line/60">
-                <td className="py-2 pr-4">Supported-grade QWK <span className="text-xs text-mut">(ordinal)</span></td>
-                <td className="py-2 pr-4 font-mono text-mut">—</td>
-                <td className="py-2 font-mono">{f.qwk}</td>
-              </tr>
-              <tr>
-                <td className="py-2 pr-4">HSIL recall <span className="text-xs text-mut">(high grade)</span></td>
-                <td className="py-2 pr-4 font-mono text-mut">—</td>
-                <td className="py-2 font-mono">{f.recall_hs}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-xs leading-relaxed text-mut">
-          Evidence note: Herlev contains no true KOIL examples, so KOIL is excluded from the grade output. The separate SIPaKMeD morphology endpoint achieved locked-test sensitivity 0.9624 and specificity 0.9764, but is not externally validated for ThinPrep.
-          Specificity near 0.70 implies some over-referral, a trade-off of the current high-sensitivity screening configuration.
-          See the Performance page for the complete results and boundaries.
-        </p>
-      </div>
+      <section className="mt-8" aria-labelledby="evidence-by-endpoint">
+        <h2 id="evidence-by-endpoint" className="font-display text-2xl font-semibold text-ink">Measured evidence by endpoint</h2>
+        <p className="mt-2 text-sm leading-6 text-mut">Each block below belongs to a different dataset, task, and evaluation protocol. The values are not interchangeable and the sample counts must not be combined.</p>
 
-      <div className="card mt-6 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="font-semibold text-ink">Separate CRIC four-grade research candidate</div>
-            <p className="mt-1 text-xs leading-5 text-mut">Five-fold parent-image-disjoint evaluation on {cg.cells.toLocaleString()} conventional Pap-smear cells from {cg.parents} parent microscope images. This candidate is not the upload checkpoint.</p>
+        <div className="card mt-5 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold text-ink">Deployed upload baseline · Herlev</div><p className="mt-1 text-xs text-mut">{hb.images} conventional Pap cell images; held-out n={hb.heldOut} plus five-fold CV.</p></div><span className="rounded-full border border-teal px-3 py-1 text-xs font-semibold text-teal">Used by upload workflow</span></div>
+          <div className="mt-4 hidden overflow-x-auto sm:block"><table className="w-full min-w-[580px] border-collapse text-sm"><thead><tr className="border-b border-line text-left text-mut"><th className="py-2 pr-4 font-medium">Endpoint</th><th className="py-2 pr-4 font-medium">Held-out</th><th className="py-2 font-medium">5-fold CV · mean ± SD</th></tr></thead><tbody className="text-ink"><tr className="border-b border-line/60"><td className="py-2 pr-4">Binary triage sensitivity</td><td className="py-2 pr-4 font-mono">{hb.binaryTriage.held.sensitivity}</td><td className="py-2 font-mono">{hb.binaryTriage.cv.sensitivity}</td></tr><tr className="border-b border-line/60"><td className="py-2 pr-4">Binary triage specificity</td><td className="py-2 pr-4 font-mono">{hb.binaryTriage.held.specificity}</td><td className="py-2 font-mono">{hb.binaryTriage.cv.specificity}</td></tr><tr className="border-b border-line/60"><td className="py-2 pr-4">Binary triage AUROC</td><td className="py-2 pr-4 font-mono">{hb.binaryTriage.held.auroc} <span className="text-xs text-mut">(95% CI {hb.binaryTriage.held.aurocCi})</span></td><td className="py-2 font-mono">{hb.binaryTriage.cv.auroc}</td></tr><tr><td className="py-2 pr-4">Four-grade exact accuracy</td><td className="py-2 pr-4 text-mut">Not reported</td><td className="py-2 font-mono">{hb.fourGrade.accuracy}</td></tr></tbody></table></div>
+          <div className="mt-4 grid gap-3 sm:hidden">
+            {[
+              ["Binary triage sensitivity", hb.binaryTriage.held.sensitivity, hb.binaryTriage.cv.sensitivity],
+              ["Binary triage specificity", hb.binaryTriage.held.specificity, hb.binaryTriage.cv.specificity],
+              ["Binary triage AUROC", `${hb.binaryTriage.held.auroc} (CI ${hb.binaryTriage.held.aurocCi})`, hb.binaryTriage.cv.auroc],
+              ["Four-grade exact accuracy", "Not reported", hb.fourGrade.accuracy],
+            ].map(([endpoint, held, cv]) => <div key={endpoint} className="rounded-lg border border-line p-3"><div className="text-sm font-semibold text-ink">{endpoint}</div><div className="mt-2 grid grid-cols-2 gap-3 text-xs"><div><div className="text-mut">Held-out</div><div className="mt-1 font-mono text-ink">{held}</div></div><div><div className="text-mut">5-fold CV</div><div className="mt-1 font-mono text-ink">{cv}</div></div></div></div>)}
           </div>
-          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research · not deployed</span>
+          <p className="mt-3 text-xs leading-5 text-mut">Binary triage and exact four-grade classification are different endpoints. High sensitivity is paired with moderate specificity, so this baseline can over-refer and always requires human review.</p>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-teal">91.7%</div><div className="text-xs text-mut">Selective accuracy</div></div>
-          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-navy">94.1%</div><div className="text-xs text-mut">Coverage</div></div>
-          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-ink">88.8%</div><div className="text-xs text-mut">Full-cohort accuracy</div></div>
-          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-scc">50.3%</div><div className="text-xs text-mut">SCC recall</div></div>
+
+        <div className="card mt-5 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold text-ink">Research candidate · CRIC · not deployed</div><p className="mt-1 text-xs text-mut">Five-fold parent-image-disjoint OOF evaluation on {cg.cells.toLocaleString()} conventional Pap cells from {cg.parents} parent microscope images.</p></div><span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research only</span></div>
+          <p className="mt-4 text-sm leading-6 text-ink"><b>91.7% accepted-case accuracy</b> at <b>94.1% coverage</b>; <b>88.8% all-cell accuracy</b>. The model abstained on {cg.abstained.toLocaleString()} uncertain cells.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-teal">91.7%</div><div className="text-xs text-mut">accepted-case accuracy</div></div><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-navy">94.1%</div><div className="text-xs text-mut">coverage</div></div><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-ink">88.8%</div><div className="text-xs text-mut">all-cell accuracy</div></div><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-scc">50.3%</div><div className="text-xs text-mut">exact SCC recall</div></div></div>
+          <p className="mt-3 text-xs leading-5 text-mut">Accepted-case accuracy 95% CI {cg.selectiveAccuracyCi}; its lower bound is below 90%. Threshold {cg.selectiveThreshold} was fixed for evaluation. SCC high-grade capture was 96.3%, but exact SCC recall was only 50.3%; those are different clinical questions.</p>
         </div>
-        <p className="mt-3 text-xs leading-5 text-mut">Selective accuracy 95% CI {cg.selectiveAccuracyCi}; the lower bound is below 90%. Threshold {cg.selectiveThreshold} is locked for the next external evaluation. These metrics do not establish Thai ThinPrep performance, clinical accuracy, or HPV infection detection.</p>
-      </div>
+
+        <div className="card mt-5 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold text-ink">Independent KOIL endpoint · SIPaKMeD</div><p className="mt-1 text-xs text-mut">KOIL morphology positive/negative; locked test n={koil.test} ({koil.positive} positive, {koil.negative} negative).</p></div><span className="rounded-full border border-navy px-3 py-1 text-xs font-semibold text-navy">Separate model</span></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-teal">96.2%</div><div className="text-xs text-mut">sensitivity</div></div><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-navy">97.6%</div><div className="text-xs text-mut">specificity</div></div><div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-ink">0.991</div><div className="text-xs text-mut">AUROC</div></div></div>
+          <p className="mt-3 text-xs leading-5 text-mut">This endpoint estimates koilocytic morphology. It is not a fifth cytology grade and does not detect HPV infection, DNA/RNA, genotype, viral load, or persistence.</p>
+        </div>
+      </section>
 
       <p className="mt-6 text-xs text-mut">
         Disclaimer: Research decision support only. Clinician sign-off is required. Not a final diagnosis and not an HPV DNA/RNA test.

@@ -1270,3 +1270,33 @@ descriptions above.
   this session because 224-pixel dual-input training was preprocessing-bound.
   The canonical CRIC metrics and deployed upload checkpoint therefore remain
   unchanged.
+
+## 2026-07-23 endpoint-specific web metric audit
+
+- Overview and Model Card metrics are now grouped into three explicitly
+  separate result sets. Do not collapse them into one model score:
+  1. Herlev deployed upload baseline: 917 conventional Pap cell images;
+     binary-triage CV sensitivity 98.7% +/- 0.9%, specificity 69.1% +/- 11.5%,
+     and four-grade CV accuracy 69.0% +/- 6.2%.
+  2. CRIC research candidate, not deployed: 10,003 cells from 395 parent
+     images; 88.8% all-cell OOF accuracy, or 91.7% accepted-case accuracy at
+     94.1% coverage. Exact SCC recall remains 50.3%; SCC high-grade capture is
+     a different endpoint at 96.3%.
+  3. SIPaKMeD KOIL morphology: locked n=641; sensitivity 96.2%, specificity
+     97.6%, AUROC 0.991. This is not a fifth grade or a molecular HPV test.
+- `METRICS.fiveClass`, generic `METRICS.dataset`, and other unused historical
+  arrays were removed from `web-react/src/lib/data.ts`. Use
+  `METRICS.herlevBaseline`, `METRICS.cricGrade`, and `METRICS.koil` so dataset
+  and endpoint provenance remain visible in code.
+- CCCID's 20 positives are external challenge evidence, not training data.
+  The Model Card now labels the row as Evidence datasets and states this role.
+- Percent-valued Herlev metrics are displayed as percentages throughout the
+  public UI; AUROC remains on its 0-1 scale. Mobile Model Card metrics use
+  stacked endpoint cards instead of a horizontally clipped table.
+- The 14,969 current development items are a registry sum across separate
+  datasets and endpoints, not one cohort, not independent patients, and not
+  all ThinPrep images.
+- Verification on 2026-07-23: 81 tests plus 10 subtests passed; the TypeScript
+  and Vite production build passed; desktop and 390 px browser checks showed
+  no horizontal page overflow; all five Performance figures loaded with
+  non-zero natural dimensions.
