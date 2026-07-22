@@ -22,14 +22,17 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertIn("91.7% selective accuracy at 94.1% coverage", source)
         self.assertNotIn("92.8% overall accuracy", source)
 
-    def test_performance_keeps_limitations_auditable_without_prominent_failure_panels(self):
+    def test_performance_uses_a_compact_presentation_view_with_model_card_audit_path(self):
         source = (ROOT / "web-react/src/pages/Performance.tsx").read_text(encoding="utf-8")
         self.assertNotIn("SCC explained", source)
         self.assertNotIn("External domain stress test", source)
         self.assertNotIn("The CRIC model does not transfer safely to APCData LBC", source)
-        self.assertIn('title="Limitations and external validation"', source)
-        self.assertIn("Exact SCC recall: 50.3%", source)
-        self.assertIn("APCData balanced accuracy: 28.4%", source)
+        self.assertNotIn('title="Limitations and external validation"', source)
+        self.assertNotIn('title="Exact class metrics"', source)
+        self.assertNotIn('title="How the two model endpoints differ"', source)
+        self.assertNotIn("cric_recall_by_endpoint.png", source)
+        self.assertIn("Headline results are endpoint-specific", source)
+        self.assertIn('href="/model"', source)
 
     def test_overview_hides_requested_readiness_rows(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
@@ -63,7 +66,7 @@ class FrontendEvidenceContractTests(unittest.TestCase):
 
         self.assertIn("CRIC research model · not deployed", source)
         self.assertIn('id="research-charts"', source)
-        self.assertIn("All five charts are visible here", source)
+        self.assertIn("Four presentation charts are shown here", source)
         self.assertNotIn('<Disclosure title="All five research charts"', source)
         self.assertNotIn("Research v3", source)
         self.assertNotIn("Historical Herlev grade view", source)
@@ -75,7 +78,8 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         evidence = json.loads((ROOT / "web-react" / "public" / "evidence" / "cric_grade_5fold_summary.json").read_text(encoding="utf-8"))
         self.assertIn("91.7% selective four-grade accuracy at 94.1% coverage", source)
         self.assertIn("Full-cohort accuracy was 88.8%", source)
-        self.assertIn("SCC recall is 50.3%", source)
+        model = (ROOT / "web-react" / "src" / "pages" / "ModelCard.tsx").read_text(encoding="utf-8")
+        self.assertIn("exact SCC recall was only 50.3%", model)
         self.assertAlmostEqual(evidence["selective_accuracy"], 0.9165869726915312)
         self.assertAlmostEqual(evidence["selective_coverage"], 0.940817754673598)
         self.assertLess(evidence["pooled_accuracy"], 0.90)

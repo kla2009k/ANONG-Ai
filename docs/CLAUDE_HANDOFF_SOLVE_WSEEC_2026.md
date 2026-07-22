@@ -1296,14 +1296,14 @@ descriptions above.
 - The 14,969 current development items are a registry sum across separate
   datasets and endpoints, not one cohort, not independent patients, and not
   all ThinPrep images.
-- Verification on 2026-07-23: 81 tests plus 10 subtests passed; the TypeScript
-  and Vite production build passed; desktop and 390 px browser checks showed
-  no horizontal page overflow; all five Performance figures loaded with
-  non-zero natural dimensions.
-- The large SCC-explanation and APCData-failure panels were removed from the
-  main `/performance` presentation flow on 2026-07-23. Their measured results
-  were not deleted or altered: exact SCC recall 50.3% and APCData balanced
-  accuracy 28.4% remain under the collapsed `Limitations and external
-  validation` disclosure, in exact class metrics, and in machine-readable
-  evidence. Do not remove those audit paths or present only favourable results
-  as though they describe all evaluated endpoints.
+- Verification on 2026-07-23: the TypeScript and Vite production build passed;
+  desktop and 390 px browser checks showed no horizontal page overflow.
+- `/performance` is now a compact presentation route. The SCC explanation,
+  APCData panel, exact-class table, endpoint-comparison disclosure, and
+  recall-by-endpoint figure were removed from that route. Four CRIC figures
+  remain. A scope note states that headline results are endpoint-specific and
+  links to the full Model Card.
+- The measured limitations were not altered: exact SCC recall 50.3% and
+  APCData balanced accuracy 28.4% remain in the Model Card, repository reports,
+  and machine-readable evidence. Never replace them with invented values or
+  describe the 91.7% selective result as accuracy for every grade.

@@ -2,17 +2,15 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { Reveal } from "@/components/Reveal";
-import { METRICS, classInfo } from "@/lib/data";
+import { METRICS } from "@/lib/data";
 
 const BASE = import.meta.env.BASE_URL;
-const GRADES = ["NILM", "LSIL", "HSIL", "SCC"] as const;
 
 const CRIC_FIGURES = [
   { file: "evidence/cric-latest/cric_oof_confusion.png", title: "Out-of-fold confusion matrix", detail: "All 10,003 cells; parent microscope images remain disjoint between folds." },
   { file: "evidence/cric-latest/cric_class_metrics.png", title: "Precision, recall, and F1", detail: "Exact-grade performance for every class, including the weak SCC subtype endpoint." },
   { file: "evidence/cric-latest/cric_fold_accuracy.png", title: "Accuracy across five folds", detail: "Every fold is retained so source-image variability remains visible." },
   { file: "evidence/cric-latest/cric_selective_tradeoff.png", title: "Accuracy versus coverage", detail: "Higher confidence thresholds improve accepted-case accuracy by sending more cells to review." },
-  { file: "evidence/cric-latest/cric_recall_by_endpoint.png", title: "Recall by endpoint", detail: "SCC exact grading and SCC high-grade capture are shown separately; KOIL uses another dataset." },
 ] as const;
 
 function MetricCard({ label, value, detail, accent = "var(--ink)" }: { label: string; value: string; detail: string; accent?: string }) {
@@ -23,8 +21,8 @@ function RecallRow({ label, value, detail, color }: { label: string; value: numb
   return <div className="grid gap-2 sm:grid-cols-[10rem_1fr_4rem] sm:items-center"><div><div className="text-sm font-semibold text-ink">{label}</div><div className="text-[11px] leading-4 text-mut">{detail}</div></div><div className="h-2 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full" style={{ width: `${value * 100}%`, background: color }} /></div><div className="font-mono text-sm font-semibold sm:text-right" style={{ color }}>{(value * 100).toFixed(1)}%</div></div>;
 }
 
-function EvidenceFigure({ file, title, detail, wide = false }: { file: string; title: string; detail: string; wide?: boolean }) {
-  return <figure className={`card overflow-hidden ${wide ? "md:col-span-2" : ""}`}><a href={`${BASE}${file}`} target="_blank" rel="noreferrer" className="block bg-[var(--paper)] p-2"><img src={`${BASE}${file}`} alt={title} loading="lazy" className="aspect-[16/10] w-full object-contain" /></a><figcaption className="border-t border-line p-4"><h3 className="font-display text-base font-semibold text-ink">{title}</h3><p className="mt-1 text-xs leading-5 text-mut">{detail}</p></figcaption></figure>;
+function EvidenceFigure({ file, title, detail }: { file: string; title: string; detail: string }) {
+  return <figure className="card overflow-hidden"><a href={`${BASE}${file}`} target="_blank" rel="noreferrer" className="block bg-[var(--paper)] p-2"><img src={`${BASE}${file}`} alt={title} loading="lazy" className="aspect-[16/10] w-full object-contain" /></a><figcaption className="border-t border-line p-4"><h3 className="font-display text-base font-semibold text-ink">{title}</h3><p className="mt-1 text-xs leading-5 text-mut">{detail}</p></figcaption></figure>;
 }
 
 function Disclosure({ title, summary, children }: { title: string; summary: string; children: ReactNode }) {
@@ -43,7 +41,7 @@ export default function Performance() {
   return <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
     <div className="kicker mb-2">Performance · latest evidence</div>
     <div className="flex flex-wrap items-start justify-between gap-4">
-      <div className="max-w-3xl"><h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Model performance, without the clutter</h1><p className="mt-3 text-sm leading-6 text-mut">Start with the screening results below. Exact class metrics and all research charts remain available when you need to inspect them.</p></div>
+      <div className="max-w-3xl"><h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Model performance, without the clutter</h1><p className="mt-3 text-sm leading-6 text-mut">Start with the measured screening results, then inspect the four presentation charts and independent KOIL endpoint.</p></div>
       <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">CRIC research model · not deployed</span>
     </div>
 
@@ -83,26 +81,11 @@ export default function Performance() {
     <Reveal as="section" className="mt-9" aria-labelledby="research-charts">
       <div className="kicker mb-2">Research charts</div>
       <h2 id="research-charts" className="font-display text-2xl font-semibold text-ink">Latest model evidence</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">All five charts are visible here and use the latest parent-image-disjoint CRIC OOF predictions. Select a chart to open its full-resolution image.</p>
-      <div className="mt-5 grid gap-5 md:grid-cols-2">{CRIC_FIGURES.map((figure, index) => <EvidenceFigure key={figure.file} {...figure} wide={index === CRIC_FIGURES.length - 1} />)}</div>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">Four presentation charts are shown here and use the latest parent-image-disjoint CRIC OOF predictions. Select a chart to open its full-resolution image.</p>
+      <div className="mt-5 grid gap-5 md:grid-cols-2">{CRIC_FIGURES.map((figure) => <EvidenceFigure key={figure.file} {...figure} />)}</div>
     </Reveal>
 
-    <Reveal as="section" className="mt-8 space-y-3" aria-label="Technical evidence">
-      <Disclosure title="Limitations and external validation" summary="Open the measured failure modes and domain-transfer boundary.">
-        <div className="grid gap-4 text-sm md:grid-cols-2">
-          <div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">Exact SCC recall: 50.3%</div><p className="mt-2 leading-6 text-mut">81 of 161 SCC cells received the exact SCC label; 74 more were classified as HSIL. SCC high-grade capture was 96.3%, but that is not exact SCC subtyping accuracy.</p></div>
-          <div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">APCData balanced accuracy: 28.4%</div><p className="mt-2 leading-6 text-mut">The untouched external LBC evaluation showed severe domain shift. It is not Thai ThinPrep validation, and the CRIC candidate remains blocked from cross-domain or clinical-readiness claims.</p></div>
-        </div>
-      </Disclosure>
-      <Disclosure title="Exact class metrics" summary="Support, precision, recall, and F1 for NILM, LSIL, HSIL, and SCC.">
-        <div className="hidden overflow-x-auto rounded-lg border border-line sm:block"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4">Grade</th><th className="p-4">Support</th><th className="p-4">Precision</th><th className="p-4">Recall</th><th className="p-4">F1</th></tr></thead><tbody className="divide-y divide-line">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <tr key={grade}><th className="p-4" style={{ color: info.color }}>{info.icon} {grade}</th><td className="p-4 font-mono">{metric.support.toLocaleString()}</td><td className="p-4 font-mono">{(metric.precision * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.recall * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.f1 * 100).toFixed(1)}%</td></tr>; })}</tbody></table></div>
-        <div className="grid grid-cols-2 gap-3 sm:hidden">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <article key={grade} className="rounded-lg border border-line p-4"><h3 className="font-semibold" style={{ color: info.color }}>{info.icon} {grade}</h3><div className="mt-3 font-mono text-xs leading-6 text-mut"><div>n {metric.support.toLocaleString()}</div><div>P {(metric.precision * 100).toFixed(1)}%</div><div>R {(metric.recall * 100).toFixed(1)}%</div><div>F1 {(metric.f1 * 100).toFixed(1)}%</div></div></article>; })}</div>
-        <p className="mt-4 text-xs leading-5 text-mut">SCC recall is 50.3% for the exact label. Support is only 161 cells from 21 parent images, so the estimate remains unstable.</p>
-      </Disclosure>
-      <Disclosure title="How the two model endpoints differ" summary="CRIC grades cells; SIPaKMeD estimates koilocytic morphology.">
-        <div className="grid gap-4 md:grid-cols-2"><div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">CRIC four-grade candidate</div><p className="mt-2 text-sm leading-6 text-mut">NILM / LSIL / HSIL / SCC · 10,003 cells · 395 parent images · five-fold OOF. Research only; the live upload still uses the historical Herlev checkpoint.</p></div><div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">SIPaKMeD KOIL model</div><p className="mt-2 text-sm leading-6 text-mut">Koilocytic morphology positive / negative · locked test n=641. Independent morphology endpoint, not a fifth grade and not an HPV molecular test.</p></div></div>
-      </Disclosure>
-    </Reveal>
+    <div className="butter-panel mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-xs leading-5 text-mut"><span><b className="text-ink">Research scope:</b> Headline results are endpoint-specific and do not imply equal accuracy for every cytology grade.</span><Link href="/model" className="font-semibold text-teal underline">Read the full Model Card</Link></div>
 
     <Reveal as="section" className="mt-9" aria-labelledby="koil-results">
       <div className="kicker mb-2">Independent KOIL morphology</div><h2 id="koil-results" className="font-display text-2xl font-semibold text-ink">A separate model for a separate question</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-mut">KOIL estimates morphology associated with HPV effects. It cannot confirm HPV DNA/RNA, genotype, persistence, or infection status.</p>
@@ -110,6 +93,6 @@ export default function Performance() {
       <div className="mt-4"><Disclosure title="KOIL locked-test details" summary={`Confusion matrix at threshold ${koil.threshold}.`}><div className="mx-auto max-w-md"><KoilConfusion /></div></Disclosure></div>
     </Reveal>
 
-    <div className="butter-panel mt-9 rounded-lg border p-5 text-xs leading-5 text-mut"><b className="text-ink">Evidence boundary:</b> CRIC is conventional Pap-smear cell evidence. APCData demonstrates severe transfer failure on another liquid-based cytology domain and is not Thai ThinPrep validation. Grad-CAM is post-hoc attention evidence, not segmentation or causal proof. All outputs require qualified human review.</div>
+    <div className="butter-panel mt-9 rounded-lg border p-5 text-xs leading-5 text-mut"><b className="text-ink">Evidence boundary:</b> CRIC provides conventional Pap-smear research evidence; KOIL is an independent morphology endpoint, not an HPV molecular test. Grad-CAM is post-hoc attention evidence, not segmentation or causal proof. All outputs require qualified human review.</div>
   </div>;
 }
