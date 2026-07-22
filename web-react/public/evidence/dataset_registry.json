@@ -3,8 +3,8 @@
   "updated": "2026-07-22",
   "current_evidence_sources": 4,
   "catalogued_sources": 15,
-  "current_model_development_images": 4966,
-  "warning": "Candidate and reference datasets are not model-development data and must not be added to the current training or validation total.",
+  "current_model_development_images": 14969,
+  "warning": "The 14,969 current items belong to separate endpoints and datasets: 917 Herlev grade images, 4,049 SIPaKMeD KOIL cells, and 10,003 CRIC grade cells. They must not be presented as one training cohort, independent patients, or ThinPrep images. Candidate datasets remain excluded.",
   "records": [
     {
       "id": "herlev",
@@ -45,13 +45,13 @@
     {
       "id": "cric",
       "name": "CRIC Cervix Classification",
-      "status": "external_reference_atlas",
+      "status": "current_model_development",
       "modality": "Conventional Pap, Bethesda-labelled cells",
       "available_count": 11534,
       "available_parent_count": 400,
-      "current_use_count": 80,
+      "current_use_count": 10003,
       "unit": "labelled cells",
-      "current_use": "Twenty visual references each for NILM, LSIL, HSIL, and SCC; not model evaluation",
+      "current_use": "Four-grade research development and five-fold parent-image-disjoint out-of-fold evaluation on 10,003 directly supported NILM/LSIL/HSIL/SCC cells; 80 cells are also displayed as a visual reference atlas",
       "paired_hpv": "not_documented_for_current_use",
       "source_url": "https://figshare.com/articles/dataset/CRIC_Cervix_Classification/12233156"
     },

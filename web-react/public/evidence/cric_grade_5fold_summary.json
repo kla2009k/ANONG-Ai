@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "dataset": "CRIC Cervix Cell Classification",
+  "doi": "10.6084/m9.figshare.c.4960286.v2",
+  "endpoint": "NILM / LSIL / HSIL / SCC cell-grade classification",
+  "protocol": "five-fold parent-image-disjoint cross-validation with validation-selected checkpoints and three-view test TTA",
+  "cells": 10003,
+  "parent_images": 395,
+  "fold_accuracy": [
+    0.900851276915373,
+    0.8856143856143857,
+    0.9064386317907445,
+    0.8394197098549274,
+    0.9092711948438275
+  ],
+  "accuracy_mean": 0.8883190398038516,
+  "accuracy_sd": 0.028821992494223927,
+  "pooled_accuracy": 0.888333499950015,
+  "pooled_macro_f1": 0.7410054313694749,
+  "pooled_per_class_recall": {
+    "NILM": 0.9448296208880366,
+    "LSIL": 0.7044117647058824,
+    "HSIL": 0.8467410452143277,
+    "SCC": 0.5031055900621118
+  },
+  "group_bootstrap": {
+    "unit": "CRIC parent microscope image",
+    "iterations": 2000,
+    "accuracy_95_ci": [
+      0.8628320506279807,
+      0.9108577559490296
+    ],
+    "macro_f1_95_ci": [
+      0.691605130229047,
+      0.7842958815004749
+    ],
+    "selective_threshold": 0.6,
+    "selective_accuracy_95_ci": [
+      0.8953584795859166,
+      0.9345586164208642
+    ],
+    "selective_coverage_95_ci": [
+      0.927593465092647,
+      0.9528152341275733
+    ]
+  },
+  "selective_threshold": 0.6,
+  "selective_accuracy": 0.9165869726915312,
+  "selective_coverage": 0.940817754673598,
+  "accepted": 9411,
+  "abstained": 592,
+  "claim_boundary": "Selective four-grade accuracy among accepted CRIC cases; remaining cases are abstained for human review.",
+  "limitations": [
+    "The 0.60 confidence threshold was examined on these out-of-fold results and requires prospective locked-threshold validation.",
+    "The selective-accuracy 95% confidence interval has a lower bound below 90%.",
+    "CRIC is conventional Pap smear, not Thai ThinPrep clinical validation.",
+    "SCC support is only 161 cells from 21 parent images and recall remains unstable.",
+    "ASC-US and ASC-H were excluded rather than relabelled into unsupported categories.",
+    "This endpoint does not detect molecular HPV infection."
+  ]
+}

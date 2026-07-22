@@ -65,7 +65,7 @@ export default function DatasetRegistry() {
     {state === "error" && <div className="mt-8 rounded-lg border border-scc/40 p-5 text-sm text-scc" role="alert">Dataset registry could not be loaded. <button onClick={loadRegistry} className="ml-2 font-semibold underline" type="button">Retry</button></div>}
     {registry && <>
       <section className="mt-8 grid border-y border-line py-6 sm:grid-cols-3">
-        <RegistryMetric label="Current model-development images" value={registry.current_model_development_images.toLocaleString()} detail="Herlev + SIPaKMeD only" />
+        <RegistryMetric label="Current model-development items" value={registry.current_model_development_images.toLocaleString()} detail="Herlev + SIPaKMeD + CRIC; separate endpoints" />
         <RegistryMetric label="Current evidence sources" value={String(registry.current_evidence_sources)} detail="Development, challenge, and atlas" />
         <RegistryMetric label="Catalogued sources" value={String(registry.catalogued_sources)} detail="Includes unused candidates" />
       </section>

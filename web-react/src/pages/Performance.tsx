@@ -198,7 +198,7 @@ function ReliabilityChart({ curves }: { curves: any }) {
 }
 
 export default function Performance() {
-  const t = METRICS.triage, f = METRICS.fiveClass, bc = METRICS.binaryConfusion, k = METRICS.koil;
+  const t = METRICS.triage, f = METRICS.fiveClass, cg = METRICS.cricGrade, bc = METRICS.binaryConfusion, k = METRICS.koil;
   const [curves, setCurves] = useState<any | null>(null);
   useEffect(() => {
     fetch(`${BASE}samples/curves.json`).then((r) => r.json()).then(setCurves).catch(() => setCurves(null));
@@ -218,6 +218,7 @@ export default function Performance() {
             <tbody className="divide-y divide-line">
               <tr><th className="p-4 text-ink">Cytology grade · deployed baseline</th><td className="p-4 text-mut">NILM / LSIL / HSIL / SCC</td><td className="p-4 text-mut">Herlev held-out + 5-fold CV</td><td className="p-4 font-mono text-ink">137 held-out</td><td className="p-4 text-mut">CV accuracy {f.acc}; triage sensitivity {t.cv.sensitivity}</td></tr>
               <tr><th className="p-4 text-ink">Cytology grade · research v3</th><td className="p-4 text-mut">Four-grade mask-guided model</td><td className="p-4 text-mut">Herlev locked-test experiment</td><td className="p-4 font-mono text-ink">137 images</td><td className="p-4 text-mut">78.8% full-cohort; 94.0% selective at 60.6% coverage</td></tr>
+              <tr><th className="p-4 text-ink">Cytology grade · CRIC research</th><td className="p-4 text-mut">NILM / LSIL / HSIL / SCC</td><td className="p-4 text-mut">5-fold parent-image-disjoint CRIC</td><td className="p-4 font-mono text-ink">{cg.cells.toLocaleString()} cells / {cg.parents} parents</td><td className="p-4 text-mut">91.7% selective at 94.1% coverage; 88.8% full cohort</td></tr>
               <tr><th className="p-4 text-ink">Safety triage</th><td className="p-4 text-mut">Normal / abnormal</td><td className="p-4 text-mut">Herlev</td><td className="p-4 font-mono text-ink">137 images</td><td className="p-4 text-mut">Sensitivity {t.held.sensitivity}</td></tr>
               <tr><th className="p-4 text-ink">KOIL morphology</th><td className="p-4 text-mut">Negative / positive</td><td className="p-4 text-mut">SIPaKMeD locked test</td><td className="p-4 font-mono text-ink">641 cells</td><td className="p-4 text-mut">Sensitivity {k.sensitivity}; AUROC {k.auroc}</td></tr>
               <tr><th className="p-4 text-ink">KOIL LBC challenge</th><td className="p-4 text-mut">Positive detection only</td><td className="p-4 text-mut">CCCID v2 BD SurePath</td><td className="p-4 font-mono text-ink">20 positives</td><td className="p-4 text-mut">{k.externalDetected}; specificity not estimable</td></tr>
@@ -228,6 +229,30 @@ export default function Performance() {
         </div>
         <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
           <b className="text-ink">Why this row is zero:</b> public cytology datasets exist and HPV-tested clinical cohorts exist, but the current repository has no same-patient microscopy image + molecular assay pairs. This does not mean HPV data does not exist. It means those linked labels require a governed cohort or research partnership. <Link href="/datasets" className="font-semibold text-teal underline">Review the dataset audit</Link>.
+        </div>
+      </Reveal>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="cric-grade-title">
+        <div className="kicker mb-3">CRIC four-grade research · five-fold OOF</div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="cric-grade-title" className="font-display text-2xl font-semibold text-ink">A 90%+ selective point estimate with abstention stated</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">EfficientNet-B0 was evaluated across five parent-image-disjoint folds. Every one of the {cg.parents} parent microscope images appears in exactly one out-of-fold test partition.</p>
+          </div>
+          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research evidence · not deployed</span>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Selective grade accuracy" value="91.7%" sub={`95% CI ${cg.selectiveAccuracyCi}`} color="var(--teal)" />
+          <Stat label="Coverage" value="94.1%" sub={`${cg.accepted.toLocaleString()} accepted; ${cg.abstained} abstained`} color="var(--navy)" />
+          <Stat label="Full-cohort accuracy" value="88.8%" sub={`5-fold ${cg.accuracyMeanSd}; CI ${cg.accuracyCi}`} />
+          <Stat label="SCC recall" value="50.3%" sub={`HSIL recall ${(Number(cg.hsilRecall) * 100).toFixed(1)}%`} color="var(--scc)" />
+        </div>
+        <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
+          <b className="text-ink">Permitted wording:</b> “The CRIC research model achieved 91.7% selective four-grade accuracy at 94.1% coverage; 5.9% of cells were abstained for human review. Full-cohort accuracy was 88.8%.” This is conventional Pap-smear cell evidence, not Thai ThinPrep clinical accuracy, not the deployed Herlev checkpoint, and not HPV detection.
+        </div>
+        <p className="mt-3 text-xs leading-5 text-mut">The 95% CI for selective accuracy is {cg.selectiveAccuracyCi}; its lower bound is below 90%. Threshold 0.60 is now locked for the next external evaluation and is not yet a prospectively validated operating point.</p>
+        <div className="mt-3 rounded-lg border border-scc/40 p-4 text-sm leading-6 text-mut">
+          <b className="text-scc">Safety limitation:</b> pooled SCC recall remained only 50.3% because CRIC contains 161 SCC cells from 21 parent images. The candidate therefore cannot replace the current screening workflow or support autonomous grading despite the 90%+ selective point estimate.
         </div>
       </Reveal>
 

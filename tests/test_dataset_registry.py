@@ -25,7 +25,7 @@ class DatasetRegistryTests(unittest.TestCase):
 
         self.assertTrue(current)
         self.assertTrue(all(r["paired_hpv"] != "yes" for r in current))
-        self.assertIn("must not be added", payload["warning"])
+        self.assertIn("Candidate datasets remain excluded", payload["warning"])
 
 
 if __name__ == "__main__":

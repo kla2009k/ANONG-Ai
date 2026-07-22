@@ -67,6 +67,14 @@ export const METRICS = {
     acc: "0.690 ± 0.062", qwk: "0.698 ± 0.087", recall_hs: "0.686 ± 0.055",
     bacc: "0.701 ± 0.058", mcc: "0.600 ± 0.079", auc: "0.727 ± 0.025",
   },
+  cricGrade: {
+    dataset: "CRIC Cervix Cell Classification",
+    cells: 10003, parents: 395,
+    accuracy: "0.8883", accuracyMeanSd: "0.8883 ± 0.0288", accuracyCi: "0.8628–0.9109",
+    macroF1: "0.7410", sccRecall: "0.5031", hsilRecall: "0.8467",
+    selectiveThreshold: "0.60", selectiveAccuracy: "0.9166", selectiveAccuracyCi: "0.8954–0.9346",
+    selectiveCoverage: "0.9408", selectiveCoverageCi: "0.9276–0.9528", accepted: 9411, abstained: 592,
+  },
   perClass: [
     { k: "NILM", recall: 0.72 }, { k: "LSIL", recall: 0.61 },
     { k: "HSIL", recall: 0.87 }, { k: "SCC", recall: 0.59 },

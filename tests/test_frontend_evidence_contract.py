@@ -42,11 +42,22 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertIn("53.3% coverage", source)
         self.assertIn("HSIL recall fell", source)
 
+    def test_cric_ninety_percent_claim_is_selective_and_auditable(self):
+        source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
+        evidence = json.loads((ROOT / "web-react" / "public" / "evidence" / "cric_grade_5fold_summary.json").read_text(encoding="utf-8"))
+        self.assertIn("91.7% selective four-grade accuracy at 94.1% coverage", source)
+        self.assertIn("Full-cohort accuracy was 88.8%", source)
+        self.assertIn("SCC recall remained only 50.3%", source)
+        self.assertAlmostEqual(evidence["selective_accuracy"], 0.9165869726915312)
+        self.assertAlmostEqual(evidence["selective_coverage"], 0.940817754673598)
+        self.assertLess(evidence["pooled_accuracy"], 0.90)
+
     def test_dataset_registry_separates_public_images_from_paired_hpv_cohorts(self):
         registry = json.loads((ROOT / "web-react" / "public" / "evidence" / "dataset_registry.json").read_text(encoding="utf-8"))
         records = {record["id"]: record for record in registry["records"]}
 
-        self.assertEqual(registry["current_model_development_images"], 4966)
+        self.assertEqual(registry["current_model_development_images"], 14969)
+        self.assertEqual(records["cric"]["current_use_count"], 10003)
         self.assertEqual(records["bmt-thinprep"]["paired_hpv"], "not_exposed_per_image")
         self.assertEqual(records["nci-pap-cohort"]["current_use_count"], 0)
         self.assertEqual(records["nci-pap-cohort"]["paired_hpv"], "yes_restricted_cohort_no_public_images")

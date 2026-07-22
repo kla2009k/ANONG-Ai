@@ -1,5 +1,26 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+## Genuine 90%+ selective CRIC result — 2026-07-22
+
+- Downloaded and verified all 395 CRIC parent microscope images containing a
+  directly supported NILM/LSIL/HSIL/SCC label.
+- Built 10,003 nucleus-centered cell records. ASC-US and ASC-H were excluded,
+  not remapped into the four-grade endpoint.
+- Completed five-fold parent-image-disjoint training and out-of-fold testing.
+- Pooled full-cohort accuracy is `88.83%`, not above 90%.
+- At prespecified confidence threshold `0.60`, selective accuracy is `91.66%`
+  at `94.08%` coverage; 592/10,003 cells are abstained for human review.
+- Parent-image bootstrap 95% CI is `89.54-93.46%` for selective accuracy and
+  `92.76-95.28%` for coverage.
+- Pooled macro F1 is `74.10%`; SCC recall is only `50.31%`. The model is a
+  research candidate and must not replace the deployed screening workflow.
+- Required headline: `91.7% selective four-grade accuracy at 94.1% coverage on
+  CRIC conventional Pap-smear cells; full-cohort accuracy 88.8%.`
+- Do not shorten this to `91.7% model accuracy`, ThinPrep accuracy, clinical
+  accuracy, or HPV detection accuracy.
+- Full report: `docs/CRIC_GRADE_5FOLD_REPORT_2026_07_22.md`.
+- Public artifact: `web-react/public/evidence/cric_grade_5fold_summary.json`.
+
 ## UI and grade-model update — 2026-07-22
 
 - Removed the `Thai ThinPrep / Missing` and `Clinical use / Not ready` cards
