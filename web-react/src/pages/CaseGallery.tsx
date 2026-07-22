@@ -1,392 +1,139 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "wouter";
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { CLASS_KEYS, GRADE_CLASS_KEYS, classInfo, type Sample } from "@/lib/data";
+import { X, ZoomIn } from "lucide-react";
+import { classInfo } from "@/lib/data";
 
 const BASE = import.meta.env.BASE_URL;
+const GRADES = ["NILM", "LSIL", "HSIL", "SCC"];
 
-interface GalleryCase {
+interface LatestCase {
   id: string;
-  image: string;
+  fold: number;
+  group_id: string;
+  cell_id: number;
+  original: string;
   gradcam: string;
   true_label: string;
   predicted_label: string;
   correct: boolean;
   confidence: number;
-  uncertainty: { level: string; entropy?: number; flag?: boolean };
-  error_bucket: string;
-  engineering_review_note: string;
-  expert_review_status: string;
+  accepted_at_0_60: boolean;
+  review_status: "accepted_correct" | "accepted_error" | "abstained";
+  probabilities: Record<string, number>;
+  cam_target: string;
+  cam_method: string;
+  cam_disclaimer: string;
+}
+
+interface LatestManifest {
+  dataset: string;
+  model: string;
+  protocol: string;
+  selective_threshold: number;
+  case_selection: string;
+  count: number;
+  cases: LatestCase[];
 }
 
 interface ReferenceCase {
   id: string;
   image: string;
   class: string;
-  source_label?: string;
   source_image_id?: number;
   source_cell_id?: number;
   subtype?: string;
-  source_member?: string;
-  focus_plane?: number;
   source_doi: string;
-  license: string;
   domain: string;
 }
 
 interface ReferenceManifest {
   dataset: string;
-  dataset_doi: string;
   dataset_url: string;
   license: string;
   license_url: string;
   attribution: string;
-  intended_use: string;
   count: number;
   counts: Record<string, number>;
   items: ReferenceCase[];
 }
 
-interface KoilChallenge {
-  support_positive: number;
-  true_positive: number;
-  false_negative: number;
-  sensitivity: number;
-  sensitivity_wilson_95_ci: { lower: number; upper: number };
-  limitation: string;
-}
-
-const BUCKET_LABEL: Record<string, string> = {
-  correct_reference_sample: "Correct reference",
-  severity_overcall: "Severity overcall",
-  class_boundary_confusion: "Boundary confusion",
-  high_confidence_miss: "High-confidence miss",
+const STATUS: Record<string, string> = {
+  accepted_correct: "Accepted · correct",
+  accepted_error: "Accepted · error",
+  abstained: "Abstained · human review",
 };
 
-const EVIDENCE_FIGURES = [
-  { file: "evidence/koil_test_performance.png", title: "Locked-test discrimination", detail: "ROC, precision-recall, and locked-threshold confusion evidence for the independent KOIL one-vs-rest endpoint." },
-  { file: "evidence/koil_calibration.png", title: "Probability calibration", detail: "Reliability evidence after validation-only temperature scaling; external clinical calibration is still required." },
-  { file: "evidence/koil_error_gallery.png", title: "KOIL error gallery", detail: "False positives and false negatives are shown deliberately to expose failure modes rather than cherry-pick favorable cells." },
-  { file: "evidence/koil_gradcam_paper.png", title: "KOIL class-activation audit", detail: "Representative class-specific Grad-CAM examples. Attention evidence is not cell segmentation or proof of HPV infection." },
+const KOIL_FIGURES = [
+  { file: "evidence/koil_test_performance.png", title: "KOIL locked-test performance", detail: "Independent SIPaKMeD morphology evidence, not CRIC grade performance or molecular HPV detection." },
+  { file: "evidence/koil_calibration.png", title: "KOIL calibration", detail: "Internal locked-test reliability; external negative-inclusive ThinPrep calibration remains required." },
+  { file: "evidence/koil_error_gallery.png", title: "KOIL errors", detail: "False positives and false negatives are retained instead of presenting only favorable examples." },
+  { file: "evidence/koil_gradcam_paper.png", title: "KOIL Grad-CAM audit", detail: "Post-hoc class activation for the separate KOIL endpoint; not segmentation or proof of HPV infection." },
 ] as const;
 
+function ProbabilityBars({ probabilities }: { probabilities: Record<string, number> }) {
+  return <div className="mt-4 space-y-2">{GRADES.map((grade) => { const value = probabilities[grade] || 0; const info = classInfo(grade); return <div key={grade} className="grid grid-cols-[2.5rem_1fr_3rem] items-center gap-2 text-[10px]"><span className="font-semibold" style={{ color: info.color }}>{grade}</span><div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full" style={{ width: `${value * 100}%`, background: info.color }} /></div><span className="text-right font-mono text-mut">{(value * 100).toFixed(1)}%</span></div>; })}</div>;
+}
+
 export default function CaseGallery() {
-  const [cases, setCases] = useState<GalleryCase[]>([]);
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [sampleFilter, setSampleFilter] = useState("ALL");
+  const [latest, setLatest] = useState<LatestManifest | null>(null);
   const [cric, setCric] = useState<ReferenceManifest | null>(null);
   const [koil, setKoil] = useState<ReferenceManifest | null>(null);
-  const [koilChallenge, setKoilChallenge] = useState<KoilChallenge | null>(null);
-  const [section, setSection] = useState<"outputs" | "atlas" | "audit" | "koil">("outputs");
-  const [filter, setFilter] = useState("ALL");
-  const [atlasFilter, setAtlasFilter] = useState("ALL");
-  const [visibleAtlas, setVisibleAtlas] = useState(24);
-  const [showCam, setShowCam] = useState<Record<string, boolean>>({});
-  const [selectedRef, setSelectedRef] = useState<ReferenceCase | null>(null);
-  const [viewerZoom, setViewerZoom] = useState(1);
+  const [view, setView] = useState<"latest" | "reference" | "koil">("latest");
+  const [gradeFilter, setGradeFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [referenceFilter, setReferenceFilter] = useState("ALL");
+  const [visibleReferences, setVisibleReferences] = useState(24);
+  const [selected, setSelected] = useState<LatestCase | null>(null);
 
   useEffect(() => {
-    fetch(`${BASE}samples/error_cases.json`).then((r) => r.json()).then(setCases).catch(() => setCases([]));
-    fetch(`${BASE}samples/samples.json`).then((r) => r.json()).then(setSamples).catch(() => setSamples([]));
-    fetch(`${BASE}cric-gallery/index.json`).then((r) => r.json()).then(setCric).catch(() => setCric(null));
-    fetch(`${BASE}koil-gallery/index.json`).then((r) => r.json()).then(setKoil).catch(() => setKoil(null));
-    fetch(`${BASE}evidence/cccid_koil_20_case_challenge.json`).then((r) => r.json()).then(setKoilChallenge).catch(() => setKoilChallenge(null));
+    fetch(`${BASE}cric-model-gallery/index.json`).then((response) => response.json()).then(setLatest).catch(() => setLatest(null));
+    fetch(`${BASE}cric-gallery/index.json`).then((response) => response.json()).then(setCric).catch(() => setCric(null));
+    fetch(`${BASE}koil-gallery/index.json`).then((response) => response.json()).then(setKoil).catch(() => setKoil(null));
   }, []);
 
   useEffect(() => {
-    if (!selectedRef) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedRef(null);
-      if (event.key === "ArrowLeft") moveReference(-1);
-      if (event.key === "ArrowRight") moveReference(1);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  });
+    if (!selected) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setSelected(null); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [selected]);
 
-  const filtered = useMemo(() => (
-    cases.filter((c) => filter === "ALL" || c.true_label === filter || c.predicted_label === filter || c.error_bucket === filter)
-  ), [cases, filter]);
-  const buckets = Array.from(new Set(cases.map((c) => c.error_bucket)));
-  const atlasCases = useMemo(() => {
-    const all = [...(cric?.items || []), ...(koil?.items || [])];
-    if (atlasFilter !== "ALL") return all.filter((item) => item.class === atlasFilter);
-    const classOrder = ["NILM", "LSIL", "HSIL", "SCC", "KOIL"];
-    const grouped = Object.fromEntries(classOrder.map((key) => [key, all.filter((item) => item.class === key)]));
-    return Array.from({ length: 20 }, (_, index) => classOrder.map((key) => grouped[key][index]).filter(Boolean)).flat();
-  }, [cric, koil, atlasFilter]);
-  const atlasCount = (cric?.count || 0) + (koil?.count || 0);
-  const atlasCounts = { ...(cric?.counts || {}), ...(koil?.counts || {}) };
-
-  function changeAtlasFilter(next: string) {
-    setAtlasFilter(next);
-    setVisibleAtlas(24);
-  }
-
-  function moveReference(delta: number) {
-    if (!selectedRef || !atlasCases.length) return;
-    const index = atlasCases.findIndex((item) => item.id === selectedRef.id);
-    const next = (index + delta + atlasCases.length) % atlasCases.length;
-    setSelectedRef(atlasCases[next]);
-    setViewerZoom(1);
-  }
+  const latestCases = useMemo(() => (latest?.cases || []).filter((item) => (gradeFilter === "ALL" || item.true_label === gradeFilter || item.predicted_label === gradeFilter) && (statusFilter === "ALL" || item.review_status === statusFilter)), [latest, gradeFilter, statusFilter]);
+  const references = useMemo(() => {
+    const items = [...(cric?.items || []), ...(koil?.items || [])];
+    return referenceFilter === "ALL" ? items : items.filter((item) => item.class === referenceFilter);
+  }, [cric, koil, referenceFilter]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-14">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="kicker mb-2">Case gallery</div>
-          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Real-case gallery and error analysis</h1>
-          <p className="mt-2 max-w-3xl text-sm text-mut">
-            Review Herlev cases processed by the evaluated model, including correct outputs, errors, and high-uncertainty examples. The gallery intentionally avoids cherry-picking only favorable results.
-          </p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface p-4 text-sm">
-          <div className="font-mono text-2xl font-semibold text-teal">{atlasCount} + {cases.length || 0}</div>
-          <div className="text-xs text-mut">external references + model-audit cases</div>
-        </div>
+        <div><div className="kicker mb-2">Case gallery · latest evidence</div><h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Latest CRIC model heatmaps</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-mut">Every default case uses the latest CRIC research checkpoint assigned to that case's held-out fold. Original crops, OOF predictions, and predicted-class Grad-CAM are displayed together.</p></div>
+        <div className="rounded-lg border border-line bg-surface p-4"><div className="font-mono text-2xl font-semibold text-teal">{latest?.count ?? "—"}</div><div className="text-xs text-mut">auditable OOF cases · 5 per grade</div></div>
       </div>
 
-      <div className="mt-7 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Gallery view">
-        {([
-          ["outputs", "Model outputs", "Original image + Grad-CAM"],
-          ["atlas", "External reference atlas", "100 cells · five morphology categories"],
-          ["audit", "Herlev model audit", "Predictions, errors, and Grad-CAM"],
-          ["koil", "KOIL evidence", "Performance, calibration, and XAI"],
-        ] as const).map(([key, label, detail]) => (
-          <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)}
-            className={"rounded-lg border p-4 text-left transition " + (section === key ? "border-teal bg-teal text-white" : "border-line bg-surface text-ink hover:border-teal")}>
-            <div className="text-sm font-semibold">{label}</div>
-            <div className={"mt-1 text-xs " + (section === key ? "text-white/80" : "text-mut")}>{detail}</div>
-          </button>
-        ))}
+      <div className="mt-7 grid gap-2 sm:grid-cols-3" role="tablist" aria-label="Case gallery views">
+        {([[
+          "latest", "Latest model heatmaps", "CRIC OOF · original + Grad-CAM",
+        ], ["reference", "Reference data", "CRIC + CCCID labelled cells"], ["koil", "KOIL evidence", "Separate morphology endpoint"]] as const).map(([key, label, detail]) => <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)} className={`rounded-lg border p-4 text-left ${view === key ? "border-teal bg-teal text-white" : "border-line bg-surface text-ink hover:border-teal"}`}><div className="text-sm font-semibold">{label}</div><div className={`mt-1 text-xs ${view === key ? "text-white/80" : "text-mut"}`}>{detail}</div></button>)}
       </div>
 
-      {section === "outputs" && (
-        <section className="mt-8" aria-labelledby="model-output-title">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="kicker mb-2">Measured model outputs</div>
-              <h2 id="model-output-title" className="font-display text-2xl font-semibold text-ink">Real Herlev cases with class-specific Grad-CAM</h2>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">Original data and its precomputed explanation are displayed together. Correct and incorrect predictions are both retained to make model behavior auditable.</p>
-            </div>
-            <div className="font-mono text-xs text-mut">Held-out examples · engineering review</div>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-1" role="tablist" aria-label="Filter model outputs by grade">
-            {["ALL", ...GRADE_CLASS_KEYS].map((key) => (
-              <button key={key} type="button" onClick={() => setSampleFilter(key)} className={"rounded-full border px-3 py-1 text-xs transition " + (sampleFilter === key ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}>{key === "ALL" ? `All (${samples.length})` : key}</button>
-            ))}
-          </div>
-          <div className="mt-5 grid gap-5 xl:grid-cols-2">
-            {samples.filter((sample) => sampleFilter === "ALL" || sample.top === sampleFilter || sample.true_label === sampleFilter).map((sample) => {
-              const predicted = classInfo(sample.top);
-              return (
-                <article key={sample.id} className="card overflow-hidden">
-                  <div className="grid grid-cols-2 gap-px bg-line">
-                    <figure className="bg-surface"><img src={`${BASE}${sample.file}`} alt={`${sample.id} original cytology image, true label ${sample.true_label}`} loading="lazy" className="aspect-square w-full object-cover" /><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Original image</figcaption></figure>
-                    <figure className="bg-surface"><img src={`${BASE}${sample.cam}`} alt={`${sample.id} class-specific Grad-CAM for predicted ${sample.top}`} loading="lazy" className="aspect-square w-full object-cover" /><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Grad-CAM · {sample.top}</figcaption></figure>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-mono text-[10px] text-mut">{sample.id}</div><h3 className="mt-1 font-display text-lg font-semibold" style={{ color: predicted.color }}>{predicted.icon} Predicted {sample.top}</h3></div><span className="rounded-full border px-2 py-1 text-[10px] font-semibold" style={{ borderColor: sample.correct ? "var(--nilm)" : "var(--scc)", color: sample.correct ? "var(--nilm)" : "var(--scc)" }}>{sample.correct ? "Correct" : "Incorrect"}</span></div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs"><div><span className="text-mut">True</span><br /><b className="text-ink">{sample.true_label}</b></div><div><span className="text-mut">Confidence</span><br /><b className="font-mono text-ink">{(sample.conf * 100).toFixed(1)}%</b></div><div><span className="text-mut">Uncertainty</span><br /><b className="text-ink">{sample.uncertainty.level}</b></div></div>
-                    <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-mut">Grad-CAM indicates influential regions, not a segmentation boundary or proof of biological causality. These examples have not received project-specific pathologist review.</p>
-                  </div>
-                </article>
-              );
-            })}
-            {!samples.length && <div className="col-span-full rounded-lg border border-scc/40 p-6 text-sm text-scc" role="alert">The model-output manifest could not be loaded.</div>}
-          </div>
-        </section>
-      )}
-
-      {section === "atlas" && (
-        <section className="mt-8" aria-labelledby="cric-atlas-title">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="kicker mb-2">External morphology reference</div>
-              <h2 id="cric-atlas-title" className="font-display text-2xl font-semibold text-ink">Open cervical morphology reference atlas</h2>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">
-                Twenty real examples per displayed category. NILM, LSIL, HSIL, and SCC come from CRIC; KOIL contains ten superficial-type and ten intermediate-type expert-labelled center-focus images from CCCID liquid-based cytology.
-              </p>
-            </div>
-            <div className="font-mono text-xs text-mut">{atlasCount} cells · 20 per category</div>
-          </div>
-
-          <div className="blush-panel mt-4 rounded-lg border p-4 text-xs leading-5 text-mut">
-            <b className="text-ink">Attribution:</b> {cric?.attribution || "Rezende et al., CRIC Cervix Cell Classification (2020)"}. Licensed under{" "}
-            <a className="text-teal underline" href={cric?.license_url || "https://creativecommons.org/licenses/by/4.0/"} target="_blank" rel="noreferrer">CC BY 4.0</a>.{" "}
-            <a className="text-teal underline" href={cric?.dataset_url || "https://figshare.com/collections/CRIC_Cervix_Cell_Classification/4960286"} target="_blank" rel="noreferrer">Official Figshare collection</a>.
-            These crops come from the same CRIC development source used by the four-grade research evaluation. The atlas is for visual inspection, not an independent external-validation result and not evidence of HPV infection.
-          </div>
-
-          <div className="mt-2 rounded-lg border border-line bg-surface p-4 text-xs leading-5 text-mut">
-            <b className="text-ink">KOIL attribution:</b> {koil?.attribution || "Ohno et al., CCCID v2 (2026)"}. Licensed for non-commercial reuse under{" "}
-            <a className="text-teal underline" href={koil?.license_url || "https://creativecommons.org/licenses/by-nc/4.0/"} target="_blank" rel="noreferrer">CC BY-NC 4.0</a>.{" "}
-            <a className="text-teal underline" href={koil?.dataset_url || "https://zenodo.org/records/20807462"} target="_blank" rel="noreferrer">Official Zenodo record</a>.
-            Center-focus plane 5 was selected before inference; these references do not establish HPV infection status.
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-1" role="tablist" aria-label="Filter reference cells">
-            {["ALL", "NILM", "LSIL", "HSIL", "SCC", "KOIL"].map((key) => (
-              <button key={key} onClick={() => changeAtlasFilter(key)} type="button"
-                className={"rounded-full border px-3 py-1 text-xs transition " + (atlasFilter === key ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}>
-                {key === "ALL" ? `All (${atlasCount})` : `${key} (${atlasCounts[key] || 0})`}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {atlasCases.slice(0, visibleAtlas).map((item) => {
-              const info = classInfo(item.class);
-              return (
-                <figure key={item.id} className="card overflow-hidden">
-                  <button type="button" onClick={() => { setSelectedRef(item); setViewerZoom(1); }} className="group relative block w-full bg-paper text-left">
-                    <img src={`${BASE}${item.image}`} alt={`${item.class} reference cell ${item.id}`} loading="lazy" width={item.class === "KOIL" ? 384 : 256} height={item.class === "KOIL" ? 384 : 256} className="aspect-square w-full object-cover" />
-                    <span className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-lg bg-ink/80 text-white opacity-0 transition group-hover:opacity-100"><ZoomIn size={15} aria-hidden /></span>
-                  </button>
-                  <figcaption className="p-3">
-                    <div className="flex items-center justify-between gap-2"><b style={{ color: info.color }}>{info.icon} {item.class}</b><span className="font-mono text-[10px] text-mut">{item.id}</span></div>
-                    <div className="mt-1 text-[10px] text-mut">{item.subtype || `Source image ${item.source_image_id} · cell ${item.source_cell_id}`}</div>
-                    <a href={`https://doi.org/${item.source_doi}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[10px] text-teal underline">Source DOI</a>
-                    {item.class === "KOIL" && <Link href={`/analyze?reference=${encodeURIComponent(item.image)}`} className="ml-3 mt-2 inline-block text-[10px] font-semibold text-koil underline">Open in analyzer</Link>}
-                  </figcaption>
-                </figure>
-              );
-            })}
-          </div>
-          {(!cric || !koil) && <div className="mt-5 rounded-lg border border-dashed border-line p-8 text-center text-sm text-mut">One or more reference manifests could not be loaded.</div>}
-          {visibleAtlas < atlasCases.length && (
-            <div className="mt-6 text-center"><button type="button" onClick={() => setVisibleAtlas((value) => value + 24)} className="rounded-full border border-teal px-5 py-2 text-sm text-teal hover:bg-teal hover:text-white">Load more references ({atlasCases.length - visibleAtlas} remaining)</button></div>
-          )}
-        </section>
-      )}
-
-      {section === "koil" && <section className="mt-8" aria-labelledby="koil-evidence-title">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <div className="kicker mb-2">Independent KOIL evidence</div>
-            <h2 id="koil-evidence-title" className="font-display text-2xl font-semibold text-ink">Real SIPaKMeD evaluation figures</h2>
-          </div>
-          <div className="font-mono text-xs text-mut">4,049 cells · 966 source clusters · locked test n=641</div>
+      {view === "latest" && <section className="mt-8" aria-labelledby="latest-gallery-title">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="kicker mb-2">Fold-specific explanations</div><h2 id="latest-gallery-title" className="font-display text-2xl font-semibold text-ink">Correct, incorrect, and abstained cases</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-mut">Selection is fixed per true grade: three accepted correct cases, one accepted error, and one abstained case from different parent images. This prevents a favorable-only gallery.</p></div><div className="font-mono text-xs text-mut">Threshold 0.60 · OOF TTA probabilities</div></div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {['ALL', ...GRADES].map((grade) => <button key={grade} type="button" onClick={() => setGradeFilter(grade)} className={`rounded-full border px-3 py-1 text-xs ${gradeFilter === grade ? "border-teal bg-teal text-white" : "border-line text-mut"}`}>{grade}</button>)}
+          <span className="mx-1 h-7 border-l border-line" />
+          {[['ALL', 'All outcomes'], ['accepted_correct', 'Correct'], ['accepted_error', 'Errors'], ['abstained', 'Abstained']].map(([key, label]) => <button key={key} type="button" onClick={() => setStatusFilter(key)} className={`rounded-full border px-3 py-1 text-xs ${statusFilter === key ? "border-hsil bg-hsil text-white" : "border-line text-mut"}`}>{label}</button>)}
         </div>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">
-          These figures were generated from the official SIPaKMeD cropped-cell dataset. It contains 825 koilocytotic cells, but no paired molecular HPV DNA/RNA result. The endpoint therefore validates koilocytotic morphology only, in conventional Pap-smear crops rather than ThinPrep.
-        </p>
-        {koilChallenge && <div className="mt-4 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-line bg-surface p-4"><div className="text-[10px] uppercase text-mut">CCCID positives</div><div className="font-mono text-2xl font-semibold text-koil">{koilChallenge.true_positive}/{koilChallenge.support_positive}</div></div>
-          <div className="rounded-lg border border-line bg-surface p-4"><div className="text-[10px] uppercase text-mut">Sensitivity</div><div className="font-mono text-2xl font-semibold text-koil">{(koilChallenge.sensitivity * 100).toFixed(1)}%</div></div>
-          <div className="rounded-lg border border-line bg-surface p-4"><div className="text-[10px] uppercase text-mut">Wilson 95% CI</div><div className="font-mono text-lg font-semibold text-ink">{(koilChallenge.sensitivity_wilson_95_ci.lower * 100).toFixed(1)}–{(koilChallenge.sensitivity_wilson_95_ci.upper * 100).toFixed(1)}%</div></div>
-          <button type="button" onClick={() => { setSection("atlas"); changeAtlasFilter("KOIL"); }} className="rounded-lg border border-koil p-4 text-left text-sm font-semibold text-koil hover:bg-surface">View all 20 KOIL references</button>
-          <p className="sm:col-span-4 text-xs leading-5 text-mut"><b className="text-ink">External positive-only challenge:</b> {koilChallenge.limitation} No threshold was tuned on CCCID.</p>
-        </div>}
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {EVIDENCE_FIGURES.map((figure) => (
-            <figure key={figure.file} className="card overflow-hidden">
-              <a href={`${BASE}${figure.file}`} target="_blank" rel="noreferrer" className="block bg-white">
-                <img src={`${BASE}${figure.file}`} alt={figure.title} loading="lazy" className="aspect-[16/10] w-full object-contain" />
-              </a>
-              <figcaption className="p-4"><h3 className="font-display text-base font-semibold text-ink">{figure.title}</h3><p className="mt-1 text-xs leading-5 text-mut">{figure.detail}</p></figcaption>
-            </figure>
-          ))}
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          {latestCases.map((item) => { const prediction = classInfo(item.predicted_label); const statusColor = item.review_status === "accepted_correct" ? "var(--nilm)" : item.review_status === "accepted_error" ? "var(--scc)" : "var(--hsil)"; return <article key={item.id} className="card overflow-hidden"><div className="grid grid-cols-2 gap-px bg-line"><figure className="bg-surface"><button type="button" onClick={() => setSelected(item)} className="group relative block w-full"><img src={`${BASE}${item.original}`} alt={`${item.id} original CRIC cell, true ${item.true_label}`} loading="lazy" className="aspect-square w-full object-cover" /><ZoomIn size={18} className="absolute bottom-3 right-3 text-white drop-shadow" aria-hidden /></button><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Original · true {item.true_label}</figcaption></figure><figure className="bg-surface"><button type="button" onClick={() => setSelected(item)} className="block w-full"><img src={`${BASE}${item.gradcam}`} alt={`${item.id} latest fold ${item.fold} Grad-CAM targeting ${item.cam_target}`} loading="lazy" className="aspect-square w-full object-cover" /></button><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Grad-CAM · predicted {item.predicted_label}</figcaption></figure></div><div className="p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-mono text-[10px] text-mut">{item.id} · fold {item.fold} · {item.group_id} · cell {item.cell_id}</div><h3 className="mt-1 font-display text-lg font-semibold" style={{ color: prediction.color }}>{prediction.icon} Predicted {item.predicted_label} · {(item.confidence * 100).toFixed(1)}%</h3></div><span className="rounded-full border px-2 py-1 text-[10px] font-semibold" style={{ borderColor: statusColor, color: statusColor }}>{STATUS[item.review_status]}</span></div><ProbabilityBars probabilities={item.probabilities} /><p className="mt-4 border-t border-line pt-3 text-[11px] leading-5 text-mut">{item.cam_method}. {item.cam_disclaimer}</p></div></article>; })}
         </div>
+        {!latest && <div className="mt-5 rounded-lg border border-scc/40 p-6 text-sm text-scc">Latest CRIC model manifest could not be loaded.</div>}
       </section>}
 
-      {section === "audit" && <><div className="mt-10 flex flex-wrap gap-1" role="tablist" aria-label="Filter cases">
-        {["ALL", ...CLASS_KEYS, ...buckets].map((k) => (
-          <button
-            key={k}
-            onClick={() => setFilter(k)}
-            className={"rounded-full border px-3 py-1 text-xs transition " + (filter === k ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}
-            type="button"
-          >
-            {BUCKET_LABEL[k] || (k === "ALL" ? "All" : k)}
-          </button>
-        ))}
-      </div>
+      {view === "reference" && <section className="mt-8" aria-labelledby="reference-title"><div className="kicker mb-2">Labelled source material</div><h2 id="reference-title" className="font-display text-2xl font-semibold text-ink">CRIC and CCCID reference cells</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-mut">These are source-label references, not additional independent model validation. CRIC cells come from the same development source as the latest grade model; CCCID supplies KOIL-positive liquid-based references.</p><div className="mt-5 flex flex-wrap gap-2">{['ALL', ...GRADES, 'KOIL'].map((grade) => <button key={grade} type="button" onClick={() => { setReferenceFilter(grade); setVisibleReferences(24); }} className={`rounded-full border px-3 py-1 text-xs ${referenceFilter === grade ? "border-teal bg-teal text-white" : "border-line text-mut"}`}>{grade}</button>)}</div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{references.slice(0, visibleReferences).map((item) => { const info = classInfo(item.class); return <figure key={item.id} className="card overflow-hidden"><img src={`${BASE}${item.image}`} alt={`${item.class} labelled reference ${item.id}`} loading="lazy" className="aspect-square w-full object-cover" /><figcaption className="p-3"><div className="flex justify-between gap-2"><b style={{ color: info.color }}>{info.icon} {item.class}</b><span className="font-mono text-[9px] text-mut">{item.id}</span></div><div className="mt-1 text-[10px] text-mut">{item.subtype || `Source ${item.source_image_id} · cell ${item.source_cell_id}`}</div><a href={`https://doi.org/${item.source_doi}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[10px] text-teal underline">Source DOI</a></figcaption></figure>; })}</div>{visibleReferences < references.length && <div className="mt-6 text-center"><button type="button" onClick={() => setVisibleReferences((value) => value + 24)} className="rounded-full border border-teal px-5 py-2 text-sm text-teal">Load more ({references.length - visibleReferences})</button></div>}</section>}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {filtered.map((item) => {
-          const trueInfo = classInfo(item.true_label);
-          const predInfo = classInfo(item.predicted_label);
-          const cam = showCam[item.id];
-          return (
-            <article key={item.id} className="card overflow-hidden">
-              <div className="grid gap-0 md:grid-cols-[220px_1fr]">
-                <div className="relative bg-paper">
-                  <img
-                    src={`${BASE}${cam ? item.gradcam : item.image}`}
-                    alt={cam ? `Grad-CAM for ${item.id}` : `Cytology case ${item.id}`}
-                    className="aspect-square h-full w-full object-cover"
-                  />
-                  <button
-                    onClick={() => setShowCam((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
-                    className="absolute right-2 top-2 rounded-full bg-ink/75 px-3 py-1 text-xs text-white"
-                    type="button"
-                  >
-                    {cam ? "Original" : "Grad-CAM"}
-                  </button>
-                </div>
-                <div className="p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="font-mono text-xs text-mut">{item.id}</div>
-                      <h2 className="mt-1 font-display text-xl font-semibold text-ink">
-                        <span style={{ color: predInfo.color }}>{predInfo.icon} {item.predicted_label}</span>
-                        <span className="mx-2 text-mut">vs</span>
-                        <span style={{ color: trueInfo.color }}>{trueInfo.icon} {item.true_label}</span>
-                      </h2>
-                    </div>
-                    <span className="rounded-full border px-2 py-1 text-[11px]" style={{ borderColor: item.correct ? "var(--nilm)" : "var(--scc)", color: item.correct ? "var(--nilm)" : "var(--scc)" }}>
-                      {item.correct ? "Correct" : "Incorrect"}
-                    </span>
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <div className="rounded-xl border border-line p-3">
-                      <div className="text-[10px] uppercase tracking-[.18em] text-mut">Confidence</div>
-                      <div className="font-mono text-lg font-semibold text-ink">{Math.round(item.confidence * 100)}%</div>
-                    </div>
-                    <div className="rounded-xl border border-line p-3">
-                      <div className="text-[10px] uppercase tracking-[.18em] text-mut">Uncertainty</div>
-                      <div className="font-mono text-lg font-semibold text-ink">{item.uncertainty.level}</div>
-                    </div>
-                    <div className="rounded-xl border border-line p-3">
-                      <div className="text-[10px] uppercase tracking-[.18em] text-mut">Bucket</div>
-                      <div className="text-xs font-semibold text-ink">{BUCKET_LABEL[item.error_bucket] || item.error_bucket}</div>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-mut">{item.engineering_review_note}</p>
-                  <div className="mt-3 rounded-xl border border-dashed border-line p-3 text-xs text-mut">
-                    Expert review status: <b>{item.expert_review_status}</b>. This gallery supports engineering review and demo transparency only; it has not been reviewed by a pathologist.
-                  </div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-        {!filtered.length && (
-          <div className="col-span-full rounded-2xl border border-dashed border-line p-12 text-center text-sm text-mut">
-            No cases match this filter.
-          </div>
-        )}
-      </div>
-      </>}
+      {view === "koil" && <section className="mt-8" aria-labelledby="koil-title"><div className="kicker mb-2">Independent morphology endpoint</div><h2 id="koil-title" className="font-display text-2xl font-semibold text-ink">KOIL performance and XAI</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-mut">This section remains separate because the SIPaKMeD KOIL model answers a different morphological question. It does not inherit the CRIC 91.7% result and does not detect HPV infection.</p><div className="mt-5 grid gap-5 md:grid-cols-2">{KOIL_FIGURES.map((figure) => <figure key={figure.file} className="card overflow-hidden"><a href={`${BASE}${figure.file}`} target="_blank" rel="noreferrer" className="block bg-white"><img src={`${BASE}${figure.file}`} alt={figure.title} loading="lazy" className="aspect-[16/10] w-full object-contain" /></a><figcaption className="p-4"><h3 className="font-display text-base font-semibold text-ink">{figure.title}</h3><p className="mt-1 text-xs leading-5 text-mut">{figure.detail}</p></figcaption></figure>)}</div></section>}
 
-      {selectedRef && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label={`Reference viewer ${selectedRef.id}`} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedRef(null); }}>
-        <div className="grid max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-lg border border-line bg-surface lg:grid-cols-[minmax(0,1fr)_19rem]">
-          <div className="relative grid min-h-[55vh] place-items-center overflow-auto bg-black p-3">
-            <img src={`${BASE}${selectedRef.image}`} alt={`${selectedRef.class} reference cell ${selectedRef.id}, enlarged`} className="max-h-[82vh] max-w-full object-contain transition-transform" style={{ transform: `scale(${viewerZoom})` }} />
-            <button type="button" onClick={() => moveReference(-1)} className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg bg-black/70 text-white" aria-label="Previous reference"><ChevronLeft aria-hidden /></button>
-            <button type="button" onClick={() => moveReference(1)} className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg bg-black/70 text-white" aria-label="Next reference"><ChevronRight aria-hidden /></button>
-          </div>
-          <aside className="overflow-y-auto p-5">
-            <div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] uppercase text-teal">External morphology reference</div><h2 className="mt-1 font-display text-xl font-semibold text-ink">{selectedRef.class} · {selectedRef.id}</h2></div><button type="button" onClick={() => setSelectedRef(null)} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-mut" aria-label="Close reference viewer"><X size={17} aria-hidden /></button></div>
-            <dl className="mt-5 divide-y divide-line border-y border-line text-xs"><div className="py-3"><dt className="text-mut">Subtype/source</dt><dd className="mt-1 text-ink">{selectedRef.subtype || `Image ${selectedRef.source_image_id}, cell ${selectedRef.source_cell_id}`}</dd></div><div className="py-3"><dt className="text-mut">Domain</dt><dd className="mt-1 leading-5 text-ink">{selectedRef.domain}</dd></div><div className="py-3"><dt className="text-mut">License</dt><dd className="mt-1 text-ink">{selectedRef.license}</dd></div><div className="py-3"><dt className="text-mut">Focus plane</dt><dd className="mt-1 text-ink">{selectedRef.focus_plane ?? "Not applicable"}</dd></div></dl>
-            <label className="mt-5 block text-xs text-mut">Zoom {viewerZoom.toFixed(1)}×<input type="range" min="1" max="4" step="0.25" value={viewerZoom} onChange={(event) => setViewerZoom(Number(event.target.value))} className="mt-2 w-full accent-[var(--teal)]" /></label>
-            <div className="mt-5 flex flex-wrap gap-2"><a href={`${BASE}${selectedRef.image}`} download className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-teal">Download image</a><a href={`https://doi.org/${selectedRef.source_doi}`} target="_blank" rel="noreferrer" className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-teal">Source DOI</a></div>
-            <p className="mt-5 text-[11px] leading-5 text-mut">Reference material only. This viewer does not create a model prediction and does not establish HPV infection status.</p>
-          </aside>
-        </div>
-      </div>}
+      {selected && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label={`Latest model case ${selected.id}`} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}><div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-line bg-surface"><div className="flex items-start justify-between border-b border-line p-4"><div><div className="font-mono text-[10px] uppercase text-teal">Latest CRIC OOF · fold {selected.fold}</div><h2 className="font-display text-xl font-semibold text-ink">{selected.id} · {selected.predicted_label} at {(selected.confidence * 100).toFixed(1)}%</h2></div><button type="button" onClick={() => setSelected(null)} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-mut" aria-label="Close viewer"><X size={17} aria-hidden /></button></div><div className="grid gap-px bg-line md:grid-cols-2"><figure className="bg-black p-3"><img src={`${BASE}${selected.original}`} alt={`${selected.id} original enlarged`} className="mx-auto max-h-[72vh] w-full object-contain" /></figure><figure className="bg-black p-3"><img src={`${BASE}${selected.gradcam}`} alt={`${selected.id} Grad-CAM enlarged`} className="mx-auto max-h-[72vh] w-full object-contain" /></figure></div><div className="grid gap-4 p-5 md:grid-cols-2"><div><b className="text-ink">True {selected.true_label} · predicted {selected.predicted_label}</b><ProbabilityBars probabilities={selected.probabilities} /></div><p className="text-xs leading-5 text-mut">The displayed probability is the three-view OOF TTA result. The heatmap is a single-view predicted-class Grad-CAM from the same fold-specific checkpoint. It is post-hoc attention, not segmentation or causal proof.</p></div></div></div>}
     </div>
   );
 }

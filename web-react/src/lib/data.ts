@@ -75,6 +75,12 @@ export const METRICS = {
     macroF1: "0.7410", sccRecall: "0.5031", hsilRecall: "0.8467",
     selectiveThreshold: "0.60", selectiveAccuracy: "0.9166", selectiveAccuracyCi: "0.8954–0.9346",
     selectiveCoverage: "0.9408", selectiveCoverageCi: "0.9276–0.9528", accepted: 9411, abstained: 592,
+    classMetrics: {
+      NILM: { support: 6779, precision: 0.942466, recall: 0.944830, f1: 0.943646 },
+      LSIL: { support: 1360, precision: 0.721386, recall: 0.704412, f1: 0.712798 },
+      HSIL: { support: 1703, precision: 0.855786, recall: 0.846741, f1: 0.851240 },
+      SCC: { support: 161, precision: 0.417526, recall: 0.503106, f1: 0.456338 },
+    },
   },
   perClass: [
     { k: "NILM", recall: 0.72 }, { k: "LSIL", recall: 0.61 },

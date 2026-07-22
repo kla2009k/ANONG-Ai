@@ -1165,3 +1165,50 @@ This section supersedes earlier route and HPV wording in this handoff.
 - The two grade-v3 checkpoints are experiment artefacts only. They have not
   been wired into `server/predictor.py`, copied over `models/best_cervical.pt`,
   committed, pushed, or deployed.
+
+## 2026-07-22 latest CRIC Performance and Case Gallery release
+
+This section supersedes the old Performance-page and Case-Gallery grade-model
+descriptions above.
+
+- `/performance` now presents only the two principal measured endpoints: the
+  latest CRIC four-grade research candidate and the independent SIPaKMeD KOIL
+  morphology model. The old Herlev grade charts, research-v3 comparison panels,
+  and the explanatory "What each table and graph measures" block were removed.
+- The latest CRIC candidate was evaluated on 10,003 cells from 395 parent
+  microscope images with five parent-image-disjoint out-of-fold splits. Its
+  full-cohort four-grade accuracy is 88.8% (95% CI 0.8628-0.9109).
+- At the pre-reported confidence threshold of 0.60, 9,411 cells are accepted
+  and 592 are abstained for human review: selective accuracy is 91.7% at 94.1%
+  coverage (95% CI 0.8954-0.9346). Never shorten this to "the model is 91.7%
+  accurate" without stating both selective evaluation and coverage.
+- CRIC per-class recall is NILM 94.5%, LSIL 70.4%, HSIL 84.7%, and SCC 50.3%.
+  The weak SCC result, with 161 cells from only 21 parent images, remains
+  visible and prevents an autonomous or clinical-readiness claim.
+- All five grade figures are regenerated from the latest OOF records:
+  confusion matrix, precision/recall/F1, fold accuracy, accuracy-coverage
+  trade-off, and recall by endpoint. The final chart includes KOIL sensitivity
+  for comparison but explicitly marks the separate dataset and ontology.
+- `/gallery` defaults to 20 latest-model CRIC cases: five per true grade, each
+  containing three accepted correct predictions, one accepted error, and one
+  abstained prediction from different parent images. Every probability is the
+  recorded OOF TTA output from the fold where that parent image was held out.
+- Every displayed heatmap is a newly generated predicted-class Grad-CAM from
+  that case's fold-specific EfficientNet-B0 checkpoint. The heatmap is a
+  single-view post-hoc explanation, not segmentation or causal proof. SHA-256
+  integrity hashes for every original and Grad-CAM file are in
+  `web-react/public/cric-model-gallery/index.json`.
+- Rebuild the figures and gallery with
+  `python scripts/build_cric_latest_web_evidence.py`. Machine-readable figure
+  metrics are in `web-react/public/evidence/cric-latest/index.json`.
+- The live `/analyze` upload workflow still uses the historical Herlev grade
+  checkpoint. The CRIC candidate is research evidence and has not replaced the
+  deployed upload model. CRIC is conventional Pap-smear evidence, not Thai
+  ThinPrep clinical validation.
+- KOIL remains a separate SIPaKMeD morphology endpoint with sensitivity 96.2%,
+  specificity 97.6%, and AUROC 0.991 on its locked source-cluster-disjoint test.
+  Neither KOIL nor CRIC confirms HPV DNA/RNA, genotype, persistence, or
+  molecular infection status.
+- Verification for this release: 66 unit/contract tests passed, the production
+  frontend build completed, claim audit passed, and responsive browser checks
+  showed no horizontal overflow at 390 px on Performance or Case Gallery.

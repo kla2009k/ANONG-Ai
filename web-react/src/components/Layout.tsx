@@ -27,9 +27,9 @@ export function Layout({ children }: { children: ReactNode }) {
     canonical.href = `${window.location.origin}${window.location.pathname}`;
   }, [location]);
   return (
-    <div className="relative z-[2] flex min-h-screen flex-col lg:pl-64">
+    <div className="relative z-[2] flex min-h-screen min-w-0 flex-col overflow-x-hidden lg:pl-64">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
       <footer className="border-t border-line py-6 text-center text-xs text-mut">
         <span className="font-display font-semibold text-teal">Anong</span> · <span className="font-mono">CerviCo-Pilot</span> · Research decision support · Clinician sign-off required · No HPV DNA/RNA endpoint · Evidence version 2026-07-22
       </footer>

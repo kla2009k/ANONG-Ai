@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0",
+  "dataset": "CRIC Cervix Cell Classification",
+  "cells": 10003,
+  "parent_images": 395,
+  "pooled_accuracy": 0.888333499950015,
+  "macro_f1": 0.7410054313694749,
+  "fold_accuracy": [
+    0.900851276915373,
+    0.8856143856143857,
+    0.9064386317907445,
+    0.8394197098549274,
+    0.9092711948438275
+  ],
+  "confusion_matrix": [
+    [
+      6405,
+      256,
+      113,
+      5
+    ],
+    [
+      329,
+      958,
+      56,
+      17
+    ],
+    [
+      59,
+      111,
+      1442,
+      91
+    ],
+    [
+      3,
+      3,
+      74,
+      81
+    ]
+  ],
+  "class_metrics": {
+    "NILM": {
+      "precision": 0.942466156562684,
+      "recall": 0.9448296208880366,
+      "f1": 0.943646408839779,
+      "support": 6779
+    },
+    "LSIL": {
+      "precision": 0.7213855421686747,
+      "recall": 0.7044117647058824,
+      "f1": 0.7127976190476191,
+      "support": 1360
+    },
+    "HSIL": {
+      "precision": 0.8557863501483679,
+      "recall": 0.8467410452143277,
+      "f1": 0.8512396694214877,
+      "support": 1703
+    },
+    "SCC": {
+      "precision": 0.4175257731958763,
+      "recall": 0.5031055900621118,
+      "f1": 0.4563380281690141,
+      "support": 161
+    }
+  },
+  "selective_curve": [
+    {
+      "threshold": 0.4,
+      "coverage": 0.9956013196041188,
+      "selective_accuracy": 0.8913545536700472,
+      "accepted": 9959,
+      "abstained": 44
+    },
+    {
+      "threshold": 0.45,
+      "coverage": 0.991702489253224,
+      "selective_accuracy": 0.8938508064516129,
+      "accepted": 9920,
+      "abstained": 83
+    },
+    {
+      "threshold": 0.5,
+      "coverage": 0.9800059982005398,
+      "selective_accuracy": 0.9000306028766704,
+      "accepted": 9803,
+      "abstained": 200
+    },
+    {
+      "threshold": 0.55,
+      "coverage": 0.960111966410077,
+      "selective_accuracy": 0.9088921282798834,
+      "accepted": 9604,
+      "abstained": 399
+    },
+    {
+      "threshold": 0.6,
+      "coverage": 0.940817754673598,
+      "selective_accuracy": 0.9165869726915312,
+      "accepted": 9411,
+      "abstained": 592
+    },
+    {
+      "threshold": 0.65,
+      "coverage": 0.9187243826851944,
+      "selective_accuracy": 0.9272034820457018,
+      "accepted": 9190,
+      "abstained": 813
+    },
+    {
+      "threshold": 0.7,
+      "coverage": 0.8983305008497451,
+      "selective_accuracy": 0.9336746049410194,
+      "accepted": 8986,
+      "abstained": 1017
+    },
+    {
+      "threshold": 0.75,
+      "coverage": 0.875037488753374,
+      "selective_accuracy": 0.9423054952587684,
+      "accepted": 8753,
+      "abstained": 1250
+    },
+    {
+      "threshold": 0.8,
+      "coverage": 0.8470458862341298,
+      "selective_accuracy": 0.9517290215980172,
+      "accepted": 8473,
+      "abstained": 1530
+    },
+    {
+      "threshold": 0.85,
+      "coverage": 0.81555533339998,
+      "selective_accuracy": 0.959303750919343,
+      "accepted": 8158,
+      "abstained": 1845
+    },
+    {
+      "threshold": 0.8999999999999999,
+      "coverage": 0.7719684094771568,
+      "selective_accuracy": 0.9691789691789692,
+      "accepted": 7722,
+      "abstained": 2281
+    },
+    {
+      "threshold": 0.95,
+      "coverage": 0.6704988503448965,
+      "selective_accuracy": 0.9798717757566722,
+      "accepted": 6707,
+      "abstained": 3296
+    }
+  ],
+  "figures": [
+    {
+      "file": "evidence/cric-latest/cric_oof_confusion.png",
+      "title": "Pooled out-of-fold confusion matrix",
+      "detail": "Counts and row percentages across all 10,003 CRIC cells; every prediction comes from the fold where its parent image was held out."
+    },
+    {
+      "file": "evidence/cric-latest/cric_class_metrics.png",
+      "title": "Precision, recall, and F1 by grade",
+      "detail": "NILM is strongest; SCC remains the principal safety limitation and is not hidden by aggregate accuracy."
+    },
+    {
+      "file": "evidence/cric-latest/cric_fold_accuracy.png",
+      "title": "Accuracy across five held-out folds",
+      "detail": "All folds are retained. Fold 4 shows the domain variability that would be hidden by reporting only the best split."
+    },
+    {
+      "file": "evidence/cric-latest/cric_selective_tradeoff.png",
+      "title": "Selective accuracy versus coverage",
+      "detail": "At threshold 0.60, accuracy is 91.7% at 94.1% coverage. The rejected 5.9% require human review."
+    },
+    {
+      "file": "evidence/cric-latest/cric_recall_by_endpoint.png",
+      "title": "Recall by endpoint",
+      "detail": "CRIC grade recalls and the independent SIPaKMeD KOIL sensitivity share a scale but not a dataset or label ontology."
+    }
+  ],
+  "limitations": [
+    "Research candidate, not the deployed upload checkpoint.",
+    "Conventional Pap-smear cells, not Thai ThinPrep clinical validation.",
+    "SCC recall remains 50.3%.",
+    "No molecular HPV endpoint."
+  ]
+}

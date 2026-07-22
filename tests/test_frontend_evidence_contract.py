@@ -18,9 +18,11 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         gallery = (ROOT / "web-react" / "src" / "pages" / "CaseGallery.tsx").read_text(encoding="utf-8")
         self.assertNotIn("Real examples with model outputs", analyze)
         self.assertIn('href="/gallery"', analyze)
-        self.assertIn("Real Herlev cases with class-specific Grad-CAM", gallery)
-        self.assertIn("Original image", gallery)
-        self.assertIn("Grad-CAM · {sample.top}", gallery)
+        self.assertIn("Latest CRIC model heatmaps", gallery)
+        self.assertIn("latest CRIC research checkpoint", gallery)
+        self.assertIn("Original · true {item.true_label}", gallery)
+        self.assertIn("Grad-CAM · predicted {item.predicted_label}", gallery)
+        self.assertNotIn("Real Herlev cases with class-specific Grad-CAM", gallery)
 
     def test_public_copy_defines_hpv_risk_without_claiming_infection_detection(self):
         landing = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
@@ -36,21 +38,46 @@ class FrontendEvidenceContractTests(unittest.TestCase):
     def test_research_grade_result_is_shown_with_coverage_and_not_deployed(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
 
-        self.assertIn("Research candidate — not deployed", source)
-        self.assertIn("78.8%", source)
-        self.assertIn("97.3%", source)
-        self.assertIn("53.3% coverage", source)
-        self.assertIn("HSIL recall fell", source)
+        self.assertIn("CRIC research model · not deployed", source)
+        self.assertIn("Every grade graph now uses the latest OOF model", source)
+        self.assertNotIn("Research v3", source)
+        self.assertNotIn("Historical Herlev grade view", source)
+        self.assertNotIn("Binary screening view", source)
+        self.assertNotIn("What each table and graph measures", source)
 
     def test_cric_ninety_percent_claim_is_selective_and_auditable(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
         evidence = json.loads((ROOT / "web-react" / "public" / "evidence" / "cric_grade_5fold_summary.json").read_text(encoding="utf-8"))
         self.assertIn("91.7% selective four-grade accuracy at 94.1% coverage", source)
         self.assertIn("Full-cohort accuracy was 88.8%", source)
-        self.assertIn("SCC recall remained only 50.3%", source)
+        self.assertIn("SCC recall is 50.3%", source)
         self.assertAlmostEqual(evidence["selective_accuracy"], 0.9165869726915312)
         self.assertAlmostEqual(evidence["selective_coverage"], 0.940817754673598)
         self.assertLess(evidence["pooled_accuracy"], 0.90)
+
+    def test_latest_cric_web_figures_and_heatmaps_are_auditable(self):
+        evidence = json.loads((ROOT / "web-react" / "public" / "evidence" / "cric-latest" / "index.json").read_text(encoding="utf-8"))
+        gallery = json.loads((ROOT / "web-react" / "public" / "cric-model-gallery" / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(evidence["cells"], 10003)
+        self.assertEqual(evidence["parent_images"], 395)
+        self.assertEqual(len(evidence["figures"]), 5)
+        self.assertEqual(gallery["count"], 20)
+        self.assertIn("parent-image-disjoint OOF", gallery["protocol"])
+        for grade in ("NILM", "LSIL", "HSIL", "SCC"):
+            cases = [case for case in gallery["cases"] if case["true_label"] == grade]
+            self.assertEqual(len(cases), 5)
+            self.assertEqual(sum(case["review_status"] == "accepted_correct" for case in cases), 3)
+            self.assertEqual(sum(case["review_status"] == "accepted_error" for case in cases), 1)
+            self.assertEqual(sum(case["review_status"] == "abstained" for case in cases), 1)
+            self.assertEqual(len({case["group_id"] for case in cases}), 5)
+        for case in gallery["cases"]:
+            self.assertAlmostEqual(sum(case["probabilities"].values()), 1.0, places=5)
+            for field, hash_field in (("original", "original_sha256"), ("gradcam", "gradcam_sha256")):
+                path = ROOT / "web-react" / "public" / case[field]
+                self.assertTrue(path.is_file())
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), case[hash_field])
+        for figure in evidence["figures"]:
+            self.assertTrue((ROOT / "web-react" / "public" / figure["file"]).is_file())
 
     def test_cric_evidence_is_consistent_across_public_routes(self):
         files = {

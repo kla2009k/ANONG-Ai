@@ -1,400 +1,116 @@
 import { Reveal } from "@/components/Reveal";
 import { METRICS, classInfo } from "@/lib/data";
-import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
-const CK = ["NILM", "LSIL", "HSIL", "SCC"];
 const BASE = import.meta.env.BASE_URL;
+const GRADES = ["NILM", "LSIL", "HSIL", "SCC"] as const;
+
+const CRIC_FIGURES = [
+  { file: "evidence/cric-latest/cric_oof_confusion.png", title: "Pooled out-of-fold confusion matrix", detail: "All 10,003 CRIC cells. Each prediction comes from the fold where its parent microscope image was held out." },
+  { file: "evidence/cric-latest/cric_class_metrics.png", title: "Precision, recall, and F1 by grade", detail: "The aggregate score is not allowed to hide the weak SCC endpoint." },
+  { file: "evidence/cric-latest/cric_fold_accuracy.png", title: "Accuracy across all five folds", detail: "Every fold is retained; the lower fourth fold exposes source-image variability." },
+  { file: "evidence/cric-latest/cric_selective_tradeoff.png", title: "Selective accuracy versus coverage", detail: "Threshold 0.60 produces 91.7% accuracy at 94.1% coverage; the remaining 5.9% are sent for human review." },
+  { file: "evidence/cric-latest/cric_recall_by_endpoint.png", title: "Recall by endpoint", detail: "CRIC grade recalls and SIPaKMeD KOIL sensitivity share a visual scale, but not a dataset or label ontology." },
+] as const;
+
+const MODEL_ENDPOINTS = [
+  {
+    endpoint: "CRIC four-grade candidate",
+    output: "NILM / LSIL / HSIL / SCC",
+    evaluation: "10,003 cells · 395 parents · five-fold OOF",
+    result: <>91.7% selective at 94.1% coverage<br />88.8% full cohort</>,
+    status: "Research · not deployed",
+    statusClass: "text-hsil",
+  },
+  {
+    endpoint: "SIPaKMeD KOIL model",
+    output: "Koilocytic morphology positive / negative",
+    evaluation: "Locked test n=641 · source-cluster-disjoint",
+    result: <>Sensitivity 96.2% · AUROC 0.991</>,
+    status: "Independent endpoint",
+    statusClass: "text-teal",
+  },
+] as const;
 
 function Stat({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
-  return (
-    <div className="card min-w-0 overflow-hidden p-5">
-      <div className="text-xs text-mut">{label}</div>
-      <div className="mt-1 break-words font-mono text-2xl font-semibold sm:text-3xl" style={{ color: color || "var(--ink)" }}>{value}</div>
-      {sub && <div className="text-xs text-mut">{sub}</div>}
-    </div>
-  );
+  return <div className="card min-w-0 p-5"><div className="text-xs text-mut">{label}</div><div className="mt-1 break-words font-mono text-2xl font-semibold sm:text-3xl" style={{ color: color || "var(--ink)" }}>{value}</div>{sub && <div className="mt-1 text-xs leading-5 text-mut">{sub}</div>}</div>;
 }
 
-/* Cross-endpoint comparison with explicit dataset separation. */
-function EndpointRecallChart() {
-  const rows = [
-    ...METRICS.perClass.map((p) => ({ key: p.k, value: p.recall, color: classInfo(p.k).color, group: "HERLEV GRADE" })),
-    { key: "KOIL", value: Number(METRICS.koil.sensitivity), color: "var(--koil)", group: "SIPAKMED MORPHOLOGY" },
-  ];
-  return (
-    <svg viewBox="0 0 390 218" className="w-full" role="img"
-      aria-label="Recall comparison: four Herlev grade categories and the separate SIPaKMeD KOIL morphology endpoint">
-      <title>Recall by endpoint with separate evaluation datasets</title>
-      <text x="0" y="11" fill="var(--mut)" fontFamily="IBM Plex Mono" fontSize="8">HERLEV GRADE · HELD-OUT n=137</text>
-      <line x1="0" y1="154" x2="378" y2="154" stroke="var(--line)" strokeDasharray="4 4" />
-      <text x="0" y="171" fill="var(--mut)" fontFamily="IBM Plex Mono" fontSize="8">SIPAKMED KOIL · LOCKED TEST n=641</text>
-      {rows.map((p, i) => {
-        const y = i < 4 ? 22 + i * 31 : 182;
-        const w = p.value * 270;
-        return (
-          <g key={`${p.group}-${p.key}`} fontFamily="IBM Plex Mono" fontSize="10">
-            <text x="0" y={y + 13} fill="var(--mut)">{p.key}</text>
-            <rect x="60" y={y} width="270" height="16" rx="4" fill="var(--line)" />
-            <rect x="60" y={y} width={w} height="16" rx="4" fill={p.color}>
-              <animate attributeName="width" from="0" to={w} dur="1s" fill="freeze" />
-            </rect>
-            <text x="340" y={y + 13} fill="var(--ink)">{p.value.toFixed(3)}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
+function EvidenceFigure({ file, title, detail, wide = false }: { file: string; title: string; detail: string; wide?: boolean }) {
+  return <figure className={`card overflow-hidden ${wide ? "md:col-span-2" : ""}`}><a href={`${BASE}${file}`} target="_blank" rel="noreferrer" className="block bg-[var(--paper)] p-2"><img src={`${BASE}${file}`} alt={title} loading="lazy" className="aspect-[16/10] w-full object-contain" /></a><figcaption className="border-t border-line p-4"><h3 className="font-display text-base font-semibold text-ink">{title}</h3><p className="mt-1 text-xs leading-5 text-mut">{detail}</p></figcaption></figure>;
 }
 
-function KoilConfusionHeatmap() {
+function KoilConfusion() {
   const k = METRICS.koil.confusion;
   const cells = [
-    { x: 0, y: 0, value: k.TN, label: "TN", color: "var(--nilm)" },
-    { x: 1, y: 0, value: k.FP, label: "FP", color: "var(--hsil)" },
-    { x: 0, y: 1, value: k.FN, label: "FN", color: "var(--scc)" },
-    { x: 1, y: 1, value: k.TP, label: "TP", color: "var(--koil)" },
-  ];
-  return (
-    <div>
-      <div className="grid grid-cols-[5rem_repeat(2,minmax(0,1fr))] gap-2 text-center text-xs">
-        <div />
-        <div className="text-mut">Pred. negative</div><div className="text-mut">Pred. KOIL</div>
-        <div className="self-center text-right text-mut">True negative</div>
-        {cells.slice(0, 2).map((cell) => <MatrixCell key={cell.label} {...cell} />)}
-        <div className="self-center text-right text-mut">True KOIL</div>
-        {cells.slice(2).map((cell) => <MatrixCell key={cell.label} {...cell} />)}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] text-mut sm:grid-cols-4">
-        <span>Positive support: {METRICS.koil.positive}</span><span>Negative support: {METRICS.koil.negative}</span><span>Threshold: {METRICS.koil.threshold}</span><span>Test n={METRICS.koil.test}</span>
-      </div>
-    </div>
-  );
-}
-
-function MatrixCell({ value, label, color }: { value: number; label: string; color: string }) {
-  return <div className="rounded-lg border border-line p-4" style={{ background: `color-mix(in srgb, ${color} 18%, var(--surface))` }}><div className="font-mono text-2xl font-semibold" style={{ color }}>{value}</div><div className="mt-1 text-[10px] text-mut">{label}</div></div>;
-}
-
-function EvidenceImage({ src, title, detail }: { src: string; title: string; detail: string }) {
-  return <figure className="card overflow-hidden"><div className="bg-white p-2"><img src={`${BASE}${src}`} alt={title} className="h-auto w-full" loading="lazy" /></div><figcaption className="border-t border-line p-4"><h3 className="text-sm font-semibold text-ink">{title}</h3><p className="mt-1 text-xs leading-5 text-mut">{detail}</p></figcaption></figure>;
-}
-
-/* ── line chart: per-fold sensitivity + AUROC + QWK + acc ── */
-function FoldLineChart() {
-  const W = 380, H = 200, pad = 34;
-  const xs = (i: number) => pad + (i * (W - pad - 10)) / 4;
-  const ys = (v: number) => H - pad - v * (H - pad - 16); // 0..1
-  const series: [string, string, (f: any) => number][] = [
-    ["Sensitivity", "var(--teal)", (f) => f.sens],
-    ["AUROC", "var(--navy)", (f) => f.auroc],
-    ["QWK", "var(--koil)", (f) => f.qwk],
-    ["Accuracy", "var(--hsil)", (f) => f.acc],
-  ];
-  return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" fontFamily="IBM Plex Mono" fontSize="9" role="img"
-        aria-label="Line chart of sensitivity, AUROC, QWK, and accuracy across five cross-validation folds">
-        <title>Metric trends across five cross-validation folds</title>
-        {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-          <g key={g}>
-            <line x1={pad} y1={ys(g)} x2={W - 10} y2={ys(g)} stroke="var(--line)" />
-            <text x="4" y={ys(g) + 3} fill="var(--mut)">{g.toFixed(2)}</text>
-          </g>
-        ))}
-        {METRICS.foldNum.map((f, i) => (
-          <text key={i} x={xs(i)} y={H - 16} fill="var(--mut)" textAnchor="middle">F{f.fold}</text>
-        ))}
-        {series.map(([, col, fn]) => {
-          const d = METRICS.foldNum.map((f, i) => `${i === 0 ? "M" : "L"}${xs(i)},${ys(fn(f))}`).join(" ");
-          return (
-            <g key={col as string}>
-              <path d={d} fill="none" stroke={col} strokeWidth="2" />
-              {METRICS.foldNum.map((f, i) => <circle key={i} cx={xs(i)} cy={ys(fn(f))} r="2.6" fill={col} />)}
-            </g>
-          );
-        })}
-      </svg>
-      <div className="mt-2 flex flex-wrap gap-3 text-xs text-mut">
-        {series.map(([name, col]) => (
-          <span key={name} className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded" style={{ background: col }} />{name}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* Historical Herlev checkpoint, restricted to supported grade classes. */
-function ConfusionHeatmap() {
-  const cm = METRICS.confusion.slice(0, 4).map((row) => row.slice(0, 4));
-  const max = Math.max(...cm.flat());
-  const cell = 52, ox = 60, oy = 28;
-  return (
-    <svg viewBox={`0 0 ${ox + cell * 4 + 10} ${oy + cell * 4 + 40}`} className="w-full max-w-md" fontFamily="IBM Plex Mono" fontSize="11" role="img"
-      aria-label="Four-by-four held-out confusion matrix for the supported Herlev grade classes.">
-      <title>Held-out supported-grade confusion matrix</title>
-      {CK.map((c, j) => <text key={"p" + c} x={ox + j * cell + cell / 2} y={oy - 10} fill="var(--mut)" textAnchor="middle">{c}</text>)}
-      <text x={ox + cell * 2} y={oy + cell * 4 + 30} fill="var(--mut)" textAnchor="middle" fontSize="10">Predicted →</text>
-      {cm.map((row, i) =>
-        row.map((v, j) => {
-          const corr = i === j;
-          const op = max ? v / max : 0;
-          const base = corr ? "20,150,110" : "192,73,47";
-          return (
-            <g key={`${i}-${j}`}>
-              <rect x={ox + j * cell} y={oy + i * cell} width={cell - 3} height={cell - 3} rx="5"
-                fill={`rgba(${base},${0.12 + op * 0.8})`} stroke="var(--line)" />
-              <text x={ox + j * cell + (cell - 3) / 2} y={oy + i * cell + (cell - 3) / 2 + 4} textAnchor="middle"
-                fill={op > 0.45 ? "#fff" : "var(--ink)"} fontWeight={corr ? "600" : "400"}>{v}</text>
-            </g>
-          );
-        })
-      )}
-      {CK.map((c, i) => <text key={"t" + c} x={ox - 8} y={oy + i * cell + cell / 2 + 4} fill="var(--mut)" textAnchor="end">{c}</text>)}
-    </svg>
-  );
-}
-
-function RocChart({ curves }: { curves: any }) {
-  const W = 260, H = 220, pad = 28;
-  const x = (v: number) => pad + v * (W - pad - 12);
-  const y = (v: number) => H - pad - v * (H - pad - 12);
-  const pts = (curves?.roc || []).filter((_: any, i: number) => i % 3 === 0 || i === 0 || i === curves.roc.length - 1);
-  const d = pts.map((p: any, i: number) => `${i === 0 ? "M" : "L"}${x(p.fpr)},${y(p.tpr)}`).join(" ");
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm" role="img"
-      aria-label={`ROC curve binary triage AUROC ${curves.roc_auc}`} fontFamily="IBM Plex Mono" fontSize="10">
-      <title>ROC curve binary triage</title>
-      <line x1={pad} y1={H - pad} x2={W - 12} y2={12} stroke="var(--line)" strokeDasharray="4 4" />
-      <path d={d} fill="none" stroke="var(--teal)" strokeWidth="3" />
-      <text x={pad} y={H - 8} fill="var(--mut)">0</text>
-      <text x={W - 18} y={H - 8} fill="var(--mut)">FPR</text>
-      <text x="2" y="18" fill="var(--mut)">TPR</text>
-    </svg>
-  );
-}
-
-function ReliabilityChart({ curves }: { curves: any }) {
-  const W = 260, H = 220, pad = 28;
-  const x = (v: number) => pad + v * (W - pad - 12);
-  const y = (v: number) => H - pad - v * (H - pad - 12);
-  const pts = (curves?.reliability || []).filter((b: any) => b.accuracy !== null);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm" role="img"
-      aria-label={`Reliability plot ECE ${curves.ece_l1_10bin}`} fontFamily="IBM Plex Mono" fontSize="10">
-      <title>Reliability plot binary triage</title>
-      <line x1={pad} y1={H - pad} x2={W - 12} y2={12} stroke="var(--line)" strokeDasharray="4 4" />
-      <polyline points={pts.map((p: any) => `${x(p.confidence)},${y(p.accuracy)}`).join(" ")}
-        fill="none" stroke="var(--hsil)" strokeWidth="2.5" />
-      {pts.map((p: any) => (
-        <circle key={p.bin} cx={x(p.confidence)} cy={y(p.accuracy)} r={Math.max(2, Math.min(7, p.count / 8))}
-          fill="var(--hsil)" opacity="0.85" />
-      ))}
-      <text x={pad} y={H - 8} fill="var(--mut)">0</text>
-      <text x={W - 46} y={H - 8} fill="var(--mut)">confidence</text>
-      <text x="2" y="18" fill="var(--mut)">accuracy</text>
-    </svg>
-  );
+    ["TN", k.TN, "var(--nilm)"], ["FP", k.FP, "var(--hsil)"],
+    ["FN", k.FN, "var(--scc)"], ["TP", k.TP, "var(--koil)"],
+  ] as const;
+  return <div className="grid grid-cols-2 gap-2">{cells.map(([label, value, color]) => <div key={label} className="rounded-lg border border-line p-4 text-center" style={{ background: `color-mix(in srgb, ${color} 14%, var(--surface))` }}><div className="font-mono text-2xl font-semibold" style={{ color }}>{value}</div><div className="text-[10px] text-mut">{label}</div></div>)}</div>;
 }
 
 export default function Performance() {
-  const t = METRICS.triage, f = METRICS.fiveClass, cg = METRICS.cricGrade, bc = METRICS.binaryConfusion, k = METRICS.koil;
-  const [curves, setCurves] = useState<any | null>(null);
-  useEffect(() => {
-    fetch(`${BASE}samples/curves.json`).then((r) => r.json()).then(setCurves).catch(() => setCurves(null));
-  }, []);
+  const cg = METRICS.cricGrade;
+  const k = METRICS.koil;
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      <div className="kicker mb-2">Performance · measured evidence</div>
-      <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Evaluation results</h1>
-      <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-mut">One image request returns five visible outputs: four mutually exclusive grade probabilities plus an independent KOIL morphology probability. A separately reported HPV molecular result can be recorded in the same review and PDF workflow, but it is not inferred from image pixels.</p>
-
-      <Reveal as="section" className="mt-8" aria-labelledby="endpoint-map-title">
-        <div className="kicker mb-3">Endpoint map</div>
-        <h2 id="endpoint-map-title" className="font-display text-2xl font-semibold text-ink">What each table and graph measures</h2>
-        <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-surface">
-          <table className="w-full min-w-[820px] border-collapse text-left text-sm">
-            <thead className="bg-[var(--blush-soft)]"><tr><th className="p-4 text-ink">Endpoint</th><th className="p-4 text-ink">Output</th><th className="p-4 text-ink">Evaluation data</th><th className="p-4 text-ink">Test support</th><th className="p-4 text-ink">Evidence</th></tr></thead>
-            <tbody className="divide-y divide-line">
-              <tr><th className="p-4 text-ink">Cytology grade · deployed baseline</th><td className="p-4 text-mut">NILM / LSIL / HSIL / SCC</td><td className="p-4 text-mut">Herlev held-out + 5-fold CV</td><td className="p-4 font-mono text-ink">137 held-out</td><td className="p-4 text-mut">CV accuracy {f.acc}; triage sensitivity {t.cv.sensitivity}</td></tr>
-              <tr><th className="p-4 text-ink">Cytology grade · research v3</th><td className="p-4 text-mut">Four-grade mask-guided model</td><td className="p-4 text-mut">Herlev locked-test experiment</td><td className="p-4 font-mono text-ink">137 images</td><td className="p-4 text-mut">78.8% full-cohort; 94.0% selective at 60.6% coverage</td></tr>
-              <tr><th className="p-4 text-ink">Cytology grade · CRIC research</th><td className="p-4 text-mut">NILM / LSIL / HSIL / SCC</td><td className="p-4 text-mut">5-fold parent-image-disjoint CRIC</td><td className="p-4 font-mono text-ink">{cg.cells.toLocaleString()} cells / {cg.parents} parents</td><td className="p-4 text-mut">91.7% selective at 94.1% coverage; 88.8% full cohort</td></tr>
-              <tr><th className="p-4 text-ink">Safety triage</th><td className="p-4 text-mut">Normal / abnormal</td><td className="p-4 text-mut">Herlev</td><td className="p-4 font-mono text-ink">137 images</td><td className="p-4 text-mut">Sensitivity {t.held.sensitivity}</td></tr>
-              <tr><th className="p-4 text-ink">KOIL morphology</th><td className="p-4 text-mut">Negative / positive</td><td className="p-4 text-mut">SIPaKMeD locked test</td><td className="p-4 font-mono text-ink">641 cells</td><td className="p-4 text-mut">Sensitivity {k.sensitivity}; AUROC {k.auroc}</td></tr>
-              <tr><th className="p-4 text-ink">KOIL LBC challenge</th><td className="p-4 text-mut">Positive detection only</td><td className="p-4 text-mut">CCCID v2 BD SurePath</td><td className="p-4 font-mono text-ink">20 positives</td><td className="p-4 text-mut">{k.externalDetected}; specificity not estimable</td></tr>
-              <tr><th className="p-4 text-ink">Current HPV handling</th><td className="p-4 text-mut">Recorded molecular positive / negative + genotype when reported</td><td className="p-4 text-mut">External laboratory result entered by the reviewer</td><td className="p-4 font-mono text-ink">Workflow field</td><td className="p-4 text-mut">Included in review and PDF; never inferred from pixels</td></tr>
-              <tr><th className="p-4 text-ink">Future image-to-HPV research</th><td className="p-4 text-mut">Molecular HPV prediction from cytology</td><td className="p-4 text-mut">Paired image + assay cohort required</td><td className="p-4 font-mono text-scc">0 in this repository</td><td className="p-4 font-semibold text-scc">Not trained</td></tr>
-            </tbody>
-          </table>
+      <div className="kicker mb-2">Performance · latest measured evidence</div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Latest model evaluation</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-mut">The primary grade evidence below is the latest CRIC EfficientNet-B0 candidate, evaluated with five parent-image-disjoint folds. KOIL remains a separate SIPaKMeD morphology endpoint and is not a fifth grade or molecular HPV test.</p>
         </div>
-        <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
-          <b className="text-ink">Why this row is zero:</b> public cytology datasets exist and HPV-tested clinical cohorts exist, but the current repository has no same-patient microscopy image + molecular assay pairs. This does not mean HPV data does not exist. It means those linked labels require a governed cohort or research partnership. <Link href="/datasets" className="font-semibold text-teal underline">Review the dataset audit</Link>.
+        <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">CRIC research model · not deployed</span>
+      </div>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="headline-results">
+        <h2 id="headline-results" className="font-display text-2xl font-semibold text-ink">Primary four-grade result</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Selective accuracy" value="91.7%" sub={`95% CI ${cg.selectiveAccuracyCi}`} color="var(--teal)" />
+          <Stat label="Coverage" value="94.1%" sub={`${cg.accepted.toLocaleString()} accepted · ${cg.abstained} human review`} color="var(--navy)" />
+          <Stat label="Full-cohort accuracy" value="88.8%" sub={`95% CI ${cg.accuracyCi}`} />
+          <Stat label="Macro F1" value="74.1%" sub="Pooled across four grades" color="var(--hsil)" />
+        </div>
+        <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut"><b className="text-ink">Required wording:</b> The latest CRIC research model achieved <b className="text-teal">91.7% selective four-grade accuracy at 94.1% coverage</b>; 5.9% of cells were abstained for human review. Full-cohort accuracy was 88.8%. The selective-accuracy CI is {cg.selectiveAccuracyCi}, so its lower bound remains below 90%.</div>
+      </Reveal>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="main-endpoints">
+        <div className="kicker mb-3">Main evaluated models</div>
+        <h2 id="main-endpoints" className="font-display text-2xl font-semibold text-ink">Two model endpoints, two evidence domains</h2>
+        <div className="mt-4 hidden overflow-x-auto rounded-lg border border-line bg-surface sm:block">
+          <table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4">Model endpoint</th><th className="p-4">Output</th><th className="p-4">Evaluation</th><th className="p-4">Measured result</th><th className="p-4">Status</th></tr></thead><tbody className="divide-y divide-line">
+            {MODEL_ENDPOINTS.map((model) => <tr key={model.endpoint}><th className="p-4 text-ink">{model.endpoint}</th><td className="p-4 text-mut">{model.output}</td><td className="p-4 text-mut">{model.evaluation}</td><td className="p-4 text-mut">{model.result}</td><td className={`p-4 font-semibold ${model.statusClass}`}>{model.status}</td></tr>)}
+          </tbody></table>
+        </div>
+        <div className="mt-4 grid gap-3 sm:hidden">{MODEL_ENDPOINTS.map((model) => <article key={model.endpoint} className="card p-4"><h3 className="font-semibold text-ink">{model.endpoint}</h3><dl className="mt-3 grid gap-3 text-xs"><div><dt className="font-semibold text-ink">Output</dt><dd className="mt-1 leading-5 text-mut">{model.output}</dd></div><div><dt className="font-semibold text-ink">Evaluation</dt><dd className="mt-1 leading-5 text-mut">{model.evaluation}</dd></div><div><dt className="font-semibold text-ink">Measured result</dt><dd className="mt-1 leading-5 text-mut">{model.result}</dd></div><div><dt className="font-semibold text-ink">Status</dt><dd className={`mt-1 font-semibold ${model.statusClass}`}>{model.status}</dd></div></dl></article>)}</div>
+        <p className="mt-3 text-xs leading-5 text-mut">The live upload workflow still uses the historical Herlev grade checkpoint. This page reports the latest research candidate without pretending that deployment has already changed.</p>
+      </Reveal>
+
+      <Reveal as="section" className="mt-8" aria-labelledby="latest-figures">
+        <div className="kicker mb-3">Latest CRIC figures</div>
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 id="latest-figures" className="font-display text-2xl font-semibold text-ink">Every grade graph now uses the latest OOF model</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-mut">No Herlev grade graph or superseded research-v3 chart is mixed into this section.</p></div><Link href="/gallery" className="rounded-full border border-teal px-4 py-2 text-sm font-semibold text-teal">Inspect latest heatmaps</Link></div>
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          {CRIC_FIGURES.map((figure, index) => <EvidenceFigure key={figure.file} {...figure} wide={index === CRIC_FIGURES.length - 1} />)}
         </div>
       </Reveal>
 
-      <Reveal as="section" className="mt-8" aria-labelledby="cric-grade-title">
-        <div className="kicker mb-3">CRIC four-grade research · five-fold OOF</div>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 id="cric-grade-title" className="font-display text-2xl font-semibold text-ink">A 90%+ selective point estimate with abstention stated</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">EfficientNet-B0 was evaluated across five parent-image-disjoint folds. Every one of the {cg.parents} parent microscope images appears in exactly one out-of-fold test partition.</p>
-          </div>
-          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research evidence · not deployed</span>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Selective grade accuracy" value="91.7%" sub={`95% CI ${cg.selectiveAccuracyCi}`} color="var(--teal)" />
-          <Stat label="Coverage" value="94.1%" sub={`${cg.accepted.toLocaleString()} accepted; ${cg.abstained} abstained`} color="var(--navy)" />
-          <Stat label="Full-cohort accuracy" value="88.8%" sub={`5-fold ${cg.accuracyMeanSd}; CI ${cg.accuracyCi}`} />
-          <Stat label="SCC recall" value="50.3%" sub={`HSIL recall ${(Number(cg.hsilRecall) * 100).toFixed(1)}%`} color="var(--scc)" />
-        </div>
-        <div className="butter-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
-          <b className="text-ink">Permitted wording:</b> “The CRIC research model achieved 91.7% selective four-grade accuracy at 94.1% coverage; 5.9% of cells were abstained for human review. Full-cohort accuracy was 88.8%.” This is conventional Pap-smear cell evidence, not Thai ThinPrep clinical accuracy, not the deployed Herlev checkpoint, and not HPV detection.
-        </div>
-        <p className="mt-3 text-xs leading-5 text-mut">The 95% CI for selective accuracy is {cg.selectiveAccuracyCi}; its lower bound is below 90%. Threshold 0.60 is now locked for the next external evaluation and is not yet a prospectively validated operating point.</p>
-        <div className="mt-3 rounded-lg border border-scc/40 p-4 text-sm leading-6 text-mut">
-          <b className="text-scc">Safety limitation:</b> pooled SCC recall remained only 50.3% because CRIC contains 161 SCC cells from 21 parent images. The candidate therefore cannot replace the current screening workflow or support autonomous grading despite the 90%+ selective point estimate.
-        </div>
+      <Reveal as="section" className="mt-8" aria-labelledby="class-table">
+        <div className="kicker mb-3">Class-specific evidence</div>
+        <h2 id="class-table" className="font-display text-2xl font-semibold text-ink">Latest CRIC precision, recall, and F1</h2>
+        <div className="mt-4 hidden overflow-x-auto rounded-lg border border-line bg-surface sm:block"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4">Grade</th><th className="p-4">Support</th><th className="p-4">Precision</th><th className="p-4">Recall</th><th className="p-4">F1</th></tr></thead><tbody className="divide-y divide-line">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <tr key={grade}><th className="p-4" style={{ color: info.color }}>{info.icon} {grade}</th><td className="p-4 font-mono">{metric.support.toLocaleString()}</td><td className="p-4 font-mono">{(metric.precision * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.recall * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.f1 * 100).toFixed(1)}%</td></tr>; })}</tbody></table></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <article key={grade} className="card min-w-0 p-4"><h3 className="font-semibold" style={{ color: info.color }}>{info.icon} {grade}</h3><div className="mt-3 font-mono text-xs leading-6 text-mut"><div>n {metric.support.toLocaleString()}</div><div>P {(metric.precision * 100).toFixed(1)}%</div><div>R {(metric.recall * 100).toFixed(1)}%</div><div>F1 {(metric.f1 * 100).toFixed(1)}%</div></div></article>; })}</div>
+        <div className="mt-4 rounded-lg border border-scc/40 p-4 text-sm leading-6 text-mut"><b className="text-scc">Safety limitation:</b> SCC recall is 50.3% on only 161 cells from 21 parent images. The model cannot support autonomous grading or clinical replacement even though its selective aggregate accuracy exceeds 90%.</div>
       </Reveal>
 
-      <Reveal as="section" className="mt-8" aria-labelledby="bethesda-expansion-title">
-        <div className="kicker mb-3">Bethesda expansion</div>
-        <h2 id="bethesda-expansion-title" className="font-display text-2xl font-semibold text-ink">One report, separate clinical questions</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Mutually exclusive grade:</b> the current supported head is NILM / LSIL / HSIL / SCC. ASC-US and ASC-H are valid future categories after label and patient-split review. They should not be invented from current Herlev labels.</div>
-          <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Independent findings:</b> KOIL morphology, specified organism-consistent findings, and a molecular HPV laboratory result can coexist with a grade. They require separate heads or report fields, not one forced five-class grade table.</div>
-        </div>
+      <Reveal as="section" className="mt-8" aria-labelledby="koil-results">
+        <div className="kicker mb-3">Independent KOIL morphology</div>
+        <h2 id="koil-results" className="font-display text-2xl font-semibold text-ink">Separate model, retained because it answers a different question</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">KOIL is trained and tested on SIPaKMeD rather than CRIC. It estimates koilocytic morphology only and cannot confirm HPV DNA/RNA, genotype, persistence, or infection status.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Sensitivity" value="96.2%" sub={`95% CI ${k.sensitivityCi}`} color="var(--teal)" /><Stat label="Specificity" value="97.6%" sub={`95% CI ${k.specificityCi}`} color="var(--navy)" /><Stat label="AUROC / AUPRC" value={`${k.auroc} / ${k.auprc}`} sub={`F1 ${k.f1}`} /><Stat label="External positives" value={k.externalDetected} sub="CCCID positive-only challenge" color="var(--koil)" /></div>
+        <div className="mt-5 grid gap-5 md:grid-cols-2"><div className="card p-6"><h3 className="text-sm font-semibold text-ink">KOIL locked-test confusion matrix</h3><p className="mb-4 mt-1 text-xs text-mut">Test n={k.test}; threshold {k.threshold}</p><KoilConfusion /></div><div className="card p-6 text-sm leading-6 text-mut"><h3 className="font-semibold text-ink">Claim boundary</h3><p className="mt-3">The CRIC 91.7% result belongs only to four-grade selective classification. The KOIL 96.2% sensitivity belongs only to the independent morphology endpoint. Neither number measures molecular HPV infection.</p><Link href="/datasets" className="mt-4 inline-block font-semibold text-teal underline">Review dataset provenance</Link></div></div>
       </Reveal>
 
-      <Reveal as="section" className="mt-8" aria-labelledby="research-candidate-title">
-        <div className="kicker mb-3">Research v3 · locked-test experiment</div>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 id="research-candidate-title" className="font-display text-2xl font-semibold text-ink">Mask-guided hierarchical grade model</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">A four-grade EfficientNet-B0 experiment using Herlev masks, hierarchical safety heads, ordinal loss, hard-example weighting, and 320 px inputs.</p>
-          </div>
-          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research candidate — not deployed</span>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Exact grade accuracy" value="78.8%" sub="locked test n=137; baseline 69.3%" color="var(--teal)" />
-          <Stat label="Selective accuracy" value="97.3%" sub="confidence ≥ 0.90; 53.3% coverage" color="var(--navy)" />
-          <Stat label="Triage sensitivity" value="98.0%" sub="baseline 100%; safety regression" color="var(--scc)" />
-          <Stat label="HSIL recall" value="63.3%" sub="baseline 86.7%; safety regression" color="var(--scc)" />
-        </div>
-        <div className="blush-panel mt-4 rounded-lg border p-5 text-sm leading-6 text-mut">
-          <b className="text-ink">Why this is not the headline model:</b> exact accuracy improved, but HSIL recall fell by 23.4 percentage points and triage sensitivity no longer matched the zero-miss held-out baseline. The 97.3% result applies only after abstaining on 46.7% of cases. It is shown for transparent research comparison and has not replaced the deployed checkpoint.
-        </div>
-      </Reveal>
-
-      <Reveal as="div" className="kicker mt-8 mb-3">Binary screening view</Reveal>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Stat label="Sensitivity (5-fold)" value={t.cv.sensitivity} sub={`held-out ${t.held.sensitivity}`} color="var(--teal)" />
-        <Stat label="AUROC" value={t.cv.auroc} sub={`held-out ${t.held.auroc} (CI ${t.held.ci_auroc})`} color="var(--navy)" />
-        <div className="butter-panel rounded-lg border p-5 text-ink">
-          <div className="text-xs text-mut">High-risk cases identified (HSIL+SCC)</div>
-          <div className="mt-1 font-mono text-3xl font-semibold text-scc">{t.highRisk}</div>
-        </div>
-      </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-        <Stat label="AUPRC" value={t.cv.auprc} /><Stat label="Specificity" value={t.cv.specificity} />
-        <Stat label="MCC" value={t.cv.mcc} /><Stat label="Balanced Acc" value={t.cv.bacc} />
-      </div>
-
-      {/* charts row */}
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Recall by endpoint</div>
-          <div className="mb-3 text-xs leading-5 text-mut">Displayed on one scale for comparison, with a visible dataset boundary. KOIL is not a fifth grade class.</div>
-          <EndpointRecallChart />
-        </Reveal>
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Trends across five folds</div>
-          <div className="mb-3 text-xs text-mut">Sensitivity remains high across the five Herlev folds.</div>
-          <FoldLineChart />
-        </Reveal>
-      </div>
-
-      <Reveal as="div" className="kicker mt-8 mb-3">Historical Herlev grade view</Reveal>
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-        <Stat label="Accuracy" value={f.acc} /><Stat label="QWK (ordinal)" value={f.qwk} /><Stat label="Recall HSIL+SCC" value={f.recall_hs} />
-      </div>
-
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Held-out supported-grade confusion matrix</div>
-          <div className="mb-3 text-xs text-mut">Diagonal cells are correct predictions; off-diagonal cells show class confusion.</div>
-          <ConfusionHeatmap />
-        </Reveal>
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Binary screening confusion matrix</div>
-          <div className="mb-4 text-xs text-mut">FN = 0 in this held-out split. This does not guarantee zero misses in clinical use.</div>
-          <div className="grid grid-cols-2 gap-2 text-center">
-            {([["TP", bc.TP, "var(--nilm)", "abnormal → abnormal"], ["FN", bc.FN, "var(--scc)", "abnormal → normal (miss)"],
-               ["FP", bc.FP, "var(--hsil)", "normal → abnormal (overcall)"], ["TN", bc.TN, "var(--nilm)", "normal → normal"]] as const).map(([k, v, c, d]) => (
-              <div key={k} className="rounded-xl p-4" style={{ background: `color-mix(in srgb, ${c} 14%, transparent)` }}>
-                <div className="font-mono text-2xl font-semibold" style={{ color: c }}>{v}</div>
-                <div className="text-[10px] text-mut">{k} · {d}</div>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </div>
-
-      <Reveal as="div" className="kicker mt-8 mb-3">Independent KOIL morphology endpoint</Reveal>
-      <p className="mb-4 text-sm text-mut">{k.dataset}: {k.total} cells from {k.clusters} source clusters. The locked test set contains {k.positive} KOIL-positive and {k.negative} negative cells; splits are source-cluster-disjoint.</p>
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-        <Stat label="Sensitivity" value={k.sensitivity} sub={`95% CI ${k.sensitivityCi}`} color="var(--teal)" />
-        <Stat label="Specificity" value={k.specificity} sub={`95% CI ${k.specificityCi}`} color="var(--navy)" />
-        <Stat label="AUROC / AUPRC" value={`${k.auroc} / ${k.auprc}`} sub={`F1 ${k.f1}`} />
-        <Stat label="Calibration ECE" value={k.ece} sub={`locked threshold ${k.threshold}`} />
-      </div>
-      <div className="blush-panel mt-4 rounded-lg border p-5 text-sm text-mut">
-        <b className="text-ink">Where the project legitimately exceeds 97%:</b> the SIPaKMeD five-morphology auxiliary task reached <b className="font-mono text-teal">{k.multiclassAccuracy}</b> locked-test accuracy and <b className="font-mono text-teal">{k.multiclassMacroF1}</b> macro F1. This number belongs only to SIPaKMeD morphology classification. It must not be presented as Herlev Bethesda-grade accuracy, Thai ThinPrep performance, clinical diagnostic accuracy, or HPV detection accuracy.
-      </div>
-      <div className="mt-5 grid gap-5 md:grid-cols-2">
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">KOIL locked-test confusion matrix</div>
-          <div className="mb-5 text-xs leading-5 text-mut">Independent binary morphology endpoint on source-cluster-disjoint SIPaKMeD cells.</div>
-          <KoilConfusionHeatmap />
-        </Reveal>
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Why this is separate from the grade matrix</div>
-          <div className="mt-4 space-y-4 text-sm leading-6 text-mut">
-            <p><b className="text-ink">Different ontology:</b> KOIL morphology can coexist with a reviewed grade such as LSIL; it is not a mutually exclusive fifth grade.</p>
-            <p><b className="text-ink">Different test set:</b> Herlev supplies grade labels, while SIPaKMeD supplies the trained KOIL morphology endpoint.</p>
-            <p><b className="text-ink">Different clinical claim:</b> a positive KOIL score requests morphology review. It does not establish HPV DNA/RNA, genotype, viral load, or persistence.</p>
-          </div>
-        </Reveal>
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_2fr]">
-        <Stat label="External CCCID detected" value={k.externalDetected} sub="Expert-labelled KOIL positives" color="var(--koil)" />
-        <Stat label="External sensitivity" value={k.externalSensitivity} sub={`Wilson 95% CI ${k.externalSensitivityCi}`} color="var(--koil)" />
-        <div className="card p-5 text-sm leading-6 text-mut"><b className="text-ink">Positive-only domain challenge:</b> {k.externalDataset}. The 20 center-focus images were selected before inference and the SIPaKMeD threshold was not changed. Specificity, AUROC, calibration, and clinical accuracy are not estimable from this positive-only subset.</div>
-      </div>
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
-        <EvidenceImage src="evidence/koil_test_performance.png" title="KOIL ROC, precision-recall, and locked threshold" detail="AUROC 0.9912 and AUPRC 0.9810 on the SIPaKMeD locked test. These are morphology metrics, not HPV-infection metrics." />
-        <EvidenceImage src="evidence/koil_calibration.png" title="KOIL calibration" detail="Reliability evidence for the locked internal test. External ThinPrep calibration remains required." />
-      </div>
-
-      <Reveal as="div" className="kicker mt-8 mb-3">ROC + Calibration (binary triage)</Reveal>
-      <div className="grid gap-5 md:grid-cols-2">
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">ROC curve</div>
-          <div className="mb-3 text-xs text-mut">Computed from best_cervical.pt on the canonical held-out split with TTA.</div>
-          {curves ? <RocChart curves={curves} /> : <div className="text-sm text-mut">curves.json not found. Run `python ml/scripts/gen_curves.py`.</div>}
-          {curves && <div className="mt-2 font-mono text-xs text-mut">AUROC {curves.roc_auc.toFixed(3)} · n={curves.n}</div>}
-        </Reveal>
-        <Reveal className="card p-6">
-          <div className="mb-1 text-sm font-semibold text-ink">Reliability / calibration</div>
-          <div className="mb-3 text-xs text-mut">This is the raw reliability plot. A separate post-hoc temperature-scaling report exists, but external calibration is still required.</div>
-          {curves ? <ReliabilityChart curves={curves} /> : <div className="text-sm text-mut">curves.json not found.</div>}
-          {curves && <div className="mt-2 font-mono text-xs text-mut">ECE {curves.ece_l1_10bin.toFixed(3)} · Brier {curves.brier.toFixed(3)}</div>}
-        </Reveal>
-      </div>
-
-      <div className="butter-panel mt-6 rounded-lg border p-5 text-sm">
-        <b className="text-hsil">Required context:</b> held-out results, confidence intervals, and cross-validation are shown instead of a single optimistic score. Sensitivity is high in the current Herlev evidence,
-        while specificity is moderate. KOIL is evaluated separately on SIPaKMeD conventional Pap-smear crops and challenged on a small CCCID liquid-based positive subset; it is not a Bethesda grade and not an HPV DNA/RNA test. A full negative-inclusive external validation and external calibration remain required.
-      </div>
+      <div className="butter-panel mt-8 rounded-lg border p-5 text-xs leading-5 text-mut"><b className="text-ink">Evidence boundary:</b> CRIC is conventional Pap-smear cell evidence, not Thai ThinPrep clinical validation. Grad-CAM is post-hoc attention evidence, not segmentation or causal proof. All outputs require qualified human review.</div>
     </div>
   );
 }
