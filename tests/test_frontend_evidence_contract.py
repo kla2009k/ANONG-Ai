@@ -8,6 +8,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class FrontendEvidenceContractTests(unittest.TestCase):
+    def test_overview_hides_requested_readiness_rows(self):
+        source = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
+        self.assertNotIn('["Thai ThinPrep", "Missing"', source)
+        self.assertNotIn('["Clinical use", "Not ready"', source)
+
+    def test_model_examples_live_in_case_gallery(self):
+        analyze = (ROOT / "web-react" / "src" / "pages" / "Analyze.tsx").read_text(encoding="utf-8")
+        gallery = (ROOT / "web-react" / "src" / "pages" / "CaseGallery.tsx").read_text(encoding="utf-8")
+        self.assertNotIn("Real examples with model outputs", analyze)
+        self.assertIn('href="/gallery"', analyze)
+        self.assertIn("Real Herlev cases with class-specific Grad-CAM", gallery)
+        self.assertIn("Original image", gallery)
+        self.assertIn("Grad-CAM · {sample.top}", gallery)
+
     def test_public_copy_defines_hpv_risk_without_claiming_infection_detection(self):
         landing = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
         analyze = (ROOT / "web-react" / "src" / "pages" / "Analyze.tsx").read_text(encoding="utf-8")

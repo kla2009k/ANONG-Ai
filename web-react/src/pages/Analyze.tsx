@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, FileDown, Info, LoaderCircle, RotateCcw, ShieldCheck, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { XaiReviewPanel, type XaiState } from "@/components/XaiReviewPanel";
-import { GRADE_CLASS_KEYS, classInfo, analyzeReal, type Sample } from "@/lib/data";
+import { GRADE_CLASS_KEYS, classInfo, analyzeReal } from "@/lib/data";
 import { downloadAudit, loadAudit, saveAudit, type AuditEntry, type SignStatus } from "@/lib/audit";
 import { API_IS_CONFIGURED, backendStatus, createReviewedPdf, type ClinicalContext } from "@/lib/api";
 import { ClinicalContextPanel, EMPTY_CLINICAL_CONTEXT, SYMPTOM_LABELS } from "@/components/ClinicalContextPanel";
@@ -69,9 +69,6 @@ function htmlEscape(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char] || char));
 }
 export default function Analyze() {
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [samplesState, setSamplesState] = useState<"loading" | "ready" | "error">("loading");
-  const [sampleFilter, setSampleFilter] = useState("ALL");
   const [res, setRes] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -84,10 +81,6 @@ export default function Analyze() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch(`${BASE}samples/samples.json`).then((r) => {
-      if (!r.ok) throw new Error("Sample manifest unavailable.");
-      return r.json();
-    }).then((data) => { setSamples(data); setSamplesState("ready"); }).catch(() => { setSamples([]); setSamplesState("error"); });
     backendStatus().then(setBackend);
     const reference = new URLSearchParams(window.location.search).get("reference");
     if (reference?.startsWith("koil-gallery/") && /^[a-z0-9/_-]+\.jpg$/i.test(reference)) {
@@ -105,23 +98,6 @@ export default function Analyze() {
       }).catch((error) => setErr(error instanceof Error ? error.message : "Reference image could not be loaded."));
     }
   }, []);
-
-  function pickSample(s: Sample) {
-    setErr("");
-    const gradeMass = GRADE_CLASS_KEYS.reduce((sum, key) => sum + (s.probs[key] || 0), 0) || 1;
-    const gradeProbs = Object.fromEntries(GRADE_CLASS_KEYS.map((key) => [key, (s.probs[key] || 0) / gradeMass]));
-    const gradeTop = GRADE_CLASS_KEYS.slice().sort((a, b) => gradeProbs[b] - gradeProbs[a])[0];
-    setRes({
-      resultKey: `${s.id}-${Date.now()}`,
-      top: gradeTop, probs: gradeProbs, conf: gradeProbs[gradeTop], uncertainty: s.uncertainty,
-      koil: false, trueLabel: s.true_label, correct: gradeTop === s.true_label,
-      image: `${BASE}${s.file}`, cam: s.cam ? `${BASE}${s.cam}` : undefined,
-      camSource: s.cam ? "precomputed_gradcam" : undefined,
-      modelMode: "model",
-      xai: { ok: Boolean(s.cam), provenance: "precomputed", primaryMethod: "gradcam" },
-      source: "Real Herlev example processed by the evaluated model (held-out; not used for training).",
-    });
-  }
 
   function clearCase() {
     setUpImg(null);
@@ -195,7 +171,7 @@ export default function Analyze() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="kicker mb-2">Image analysis</div>
-          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Upload an image or select a real example</h1>
+          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Upload a cytology image</h1>
         </div>
         <Link href="/history" className="rounded-full border border-line px-4 py-2 text-sm text-mut transition hover:border-teal hover:text-teal">
           View sign-off history
@@ -207,7 +183,7 @@ export default function Analyze() {
         <Info className="mt-0.5 shrink-0 text-teal" size={17} aria-hidden />
         <span className="text-ink"><b>Intended use:</b> preliminary <b>screening support</b> from ThinPrep/Pap-style images for qualified medical personnel. It estimates HPV-related morphology risk but <b>does not diagnose</b>. Every result requires clinician sign-off and remains separate from HPV DNA/RNA testing.</span>
       </div>
-      <p className="mt-3 text-sm text-mut">The examples below are <b>real Herlev images</b> with precomputed model outputs. Uploaded images require the local analysis server.</p>
+      <p className="mt-3 text-sm text-mut">Uploaded images require the configured analysis server. Real Herlev examples and their Grad-CAM outputs are available in the <Link href="/gallery" className="font-semibold text-teal underline">Case Gallery</Link>.</p>
       <p className="mt-2 rounded-lg border border-line p-3 text-xs text-mut">
         Cytology grade and koilocytosis morphology are separate endpoints. Grade uses NILM, LSIL, HSIL, and SCC; the KOIL endpoint is trained on conventional Pap-smear crops and is not yet validated for ThinPrep.
         Contour, SAM, z-stack, and WSI backend features are roadmap prototypes rather than validated outputs.
@@ -258,55 +234,10 @@ export default function Analyze() {
         <div aria-live="polite">
           {res ? <ResultCard key={res.resultKey} res={res} clinicalContext={clinicalContext} /> : (
             <div className="grid h-full place-items-center rounded-2xl border border-dashed border-line p-8 text-center text-sm text-mut">
-              Select a real example below or upload an image<br />to review the result and Grad-CAM
+              Upload an image to review the model result,<br />uncertainty, and Grad-CAM
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-12 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-xl font-semibold text-ink">Real examples with model outputs</h2>
-          <p className="text-xs text-mut">Select a case to inspect the measured output. Correct and incorrect predictions are both included.</p>
-        </div>
-        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filter examples by Bethesda category">
-          {["ALL", ...GRADE_CLASS_KEYS].map((k) => (
-            <button
-              key={k}
-              onClick={() => setSampleFilter(k)}
-              className={"rounded-full border px-3 py-1 text-xs transition " + (sampleFilter === k ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}
-              type="button"
-            >
-              {k === "ALL" ? "All" : k}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {samplesState === "loading" && Array.from({ length: 4 }, (_, index) => <div key={index} className="aspect-square animate-pulse rounded-lg border border-line bg-surface" aria-hidden />)}
-        {samplesState === "error" && <div className="col-span-full rounded-lg border border-scc/40 p-5 text-sm text-scc" role="alert">Validated sample manifest could not be loaded. Reload the page or use the Case Gallery.</div>}
-        {samples.filter((s) => sampleFilter === "ALL" || s.top === sampleFilter || s.true_label === sampleFilter).map((s) => {
-          const I = classInfo(s.top);
-          return (
-            <button key={s.id} onClick={() => pickSample(s)} className="card card-hover overflow-hidden text-left"
-              aria-label={`Example ${s.id}, predicted ${s.top}, ${s.correct ? "correct" : "incorrect"}`}>
-              <img src={`${BASE}${s.file}`} className="aspect-square w-full object-cover" alt={`Cytology image with true label ${s.true_label}`} />
-              <div className="p-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold" style={{ color: I.color }}>{I.icon} {s.top}</span>
-                  <span className="rounded px-1.5 py-0.5 text-[10px]" style={{ background: s.correct ? "color-mix(in srgb,var(--nilm) 18%,transparent)" : "color-mix(in srgb,var(--scc) 18%,transparent)", color: s.correct ? "var(--nilm)" : "var(--scc)" }}>
-                    {s.correct ? "✓ Correct" : "✗ Error"}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-[10px] text-mut">True: {s.true_label} · Confidence {(s.conf * 100).toFixed(0)}%</div>
-              </div>
-            </button>
-          );
-        })}
-        {samples.length === 0 && <p className="col-span-full text-sm text-mut">No examples available. Run ml/scripts/gen_samples.py.</p>}
-        {samples.length > 0 && samples.filter((s) => sampleFilter === "ALL" || s.top === sampleFilter || s.true_label === sampleFilter).length === 0 && (
-          <p className="col-span-full rounded-xl border border-dashed border-line p-6 text-center text-sm text-mut">No examples match this filter.</p>
-        )}
       </div>
 
       <p className="mt-8 text-[11px] text-mut">⚠️ Preliminary screening support only. Clinician sign-off is always required. Not a final diagnosis and not an HPV DNA/RNA test.</p>

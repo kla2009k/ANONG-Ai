@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { CLASS_KEYS, classInfo } from "@/lib/data";
+import { CLASS_KEYS, GRADE_CLASS_KEYS, classInfo, type Sample } from "@/lib/data";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -72,10 +72,12 @@ const EVIDENCE_FIGURES = [
 
 export default function CaseGallery() {
   const [cases, setCases] = useState<GalleryCase[]>([]);
+  const [samples, setSamples] = useState<Sample[]>([]);
+  const [sampleFilter, setSampleFilter] = useState("ALL");
   const [cric, setCric] = useState<ReferenceManifest | null>(null);
   const [koil, setKoil] = useState<ReferenceManifest | null>(null);
   const [koilChallenge, setKoilChallenge] = useState<KoilChallenge | null>(null);
-  const [section, setSection] = useState<"atlas" | "audit" | "koil">("atlas");
+  const [section, setSection] = useState<"outputs" | "atlas" | "audit" | "koil">("outputs");
   const [filter, setFilter] = useState("ALL");
   const [atlasFilter, setAtlasFilter] = useState("ALL");
   const [visibleAtlas, setVisibleAtlas] = useState(24);
@@ -85,6 +87,7 @@ export default function CaseGallery() {
 
   useEffect(() => {
     fetch(`${BASE}samples/error_cases.json`).then((r) => r.json()).then(setCases).catch(() => setCases([]));
+    fetch(`${BASE}samples/samples.json`).then((r) => r.json()).then(setSamples).catch(() => setSamples([]));
     fetch(`${BASE}cric-gallery/index.json`).then((r) => r.json()).then(setCric).catch(() => setCric(null));
     fetch(`${BASE}koil-gallery/index.json`).then((r) => r.json()).then(setKoil).catch(() => setKoil(null));
     fetch(`${BASE}evidence/cccid_koil_20_case_challenge.json`).then((r) => r.json()).then(setKoilChallenge).catch(() => setKoilChallenge(null));
@@ -144,8 +147,9 @@ export default function CaseGallery() {
         </div>
       </div>
 
-      <div className="mt-7 grid gap-2 sm:grid-cols-3" role="tablist" aria-label="Gallery view">
+      <div className="mt-7 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Gallery view">
         {([
+          ["outputs", "Model outputs", "Original image + Grad-CAM"],
           ["atlas", "External reference atlas", "100 cells · five morphology categories"],
           ["audit", "Herlev model audit", "Predictions, errors, and Grad-CAM"],
           ["koil", "KOIL evidence", "Performance, calibration, and XAI"],
@@ -157,6 +161,43 @@ export default function CaseGallery() {
           </button>
         ))}
       </div>
+
+      {section === "outputs" && (
+        <section className="mt-8" aria-labelledby="model-output-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="kicker mb-2">Measured model outputs</div>
+              <h2 id="model-output-title" className="font-display text-2xl font-semibold text-ink">Real Herlev cases with class-specific Grad-CAM</h2>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-mut">Original data and its precomputed explanation are displayed together. Correct and incorrect predictions are both retained to make model behavior auditable.</p>
+            </div>
+            <div className="font-mono text-xs text-mut">Held-out examples · engineering review</div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-1" role="tablist" aria-label="Filter model outputs by grade">
+            {["ALL", ...GRADE_CLASS_KEYS].map((key) => (
+              <button key={key} type="button" onClick={() => setSampleFilter(key)} className={"rounded-full border px-3 py-1 text-xs transition " + (sampleFilter === key ? "border-teal bg-teal text-white" : "border-line text-mut hover:border-teal hover:text-teal")}>{key === "ALL" ? `All (${samples.length})` : key}</button>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-5 xl:grid-cols-2">
+            {samples.filter((sample) => sampleFilter === "ALL" || sample.top === sampleFilter || sample.true_label === sampleFilter).map((sample) => {
+              const predicted = classInfo(sample.top);
+              return (
+                <article key={sample.id} className="card overflow-hidden">
+                  <div className="grid grid-cols-2 gap-px bg-line">
+                    <figure className="bg-surface"><img src={`${BASE}${sample.file}`} alt={`${sample.id} original cytology image, true label ${sample.true_label}`} loading="lazy" className="aspect-square w-full object-cover" /><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Original image</figcaption></figure>
+                    <figure className="bg-surface"><img src={`${BASE}${sample.cam}`} alt={`${sample.id} class-specific Grad-CAM for predicted ${sample.top}`} loading="lazy" className="aspect-square w-full object-cover" /><figcaption className="border-t border-line px-3 py-2 text-xs font-semibold text-ink">Grad-CAM · {sample.top}</figcaption></figure>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-mono text-[10px] text-mut">{sample.id}</div><h3 className="mt-1 font-display text-lg font-semibold" style={{ color: predicted.color }}>{predicted.icon} Predicted {sample.top}</h3></div><span className="rounded-full border px-2 py-1 text-[10px] font-semibold" style={{ borderColor: sample.correct ? "var(--nilm)" : "var(--scc)", color: sample.correct ? "var(--nilm)" : "var(--scc)" }}>{sample.correct ? "Correct" : "Incorrect"}</span></div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs"><div><span className="text-mut">True</span><br /><b className="text-ink">{sample.true_label}</b></div><div><span className="text-mut">Confidence</span><br /><b className="font-mono text-ink">{(sample.conf * 100).toFixed(1)}%</b></div><div><span className="text-mut">Uncertainty</span><br /><b className="text-ink">{sample.uncertainty.level}</b></div></div>
+                    <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-mut">Grad-CAM indicates influential regions, not a segmentation boundary or proof of biological causality. These examples have not received project-specific pathologist review.</p>
+                  </div>
+                </article>
+              );
+            })}
+            {!samples.length && <div className="col-span-full rounded-lg border border-scc/40 p-6 text-sm text-scc" role="alert">The model-output manifest could not be loaded.</div>}
+          </div>
+        </section>
+      )}
 
       {section === "atlas" && (
         <section className="mt-8" aria-labelledby="cric-atlas-title">

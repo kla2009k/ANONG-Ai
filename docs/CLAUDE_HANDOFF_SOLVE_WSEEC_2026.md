@@ -1,5 +1,29 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+## UI and grade-model update — 2026-07-22
+
+- Removed the `Thai ThinPrep / Missing` and `Clinical use / Not ready` cards
+  from the Overview readiness scorecard at the team's request. The underlying
+  scientific limitations remain documented elsewhere and were not converted
+  into positive claims.
+- Removed the precomputed Herlev sample selector from Analyze. Analyze is now
+  focused on uploaded-image workflow and links to Case Gallery for evidence.
+- Added a default `Model outputs` view to Case Gallery. Each held-out example
+  shows the original image and class-specific Grad-CAM side by side, plus true
+  label, prediction, correctness, confidence, and uncertainty.
+- Performance now distinguishes the deployed baseline (`0.690 +/- 0.062`
+  five-fold CV accuracy), research v3 full-cohort locked-test accuracy (`78.8%`),
+  and selective accuracy (`94.0%` at `60.6%` coverage). Selective accuracy must
+  never be presented without its coverage and abstention rate.
+- A new lower-regularization run reached only `67.2%` full-cohort accuracy and
+  `36.7%` HSIL recall. It was rejected. The artifact is
+  `models/grade_research_v3/b0_320_balanced_20260724.json`.
+- Do not edit the site to claim 90-95% full-cohort four-grade accuracy. No
+  current artifact supports that claim. Reaching that range credibly requires
+  more patient/slide-disjoint expert-labelled data, a pre-registered external
+  test, and repeated source-disjoint validation rather than more test-set
+  tuning.
+
 > **Slide visual asset update 2026-07-22:** A reproducible 17-image,
 > presentation-ready evidence set now exists under
 > `presentation/slide_assets_2026/`. Every PNG is 1920x1080, uses canonical

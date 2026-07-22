@@ -134,3 +134,35 @@ python ml\scripts\train_grade_research_v3.py `
 Canonical metrics remain in `models/metrics.json`. Research metrics and complete
 epoch histories are stored beside each checkpoint under
 `models/grade_research_v3/`.
+
+## Experiment C: lower-regularization confirmatory run
+
+**Run date:** 2026-07-22
+
+Checkpoint: `models/grade_research_v3/b0_320_balanced_20260724.pt`
+
+This run tested whether lower dropout, label smoothing, segmentation weight,
+ordinal weight, and hard-example strength could close the exact-grade gap. It
+used seed `20260724`, 320 px inputs, and the unchanged canonical split.
+
+| Metric | Locked test |
+|---|---:|
+| Exact accuracy | 0.6715 |
+| Balanced accuracy | 0.6423 |
+| Macro F1 | 0.6398 |
+| NILM recall | 0.7500 |
+| LSIL recall | 0.8163 |
+| HSIL recall | 0.3667 |
+| SCC recall | 0.6364 |
+| Triage-head recall | 0.9802 |
+
+The run is rejected. It underperformed both the canonical baseline and
+Experiment A, with an unacceptable HSIL recall regression. Its 97.3% selective
+accuracy at confidence >= 0.90 covered only 27.0% of cases and is not suitable
+as a headline result. This negative result reinforces that 90-95% full-cohort
+four-grade accuracy cannot currently be supported by hyperparameter tuning on
+the 917-image Herlev dataset.
+
+Larger B2/B3 trials were attempted but cancelled before producing checkpoints
+because concurrent processes exceeded the practical 8 GB laptop-GPU budget.
+They provide no reportable metrics.

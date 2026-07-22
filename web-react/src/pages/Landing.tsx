@@ -8,8 +8,6 @@ const READINESS = [
   ["4-class grading", "Partial", `${METRICS.fiveClass.acc} accuracy on Herlev`],
   ["KOIL morphology", "Internally validated", `${METRICS.koil.sensitivity} sensitivity on SIPaKMeD`],
   ["Calibration", "P1 improved", "Temperature scaling on Herlev only"],
-  ["Thai ThinPrep", "Missing", "Protocol exists; data not collected"],
-  ["Clinical use", "Not ready", "Reader study and validation required"],
 ];
 
 export default function Landing() {
