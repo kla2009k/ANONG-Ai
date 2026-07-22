@@ -1300,3 +1300,10 @@ descriptions above.
   and Vite production build passed; desktop and 390 px browser checks showed
   no horizontal page overflow; all five Performance figures loaded with
   non-zero natural dimensions.
+- The large SCC-explanation and APCData-failure panels were removed from the
+  main `/performance` presentation flow on 2026-07-23. Their measured results
+  were not deleted or altered: exact SCC recall 50.3% and APCData balanced
+  accuracy 28.4% remain under the collapsed `Limitations and external
+  validation` disclosure, in exact class metrics, and in machine-readable
+  evidence. Do not remove those audit paths or present only favourable results
+  as though they describe all evaluated endpoints.

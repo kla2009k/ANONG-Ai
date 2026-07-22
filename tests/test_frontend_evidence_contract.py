@@ -22,6 +22,15 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertIn("91.7% selective accuracy at 94.1% coverage", source)
         self.assertNotIn("92.8% overall accuracy", source)
 
+    def test_performance_keeps_limitations_auditable_without_prominent_failure_panels(self):
+        source = (ROOT / "web-react/src/pages/Performance.tsx").read_text(encoding="utf-8")
+        self.assertNotIn("SCC explained", source)
+        self.assertNotIn("External domain stress test", source)
+        self.assertNotIn("The CRIC model does not transfer safely to APCData LBC", source)
+        self.assertIn('title="Limitations and external validation"', source)
+        self.assertIn("Exact SCC recall: 50.3%", source)
+        self.assertIn("APCData balanced accuracy: 28.4%", source)
+
     def test_overview_hides_requested_readiness_rows(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
         self.assertNotIn('["Thai ThinPrep", "Missing"', source)

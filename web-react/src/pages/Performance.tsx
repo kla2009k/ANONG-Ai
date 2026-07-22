@@ -70,30 +70,6 @@ export default function Performance() {
       </div>
     </Reveal>
 
-    <Reveal as="section" className="mt-9" aria-labelledby="scc-explained">
-      <div className="kicker mb-2">SCC explained</div>
-      <h2 id="scc-explained" className="font-display text-2xl font-semibold text-ink">Screening capture is strong; exact subtyping is not</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">These two numbers answer different questions and should always be presented together.</p>
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <div className="card border-scc/40 p-6"><div className="text-xs font-semibold uppercase tracking-wider text-scc">Exact SCC label</div><div className="mt-2 font-mono text-3xl font-semibold text-scc">50.3%</div><p className="mt-3 text-sm leading-6 text-mut">81 of 161 SCC cells received the exact SCC label. Another 74 were called HSIL, so the model is not reliable for final HSIL-versus-SCC subtyping.</p></div>
-        <div className="card border-teal/40 p-6"><div className="text-xs font-semibold uppercase tracking-wider text-teal">Captured as high-grade</div><div className="mt-2 font-mono text-3xl font-semibold text-teal">96.3%</div><p className="mt-3 text-sm leading-6 text-mut">155 of 161 SCC cells were still placed in HSIL or SCC. This supports a high-grade review queue, but it does not make the system autonomous.</p></div>
-      </div>
-      <div className="mt-4 rounded-lg border border-line bg-[var(--blush-soft)] p-4 text-sm leading-6 text-mut"><b className="text-ink">What must improve next:</b> add more independent SCC parent images, use a validation-selected cost-sensitive objective, adapt to liquid-based cytology, then repeat evaluation on a new external ThinPrep cohort. A display change cannot repair the exact SCC endpoint.</div>
-    </Reveal>
-
-    <Reveal as="section" className="mt-9" aria-labelledby="external-lbc">
-      <div className="kicker mb-2">External domain stress test</div>
-      <h2 id="external-lbc" className="font-display text-2xl font-semibold text-ink">The CRIC model does not transfer safely to APCData LBC</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">A five-checkpoint CRIC ensemble was tested without fitting or threshold selection on 3,065 supported APCData cells. The 69.7% raw accuracy is misleading because the model collapsed toward NILM.</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Balanced accuracy" value="28.4%" detail="External LBC; four exact grades." accent="var(--scc)" />
-        <MetricCard label="LSIL recall" value="11.3%" detail="50 of 444 external LSIL cells." accent="var(--lsil)" />
-        <MetricCard label="HSIL recall" value="2.1%" detail="9 of 419 external HSIL cells." accent="var(--hsil)" />
-        <MetricCard label="SCC recall" value="0.0%" detail="0 of 126 external SCC cells." accent="var(--scc)" />
-      </div>
-      <p className="mt-4 rounded-lg border border-scc/40 bg-surface p-4 text-xs leading-5 text-mut"><b className="text-scc">Promotion blocked:</b> APCData uses liquid-based cytology by cytocentrifugation and is not a Thai ThinPrep cohort. Even so, this failure is sufficient to reject cross-domain clinical-readiness claims and require LBC-specific development.</p>
-    </Reveal>
-
     <Reveal as="section" className="mt-9" aria-labelledby="screening-recall">
       <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="kicker mb-2">Screening view</div><h2 id="screening-recall" className="font-display text-2xl font-semibold text-ink">Recall at a glance</h2></div><Link href="/gallery" className="rounded-full border border-teal px-4 py-2 text-sm font-semibold text-teal">Inspect model heatmaps</Link></div>
       <div className="card mt-5 space-y-5 p-5 sm:p-6">
@@ -112,6 +88,12 @@ export default function Performance() {
     </Reveal>
 
     <Reveal as="section" className="mt-8 space-y-3" aria-label="Technical evidence">
+      <Disclosure title="Limitations and external validation" summary="Open the measured failure modes and domain-transfer boundary.">
+        <div className="grid gap-4 text-sm md:grid-cols-2">
+          <div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">Exact SCC recall: 50.3%</div><p className="mt-2 leading-6 text-mut">81 of 161 SCC cells received the exact SCC label; 74 more were classified as HSIL. SCC high-grade capture was 96.3%, but that is not exact SCC subtyping accuracy.</p></div>
+          <div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">APCData balanced accuracy: 28.4%</div><p className="mt-2 leading-6 text-mut">The untouched external LBC evaluation showed severe domain shift. It is not Thai ThinPrep validation, and the CRIC candidate remains blocked from cross-domain or clinical-readiness claims.</p></div>
+        </div>
+      </Disclosure>
       <Disclosure title="Exact class metrics" summary="Support, precision, recall, and F1 for NILM, LSIL, HSIL, and SCC.">
         <div className="hidden overflow-x-auto rounded-lg border border-line sm:block"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4">Grade</th><th className="p-4">Support</th><th className="p-4">Precision</th><th className="p-4">Recall</th><th className="p-4">F1</th></tr></thead><tbody className="divide-y divide-line">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <tr key={grade}><th className="p-4" style={{ color: info.color }}>{info.icon} {grade}</th><td className="p-4 font-mono">{metric.support.toLocaleString()}</td><td className="p-4 font-mono">{(metric.precision * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.recall * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.f1 * 100).toFixed(1)}%</td></tr>; })}</tbody></table></div>
         <div className="grid grid-cols-2 gap-3 sm:hidden">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <article key={grade} className="rounded-lg border border-line p-4"><h3 className="font-semibold" style={{ color: info.color }}>{info.icon} {grade}</h3><div className="mt-3 font-mono text-xs leading-6 text-mut"><div>n {metric.support.toLocaleString()}</div><div>P {(metric.precision * 100).toFixed(1)}%</div><div>R {(metric.recall * 100).toFixed(1)}%</div><div>F1 {(metric.f1 * 100).toFixed(1)}%</div></div></article>; })}</div>
