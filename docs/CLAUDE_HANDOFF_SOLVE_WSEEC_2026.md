@@ -1228,11 +1228,12 @@ descriptions above.
 - A post-hoc global SCC logit-bias sweep was explored locally and rejected. It
   raised SCC recall only by sharply reducing SCC precision and macro F1, and it
   was not validation-selected. No model checkpoint or headline result changed.
-- `/performance` now uses progressive disclosure. Four screening-level cards,
+- `/performance` uses a clean evidence hierarchy. Four screening-level cards,
   an SCC exact-versus-high-grade explanation, and a compact recall view appear
-  first. Exact precision/recall/F1, all five research charts, endpoint
-  provenance, and the KOIL confusion matrix remain available in expandable
-  sections.
+  first. All five latest-model research charts are visible directly below that
+  summary so users do not mistake them for removed content. Exact tabular
+  precision/recall/F1, endpoint provenance, and the KOIL confusion matrix remain
+  available in expandable sections.
 - `ml/scripts/aggregate_cric_grade_cv.py` and
   `scripts/build_cric_latest_web_evidence.py` now write auditable grouped
   endpoints. The recall chart displays SCC exact recall and SCC high-grade

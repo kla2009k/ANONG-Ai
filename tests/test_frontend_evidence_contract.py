@@ -39,7 +39,9 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         source = (ROOT / "web-react" / "src" / "pages" / "Performance.tsx").read_text(encoding="utf-8")
 
         self.assertIn("CRIC research model · not deployed", source)
-        self.assertIn("Every grade graph uses the latest parent-image-disjoint OOF model", source)
+        self.assertIn('id="research-charts"', source)
+        self.assertIn("All five charts are visible here", source)
+        self.assertNotIn('<Disclosure title="All five research charts"', source)
         self.assertNotIn("Research v3", source)
         self.assertNotIn("Historical Herlev grade view", source)
         self.assertNotIn("Binary screening view", source)

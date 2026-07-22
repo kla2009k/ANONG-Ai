@@ -79,14 +79,18 @@ export default function Performance() {
       </div>
     </Reveal>
 
+    <Reveal as="section" className="mt-9" aria-labelledby="research-charts">
+      <div className="kicker mb-2">Research charts</div>
+      <h2 id="research-charts" className="font-display text-2xl font-semibold text-ink">Latest model evidence</h2>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">All five charts are visible here and use the latest parent-image-disjoint CRIC OOF predictions. Select a chart to open its full-resolution image.</p>
+      <div className="mt-5 grid gap-5 md:grid-cols-2">{CRIC_FIGURES.map((figure, index) => <EvidenceFigure key={figure.file} {...figure} wide={index === CRIC_FIGURES.length - 1} />)}</div>
+    </Reveal>
+
     <Reveal as="section" className="mt-8 space-y-3" aria-label="Technical evidence">
       <Disclosure title="Exact class metrics" summary="Support, precision, recall, and F1 for NILM, LSIL, HSIL, and SCC.">
         <div className="hidden overflow-x-auto rounded-lg border border-line sm:block"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-[var(--blush-soft)]"><tr><th className="p-4">Grade</th><th className="p-4">Support</th><th className="p-4">Precision</th><th className="p-4">Recall</th><th className="p-4">F1</th></tr></thead><tbody className="divide-y divide-line">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <tr key={grade}><th className="p-4" style={{ color: info.color }}>{info.icon} {grade}</th><td className="p-4 font-mono">{metric.support.toLocaleString()}</td><td className="p-4 font-mono">{(metric.precision * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.recall * 100).toFixed(1)}%</td><td className="p-4 font-mono">{(metric.f1 * 100).toFixed(1)}%</td></tr>; })}</tbody></table></div>
         <div className="grid grid-cols-2 gap-3 sm:hidden">{GRADES.map((grade) => { const metric = cg.classMetrics[grade]; const info = classInfo(grade); return <article key={grade} className="rounded-lg border border-line p-4"><h3 className="font-semibold" style={{ color: info.color }}>{info.icon} {grade}</h3><div className="mt-3 font-mono text-xs leading-6 text-mut"><div>n {metric.support.toLocaleString()}</div><div>P {(metric.precision * 100).toFixed(1)}%</div><div>R {(metric.recall * 100).toFixed(1)}%</div><div>F1 {(metric.f1 * 100).toFixed(1)}%</div></div></article>; })}</div>
         <p className="mt-4 text-xs leading-5 text-mut">SCC recall is 50.3% for the exact label. Support is only 161 cells from 21 parent images, so the estimate remains unstable.</p>
-      </Disclosure>
-      <Disclosure title="All five research charts" summary="Every grade graph uses the latest parent-image-disjoint OOF model.">
-        <div className="grid gap-5 md:grid-cols-2">{CRIC_FIGURES.map((figure, index) => <EvidenceFigure key={figure.file} {...figure} wide={index === CRIC_FIGURES.length - 1} />)}</div>
       </Disclosure>
       <Disclosure title="How the two model endpoints differ" summary="CRIC grades cells; SIPaKMeD estimates koilocytic morphology.">
         <div className="grid gap-4 md:grid-cols-2"><div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">CRIC four-grade candidate</div><p className="mt-2 text-sm leading-6 text-mut">NILM / LSIL / HSIL / SCC · 10,003 cells · 395 parent images · five-fold OOF. Research only; the live upload still uses the historical Herlev checkpoint.</p></div><div className="rounded-lg border border-line p-5"><div className="font-semibold text-ink">SIPaKMeD KOIL model</div><p className="mt-2 text-sm leading-6 text-mut">Koilocytic morphology positive / negative · locked test n=641. Independent morphology endpoint, not a fifth grade and not an HPV molecular test.</p></div></div>
