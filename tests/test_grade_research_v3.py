@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -14,6 +15,10 @@ from ml.grade_research_v3 import (
 
 
 class GradeResearchV3Tests(unittest.TestCase):
+    def test_research_module_has_no_untracked_script_dependency(self):
+        source = (Path(__file__).resolve().parents[1] / "ml" / "grade_research_v3.py").read_text(encoding="utf-8")
+        self.assertNotIn("from scripts.augmentations", source)
+
     def test_five_display_outputs_keep_koil_independent(self):
         outputs = combined_five_outputs(
             np.asarray([0.1, 0.2, 0.6, 0.1]), koil_probability=0.8

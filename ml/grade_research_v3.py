@@ -25,9 +25,6 @@ from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as TF
 from torchvision.transforms.transforms import RandomResizedCrop
 
-from scripts.augmentations import random_stain_shift, simple_stain_normalize
-
-
 GRADE_CLASSES = ("NILM", "LSIL", "HSIL", "SCC")
 DISPLAY_OUTPUTS = (*GRADE_CLASSES, "KOIL")
 
@@ -47,6 +44,29 @@ def safety_selection_score(
     )
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
+
+
+def simple_stain_normalize(image: np.ndarray, mode: str = "mean_std") -> np.ndarray:
+    """Apply lightweight per-channel normalization to a Pap-stain reference."""
+    if mode != "mean_std":
+        raise ValueError("grade research v3 supports only mean_std stain normalization")
+    reference_mean = np.asarray([178.0, 165.0, 182.0], dtype=np.float32)
+    reference_std = np.asarray([38.0, 42.0, 35.0], dtype=np.float32)
+    output = image.astype(np.float32)
+    mean = output.mean(axis=(0, 1), keepdims=True)
+    std = output.std(axis=(0, 1), keepdims=True) + 1e-6
+    output = (output - mean) / std * reference_std.reshape(1, 1, 3) + reference_mean.reshape(1, 1, 3)
+    return np.clip(output, 0, 255).astype(np.uint8)
+
+
+def random_stain_shift(image: np.ndarray, p: float = 0.75) -> np.ndarray:
+    """Simulate moderate scanner and Pap-stain variation during training."""
+    if random.random() > p:
+        return image
+    multipliers = np.random.uniform(0.88, 1.12, size=(1, 1, 3))
+    offsets = np.random.uniform(-12.0, 12.0, size=(1, 1, 3))
+    shifted = image.astype(np.float32) * multipliers + offsets
+    return np.clip(shifted, 0, 255).astype(np.uint8)
 
 
 def combined_five_outputs(grade_probabilities: np.ndarray, koil_probability: float) -> list[dict]:
