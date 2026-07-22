@@ -249,6 +249,46 @@ class GradeResearchNet(nn.Module):
         }
 
 
+class MultiScaleGradeResearchNet(GradeResearchNet):
+    """Cell backbone plus lightweight field-context branch and multitask heads."""
+
+    def __init__(self, architecture: str = "efficientnet_b0", pretrained: bool = True,
+                 dropout: float = 0.3, mask_classes: int = 5):
+        super().__init__(architecture, pretrained, dropout, mask_classes)
+        channels = self.grade_head.in_features
+        self.context_encoder = nn.Sequential(
+            nn.Conv2d(3, 32, 5, stride=2, padding=2), nn.BatchNorm2d(32), nn.SiLU(),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1), nn.BatchNorm2d(64), nn.SiLU(),
+            nn.Conv2d(64, 128, 3, stride=2, padding=1), nn.BatchNorm2d(128), nn.SiLU(),
+            nn.AdaptiveAvgPool2d(1),
+        )
+        self.context_projection = nn.Linear(128, channels)
+        self.fusion = nn.Sequential(
+            nn.Linear(channels * 3, channels),
+            nn.LayerNorm(channels),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, image, context_image=None):
+        if context_image is None:
+            context_image = image
+        cell_features = self.features(image)
+        cell = self.pool(cell_features).flatten(1)
+        context = self.context_projection(self.context_encoder(context_image).flatten(1))
+        fused = self.fusion(torch.cat((cell, context, torch.abs(cell - context)), dim=1))
+        fused = self.dropout(fused)
+        return {
+            "grade_logits": self.grade_head(fused),
+            "triage_logit": self.triage_head(fused).squeeze(1),
+            "high_risk_logit": self.high_risk_head(fused).squeeze(1),
+            "ordinal_logits": self.ordinal_head(fused),
+            "segmentation_logits": self.segmentation_head(cell_features),
+            "cell_embedding": cell,
+            "context_embedding": context,
+        }
+
+
 def multitask_loss(outputs: dict, labels: torch.Tensor, masks: torch.Tensor,
                    mask_available: torch.Tensor, class_weights: torch.Tensor | None = None,
                    label_smoothing: float = 0.04, segmentation_weight: float = 0.15,

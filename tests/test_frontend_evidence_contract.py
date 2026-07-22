@@ -8,6 +8,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class FrontendEvidenceContractTests(unittest.TestCase):
+    def test_apcdata_external_failure_is_machine_readable_and_not_promoted(self):
+        payload = json.loads((ROOT / "web-react/public/evidence/apcdata_external_summary.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["cells"], 3065)
+        self.assertLess(payload["balanced_accuracy"], 0.30)
+        self.assertEqual(payload["per_class_recall"]["SCC"], 0.0)
+        self.assertIn("not Thai ThinPrep", payload["claim_boundary"])
+
     def test_overview_hides_requested_readiness_rows(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
         self.assertNotIn('["Thai ThinPrep", "Missing"', source)

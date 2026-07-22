@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "dataset": "APCData cervical cytology cells",
+  "doi": "10.17632/ytd568rh3p.1",
+  "role": "untouched external domain evaluation; no fitting or validation selection",
+  "cells": 3065,
+  "raw_accuracy": 0.6965742251223491,
+  "balanced_accuracy": 0.28352308155410777,
+  "macro_f1": 0.2637583768550593,
+  "per_class_recall": {
+    "NILM": 1.0,
+    "LSIL": 0.11261261261261261,
+    "HSIL": 0.021479713603818614,
+    "SCC": 0.0
+  },
+  "confusion_matrix": [
+    [2076, 0, 0, 0],
+    [394, 50, 0, 0],
+    [388, 22, 9, 0],
+    [102, 11, 13, 0]
+  ],
+  "claim_boundary": "External LBC transfer failure; not Thai ThinPrep validation and not an HPV molecular endpoint."
+}

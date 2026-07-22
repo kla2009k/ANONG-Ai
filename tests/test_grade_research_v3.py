@@ -6,6 +6,7 @@ import torch
 
 from ml.grade_research_v3 import (
     GradeResearchNet,
+    MultiScaleGradeResearchNet,
     combined_five_outputs,
     ordinal_targets,
     safety_selection_score,
@@ -46,6 +47,18 @@ class GradeResearchV3Tests(unittest.TestCase):
         self.assertEqual(result["high_risk_logit"].shape, (2,))
         self.assertEqual(result["ordinal_logits"].shape, (2, 3))
         self.assertEqual(result["segmentation_logits"].shape[:2], (2, 5))
+
+    def test_multiscale_model_fuses_cell_and_context_without_changing_contract(self):
+        model = MultiScaleGradeResearchNet("efficientnet_b0", pretrained=False, mask_classes=5)
+        cell = torch.randn(2, 3, 96, 96)
+        context = torch.randn(2, 3, 96, 96)
+        result = model(cell, context)
+        self.assertEqual(result["grade_logits"].shape, (2, 4))
+        self.assertEqual(result["triage_logit"].shape, (2,))
+        self.assertEqual(result["high_risk_logit"].shape, (2,))
+        self.assertEqual(result["ordinal_logits"].shape, (2, 3))
+        self.assertEqual(result["segmentation_logits"].shape[:2], (2, 5))
+        self.assertEqual(result["cell_embedding"].shape, result["context_embedding"].shape)
 
     def test_hard_example_weights_increase_for_harder_samples(self):
         base = np.ones(4)

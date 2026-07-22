@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import random
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +14,6 @@ from sklearn.model_selection import StratifiedGroupKFold
 from torch.utils.data import Dataset
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as TF
-from torchvision.transforms.transforms import RandomResizedCrop
 
 from ml.grade_research_v3 import GRADE_CLASSES, IMAGENET_MEAN, IMAGENET_STD, random_stain_shift
 
@@ -26,7 +26,7 @@ CRIC_LABEL_MAP = {
 }
 
 MANIFEST_FIELDS = (
-    "path", "crop_path", "source", "group_id", "cell_id", "bethesda", "label5", "nucleus_x", "nucleus_y",
+    "path", "crop_path", "context_path", "source", "group_id", "cell_id", "bethesda", "label5", "nucleus_x", "nucleus_y",
 )
 
 
@@ -40,6 +40,7 @@ def supported_rows(annotation_path: Path, image_dir: Path) -> list[dict[str, str
             rows.append({
                 "path": str((Path(image_dir) / source["image_filename"]).resolve()),
                 "crop_path": "",
+                "context_path": "",
                 "source": "cric",
                 "group_id": f"cric-image-{source['image_id']}",
                 "cell_id": source["cell_id"],
@@ -103,43 +104,104 @@ def crop_around_nucleus(image: Image.Image, x: int, y: int, crop_size: int) -> I
     return image.crop((left, top, right, bottom))
 
 
+def parent_balanced_sample_weights(
+    rows: list[dict[str, str]], class_power: float = 0.5
+) -> np.ndarray:
+    """Balance rare classes while limiting cell-rich parent-image dominance."""
+    if not rows:
+        raise ValueError("rows must not be empty")
+    if class_power < 0:
+        raise ValueError("class_power must be non-negative")
+    class_counts = Counter(int(row["label5"]) for row in rows)
+    parent_counts = Counter(row["group_id"] for row in rows)
+    weights = np.asarray([
+        (len(rows) / class_counts[int(row["label5"])]) ** class_power
+        / parent_counts[row["group_id"]]
+        for row in rows
+    ], dtype=np.float64)
+    return weights / weights.mean()
+
+
+def relative_crop_box(width: int, height: int, params: dict[str, float]) -> tuple[int, int, int, int]:
+    """Convert shared relative crop parameters into an image-specific box."""
+    crop_width = min(width, max(1, round(width * np.sqrt(params["scale"] * params["ratio"]))))
+    crop_height = min(height, max(1, round(height * np.sqrt(params["scale"] / params["ratio"]))))
+    top = round((height - crop_height) * params["top"])
+    left = round((width - crop_width) * params["left"])
+    return top, left, crop_height, crop_width
+
+
 class CricCellDataset(Dataset):
-    def __init__(self, csv_path: Path, image_size: int = 224, crop_size: int = 320, train: bool = False):
+    def __init__(self, csv_path: Path, image_size: int = 224, crop_size: int = 320,
+                 train: bool = False, context_crop_size: int | None = None,
+                 include_context: bool = True):
         with Path(csv_path).open(encoding="utf-8", newline="") as handle:
             self.rows = list(csv.DictReader(handle))
         self.image_size = image_size
         self.crop_size = crop_size
+        self.context_crop_size = context_crop_size or crop_size * 3
+        self.include_context = include_context
         self.train = train
 
     def __len__(self) -> int:
         return len(self.rows)
 
+    def _transform(self, image: Image.Image, geometry: dict[str, float | bool] | None = None) -> torch.Tensor:
+        if self.train:
+            if geometry is None:
+                raise ValueError("training geometry is required")
+            top, left, height, width = relative_crop_box(image.width, image.height, geometry)
+            image = TF.resized_crop(image, top, left, height, width, (self.image_size, self.image_size), InterpolationMode.BILINEAR)
+            if geometry["hflip"]:
+                image = TF.hflip(image)
+            if geometry["vflip"]:
+                image = TF.vflip(image)
+            image = TF.rotate(image, float(geometry["angle"]), InterpolationMode.BILINEAR, fill=255)
+            image = Image.fromarray(random_stain_shift(np.asarray(image), p=0.70))
+        else:
+            image = TF.resize(image, (self.image_size, self.image_size), InterpolationMode.BILINEAR)
+        return TF.normalize(TF.to_tensor(image), IMAGENET_MEAN, IMAGENET_STD)
+
     def __getitem__(self, index: int) -> dict:
         row = self.rows[index]
+        parent = None
+        context = None
+        context_path = row.get("context_path")
+        if self.include_context and context_path and Path(context_path).exists():
+            with Image.open(context_path) as opened:
+                context = opened.convert("RGB")
+        if self.include_context and context is None:
+            with Image.open(row["path"]) as opened:
+                parent = opened.convert("RGB")
+            context = crop_around_nucleus(
+                parent, int(row["nucleus_x"]), int(row["nucleus_y"]), self.context_crop_size
+            )
         crop_path = row.get("crop_path")
         if crop_path and Path(crop_path).exists():
             with Image.open(crop_path) as opened:
                 image = opened.convert("RGB")
         else:
-            with Image.open(row["path"]) as opened:
-                image = crop_around_nucleus(
-                    opened.convert("RGB"), int(row["nucleus_x"]), int(row["nucleus_y"]), self.crop_size
-                )
+            if parent is None:
+                with Image.open(row["path"]) as opened:
+                    parent = opened.convert("RGB")
+            image = crop_around_nucleus(
+                parent, int(row["nucleus_x"]), int(row["nucleus_y"]), self.crop_size
+            )
+        geometry = None
         if self.train:
-            top, left, height, width = RandomResizedCrop.get_params(image, scale=(0.78, 1.0), ratio=(0.90, 1.10))
-            image = TF.resized_crop(image, top, left, height, width, (self.image_size, self.image_size), InterpolationMode.BILINEAR)
-            if random.random() < 0.5:
-                image = TF.hflip(image)
-            if random.random() < 0.5:
-                image = TF.vflip(image)
-            image = TF.rotate(image, random.uniform(-20, 20), InterpolationMode.BILINEAR, fill=255)
-            rgb = random_stain_shift(np.asarray(image), p=0.70)
-            image = Image.fromarray(rgb)
-        else:
-            image = TF.resize(image, (self.image_size, self.image_size), InterpolationMode.BILINEAR)
-        tensor = TF.normalize(TF.to_tensor(image), IMAGENET_MEAN, IMAGENET_STD)
+            geometry = {
+                "scale": random.uniform(0.78, 1.0),
+                "ratio": random.uniform(0.90, 1.10),
+                "top": random.random(),
+                "left": random.random(),
+                "hflip": random.random() < 0.5,
+                "vflip": random.random() < 0.5,
+                "angle": random.uniform(-20, 20),
+            }
+        image_tensor = self._transform(image, geometry)
         return {
-            "image": tensor,
+            "image": image_tensor,
+            "context_image": self._transform(context, geometry) if context is not None else image_tensor,
             "label": torch.tensor(int(row["label5"]), dtype=torch.long),
             "mask": torch.zeros((self.image_size, self.image_size), dtype=torch.long),
             "mask_available": torch.tensor(False, dtype=torch.bool),

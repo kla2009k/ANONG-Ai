@@ -66,7 +66,20 @@ export default function Performance() {
         <div className="card border-scc/40 p-6"><div className="text-xs font-semibold uppercase tracking-wider text-scc">Exact SCC label</div><div className="mt-2 font-mono text-3xl font-semibold text-scc">50.3%</div><p className="mt-3 text-sm leading-6 text-mut">81 of 161 SCC cells received the exact SCC label. Another 74 were called HSIL, so the model is not reliable for final HSIL-versus-SCC subtyping.</p></div>
         <div className="card border-teal/40 p-6"><div className="text-xs font-semibold uppercase tracking-wider text-teal">Captured as high-grade</div><div className="mt-2 font-mono text-3xl font-semibold text-teal">96.3%</div><p className="mt-3 text-sm leading-6 text-mut">155 of 161 SCC cells were still placed in HSIL or SCC. This supports a high-grade review queue, but it does not make the system autonomous.</p></div>
       </div>
-      <div className="mt-4 rounded-lg border border-line bg-[var(--blush-soft)] p-4 text-sm leading-6 text-mut"><b className="text-ink">What must improve next:</b> add more independent SCC parent images, use a validation-selected cost-sensitive objective, and evaluate on an external ThinPrep cohort. A display change cannot repair the exact SCC endpoint.</div>
+      <div className="mt-4 rounded-lg border border-line bg-[var(--blush-soft)] p-4 text-sm leading-6 text-mut"><b className="text-ink">What must improve next:</b> add more independent SCC parent images, use a validation-selected cost-sensitive objective, adapt to liquid-based cytology, then repeat evaluation on a new external ThinPrep cohort. A display change cannot repair the exact SCC endpoint.</div>
+    </Reveal>
+
+    <Reveal as="section" className="mt-9" aria-labelledby="external-lbc">
+      <div className="kicker mb-2">External domain stress test</div>
+      <h2 id="external-lbc" className="font-display text-2xl font-semibold text-ink">The CRIC model does not transfer safely to APCData LBC</h2>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-mut">A five-checkpoint CRIC ensemble was tested without fitting or threshold selection on 3,065 supported APCData cells. The 69.7% raw accuracy is misleading because the model collapsed toward NILM.</p>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Balanced accuracy" value="28.4%" detail="External LBC; four exact grades." accent="var(--scc)" />
+        <MetricCard label="LSIL recall" value="11.3%" detail="50 of 444 external LSIL cells." accent="var(--lsil)" />
+        <MetricCard label="HSIL recall" value="2.1%" detail="9 of 419 external HSIL cells." accent="var(--hsil)" />
+        <MetricCard label="SCC recall" value="0.0%" detail="0 of 126 external SCC cells." accent="var(--scc)" />
+      </div>
+      <p className="mt-4 rounded-lg border border-scc/40 bg-surface p-4 text-xs leading-5 text-mut"><b className="text-scc">Promotion blocked:</b> APCData uses liquid-based cytology by cytocentrifugation and is not a Thai ThinPrep cohort. Even so, this failure is sufficient to reject cross-domain clinical-readiness claims and require LBC-specific development.</p>
     </Reveal>
 
     <Reveal as="section" className="mt-9" aria-labelledby="screening-recall">
@@ -103,6 +116,6 @@ export default function Performance() {
       <div className="mt-4"><Disclosure title="KOIL locked-test details" summary={`Confusion matrix at threshold ${koil.threshold}.`}><div className="mx-auto max-w-md"><KoilConfusion /></div></Disclosure></div>
     </Reveal>
 
-    <div className="butter-panel mt-9 rounded-lg border p-5 text-xs leading-5 text-mut"><b className="text-ink">Evidence boundary:</b> CRIC is conventional Pap-smear cell evidence, not Thai ThinPrep clinical validation. Grad-CAM is post-hoc attention evidence, not segmentation or causal proof. All outputs require qualified human review.</div>
+    <div className="butter-panel mt-9 rounded-lg border p-5 text-xs leading-5 text-mut"><b className="text-ink">Evidence boundary:</b> CRIC is conventional Pap-smear cell evidence. APCData demonstrates severe transfer failure on another liquid-based cytology domain and is not Thai ThinPrep validation. Grad-CAM is post-hoc attention evidence, not segmentation or causal proof. All outputs require qualified human review.</div>
   </div>;
 }

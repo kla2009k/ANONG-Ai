@@ -1,0 +1,7 @@
+{
+  "status": "pending_expert_review",
+  "source": "locked CRIC parent-disjoint OOF predictions",
+  "cases": 120,
+  "unique_parent_images": 120,
+  "prohibition": "Do not describe these labels as expert-adjudicated until review_status and reviewer are completed."
+}

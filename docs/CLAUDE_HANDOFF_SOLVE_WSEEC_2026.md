@@ -1241,3 +1241,32 @@ descriptions above.
 - Improving exact SCC grading requires more independent SCC parent images,
   validation-selected cost-sensitive training, and external ThinPrep
   evaluation. UI wording cannot repair this endpoint.
+
+## 2026-07-22 grade v4 and APCData external-domain audit
+
+- Read `docs/GRADE_V4_1_TO_8_EXECUTION_2026_07_22.md` before changing grade
+  metrics, ThinPrep/LBC claims, or the production checkpoint.
+- Official APCData (`10.17632/ytd568rh3p.1`, CC BY 4.0) was downloaded and CRC
+  verified. A locked external manifest contains 3,065 supported cells: NILM
+  2,076, LSIL 444, HSIL 419, and SCC 126. ASC-US/ASC-H remain excluded.
+- The existing CRIC five-checkpoint ensemble failed external LBC transfer:
+  accuracy 0.6966, balanced accuracy 0.2835, LSIL recall 0.1126, HSIL recall
+  0.0215, and SCC recall 0.0000. It predicted 2,960/3,065 cells as NILM.
+- This result blocks any claim that the CRIC candidate is ThinPrep-ready. It is
+  visible on `/performance`; do not remove or replace it with raw accuracy.
+- `ml/grade_research_v3.py` now includes `MultiScaleGradeResearchNet` with a
+  cell backbone, lightweight context branch, and hierarchical/ordinal heads.
+- CRIC manifests now contain cached 640-pixel context crops. The v4 trainer
+  uses parent-balanced sampling and validation-selected checkpoints.
+- `ml/grade_v4_evaluation.py` and
+  `ml/scripts/aggregate_cric_grade_v4.py` enforce fold-safe ensemble alignment
+  and an explicit production-promotion gate.
+- `review/grade_boundary_review_2026/queue.csv` contains 120 unreviewed cases
+  from unique parent images. Never call them expert-adjudicated until the
+  reviewer fields are completed by a qualified reviewer.
+- End-to-end v4 smoke training passed. Its artifacts are labelled
+  `smoke_test_only` and must never be used as evidence or website metrics.
+- A full ten-run experiment (five folds x two members) was not completed in
+  this session because 224-pixel dual-input training was preprocessing-bound.
+  The canonical CRIC metrics and deployed upload checkpoint therefore remain
+  unchanged.

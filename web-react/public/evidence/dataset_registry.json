@@ -2,10 +2,22 @@
   "schema_version": "1.0",
   "updated": "2026-07-22",
   "current_evidence_sources": 4,
-  "catalogued_sources": 15,
+  "catalogued_sources": 16,
   "current_model_development_images": 14969,
   "warning": "The 14,969 current items belong to separate endpoints and datasets: 917 Herlev grade images, 4,049 SIPaKMeD KOIL cells, and 10,003 CRIC grade cells. They must not be presented as one training cohort, independent patients, or ThinPrep images. Candidate datasets remain excluded.",
   "records": [
+    {
+      "id": "apcdata-2024",
+      "name": "APCData Cervical Cytology Cells",
+      "status": "candidate_external_lbc_prepared",
+      "modality": "Liquid-based cytology by cytocentrifugation, 425 fields from 73 diagnosed studies",
+      "available_count": 425,
+      "current_use_count": 0,
+      "unit": "field images",
+      "current_use": "Downloaded and reserved for locked external domain evaluation; excluded from model fitting and current headline metrics",
+      "paired_hpv": "no",
+      "source_url": "https://data.mendeley.com/datasets/ytd568rh3p/1"
+    },
     {
       "id": "herlev",
       "name": "Herlev Pap Smear Dataset",

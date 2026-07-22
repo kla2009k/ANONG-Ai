@@ -94,7 +94,8 @@ def split_summary(split: dict[str, list[dict[str, str]]]) -> dict:
     }
 
 
-def build_crop_cache(rows: list[dict[str, str]], cache_dir: Path, crop_size: int) -> None:
+def build_crop_cache(rows: list[dict[str, str]], cache_dir: Path, crop_size: int,
+                     path_field: str = "crop_path", suffix: str = "") -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     by_parent: dict[str, list[dict[str, str]]] = {}
     for row in rows:
@@ -103,12 +104,13 @@ def build_crop_cache(rows: list[dict[str, str]], cache_dir: Path, crop_size: int
         with Image.open(parent_path) as opened:
             parent = opened.convert("RGB")
         for row in cells:
-            filename = f"{row['group_id']}-{row['cell_id']}.jpg"
+            tag = f"-{suffix}" if suffix else ""
+            filename = f"{row['group_id']}-{row['cell_id']}{tag}.jpg"
             destination = cache_dir / filename
             if not destination.exists():
                 crop = crop_around_nucleus(parent, int(row["nucleus_x"]), int(row["nucleus_y"]), crop_size)
-                crop.save(destination, format="JPEG", quality=92, optimize=True)
-            row["crop_path"] = str(destination.resolve())
+                crop.save(destination, format="JPEG", quality=88, optimize=True)
+            row[path_field] = str(destination.resolve())
         if parent_index % 40 == 0 or parent_index == len(by_parent):
             print(f"cached crops from {parent_index}/{len(by_parent)} parent images", flush=True)
 
@@ -121,6 +123,8 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--crop-size", type=int, default=320)
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "data" / "cache" / "cric_grade_320")
+    parser.add_argument("--context-crop-size", type=int, default=640)
+    parser.add_argument("--context-cache-dir", type=Path, default=ROOT / "data" / "cache" / "cric_context_640")
     parser.add_argument("--skip-download", action="store_true")
     args = parser.parse_args()
 
@@ -138,7 +142,8 @@ def main() -> int:
     missing = sorted({row["path"] for row in rows if not Path(row["path"]).exists()})
     if missing:
         raise RuntimeError(f"{len(missing)} parent images are missing; rerun without --skip-download")
-    build_crop_cache(rows, args.cache_dir, args.crop_size)
+    build_crop_cache(rows, args.cache_dir, args.crop_size, "crop_path")
+    build_crop_cache(rows, args.context_cache_dir, args.context_crop_size, "context_path", "context")
     folds = grouped_folds(rows, folds=args.folds, seed=args.seed)
     summaries = []
     for index, split in enumerate(folds, start=1):
@@ -156,6 +161,8 @@ def main() -> int:
         "split_unit": "parent microscope image",
         "crop_cache": str(args.cache_dir.resolve()),
         "crop_size": args.crop_size,
+        "context_cache": str(args.context_cache_dir.resolve()),
+        "context_crop_size": args.context_crop_size,
         "seed": args.seed,
         "folds": summaries,
     }
