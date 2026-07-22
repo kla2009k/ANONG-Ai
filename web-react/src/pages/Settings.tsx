@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getTheme, applyTheme, type Theme } from "@/lib/theme";
 import { API_BASE, API_IS_CONFIGURED } from "@/lib/api";
+import { VERSION } from "@/lib/data";
 
 export default function Settings() {
   const [theme, setTheme] = useState<Theme>(getTheme());
@@ -49,9 +50,9 @@ export default function Settings() {
       <section className="card mt-5 p-6">
         <h2 className="font-display text-lg font-semibold text-ink">System information</h2>
         <div className="mt-3 grid gap-x-6 gap-y-1.5 text-sm text-mut sm:grid-cols-2">
-          <div>Version <span className="font-mono text-ink">Phase 1.6 dual endpoint</span></div>
+          <div>Version <span className="font-mono text-ink">{VERSION.name}</span></div>
           <div>Model <span className="font-mono text-ink">EfficientNet-B0</span></div>
-          <div>Datasets <span className="font-mono text-ink">Herlev + SIPaKMeD</span></div>
+          <div>Datasets <span className="font-mono text-ink">Herlev + SIPaKMeD + CRIC</span></div>
           <div>Outputs <span className="font-mono text-ink">4-grade + KOIL</span></div>
         </div>
         <p className="mt-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: "color-mix(in srgb, var(--scc) 8%, transparent)", color: "var(--scc)" }}>

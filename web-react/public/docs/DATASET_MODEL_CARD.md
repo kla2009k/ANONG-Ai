@@ -8,7 +8,14 @@
 > AUROC 0.9912. See `KOIL_REAL_DATA_VALIDATION_2026.md`. This is not ThinPrep
 > validation and not HPV DNA/RNA detection.
 
-Last updated: 2026-07-06
+> **CRIC research update (2026-07-22):** A separate four-grade candidate was
+> evaluated on 10,003 directly supported NILM/LSIL/HSIL/SCC cells from 395
+> parent microscope images using five parent-image-disjoint folds. Selective
+> accuracy was 91.7% at 94.1% coverage; full-cohort accuracy was 88.8%. This is
+> conventional Pap-smear research evidence, not the deployed Herlev checkpoint,
+> Thai ThinPrep validation, clinical accuracy, or molecular HPV detection.
+
+Last updated: 2026-07-22
 
 ## Model
 
@@ -46,7 +53,8 @@ review and sign off before any patient-facing result is released.
 
 ## Current Dataset
 
-Primary Phase 1 evidence uses public Herlev cytology images.
+The upload baseline uses public Herlev cytology images. Separate model-development
+evidence uses SIPaKMeD for KOIL morphology and CRIC for four-grade research.
 
 Current facts:
 
@@ -57,6 +65,14 @@ Current facts:
 - no Thai hospital images;
 - no paired HPV DNA/RNA endpoint;
 - no histology outcome endpoint.
+
+Separate CRIC research facts:
+
+- 10,003 directly supported four-grade cells from 395 parent images;
+- five-fold parent-image-disjoint out-of-fold evaluation;
+- 91.7% selective accuracy at 94.1% coverage;
+- 88.8% full-cohort accuracy;
+- SCC recall 50.3%, preventing autonomous or clinical-use claims.
 
 ## Label Schema
 
@@ -93,6 +109,15 @@ Held-out test:
 - QWK: 0.6981 +/- 0.0866
 - binary sensitivity: 0.9867 +/- 0.0086
 - binary AUROC: 0.9435 +/- 0.0448
+
+Separate CRIC research candidate:
+
+- selective four-grade accuracy: 0.9166 at 0.9408 coverage;
+- selective accuracy 95% CI: 0.8954-0.9346;
+- full-cohort four-grade accuracy: 0.8883;
+- macro F1: 0.7410;
+- SCC recall: 0.5031;
+- not deployed in the upload workflow.
 
 ## Known Limitations
 

@@ -11,7 +11,7 @@ export default function About() {
       <div className="mt-8 grid gap-5 text-sm md:grid-cols-2">
         <div className="card p-5">
           <div className="mb-2 font-semibold text-ink">Datasets</div>
-          <ul className="space-y-1 text-mut"><li>· Herlev (917 images: grade and triage)</li><li>· SIPaKMeD (4,049 cells: independent KOIL morphology)</li><li>· Thai ThinPrep + paired HPV assays (external-validation target)</li></ul>
+          <ul className="space-y-1 text-mut"><li>· Herlev (917 images: deployed grade and triage baseline)</li><li>· SIPaKMeD (4,049 cells: independent KOIL morphology)</li><li>· CRIC (10,003 cells from 395 parent images: four-grade research)</li><li>· Thai ThinPrep + paired HPV assays (external-validation target)</li></ul>
         </div>
         <div className="card p-5">
           <div className="mb-2 font-semibold text-ink">Technology</div>
@@ -36,7 +36,7 @@ export default function About() {
       <div className="card mt-5 p-5 text-sm">
         <div className="mb-3 font-semibold text-ink">Development roadmap</div>
         <div className="grid gap-4 text-mut md:grid-cols-3">
-          <div><b className="text-teal">Current evidence</b><br />Herlev four-class grade display and triage plus a separate source-cluster-disjoint SIPaKMeD KOIL endpoint, XAI, uncertainty, and sign-off.</div>
+          <div><b className="text-teal">Current evidence</b><br />Herlev deployed baseline, separate SIPaKMeD KOIL endpoint, and CRIC five-fold parent-image-disjoint grade research. CRIC reached 91.7% selective accuracy at 94.1% coverage; full-cohort accuracy was 88.8%.</div>
           <div><b className="text-teal">Next validation phase</b><br />Thai ThinPrep data, paired HPV results, external calibration, segmentation, and WSI workflow</div>
           <div><b className="text-teal">Phase 3 validation</b><br />Reader study, external calibration, regulatory/privacy work, and regional expansion</div>
         </div>

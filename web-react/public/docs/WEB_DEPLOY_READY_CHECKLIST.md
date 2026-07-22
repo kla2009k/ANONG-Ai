@@ -201,7 +201,7 @@ still works in a separate Vite static build, but uploads and server PDF export d
 
 - [ ] No console errors.
 - [ ] No failed network requests for static assets.
-- [ ] `/datasets` loads the 15-source registry and keeps current development images at 4,966.
+- [ ] `/datasets` loads the 15-source registry and reports 14,969 separate model-development items: 917 Herlev images, 4,049 SIPaKMeD cells, and 10,003 CRIC cells; it must not present them as one cohort.
 - [ ] `/performance` explains that paired molecular HPV cases are zero in this repository, not globally absent.
 - [ ] `/demo` links navigate correctly.
 - [ ] `/analyze` sample flow works without backend.

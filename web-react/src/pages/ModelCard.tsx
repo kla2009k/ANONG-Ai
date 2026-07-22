@@ -15,6 +15,7 @@ function Row({ label, value }: { label: string; value: string }) {
 export default function ModelCard() {
   const t = METRICS.triage;
   const f = METRICS.fiveClass;
+  const cg = METRICS.cricGrade;
   return (
     <div className="mx-auto max-w-4xl px-6 py-14">
       <div className="kicker mb-2">Model Card</div>
@@ -149,6 +150,23 @@ export default function ModelCard() {
           Specificity near 0.70 implies some over-referral, a trade-off of the current high-sensitivity screening configuration.
           See the Performance page for the complete results and boundaries.
         </p>
+      </div>
+
+      <div className="card mt-6 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="font-semibold text-ink">Separate CRIC four-grade research candidate</div>
+            <p className="mt-1 text-xs leading-5 text-mut">Five-fold parent-image-disjoint evaluation on {cg.cells.toLocaleString()} conventional Pap-smear cells from {cg.parents} parent microscope images. This candidate is not the upload checkpoint.</p>
+          </div>
+          <span className="rounded-full border border-hsil px-3 py-1 text-xs font-semibold text-hsil">Research · not deployed</span>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-teal">91.7%</div><div className="text-xs text-mut">Selective accuracy</div></div>
+          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-navy">94.1%</div><div className="text-xs text-mut">Coverage</div></div>
+          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-ink">88.8%</div><div className="text-xs text-mut">Full-cohort accuracy</div></div>
+          <div className="rounded-lg border border-line p-3"><div className="font-mono text-lg font-semibold text-scc">50.3%</div><div className="text-xs text-mut">SCC recall</div></div>
+        </div>
+        <p className="mt-3 text-xs leading-5 text-mut">Selective accuracy 95% CI {cg.selectiveAccuracyCi}; the lower bound is below 90%. Threshold {cg.selectiveThreshold} is locked for the next external evaluation. These metrics do not establish Thai ThinPrep performance, clinical accuracy, or HPV infection detection.</p>
       </div>
 
       <p className="mt-6 text-xs text-mut">

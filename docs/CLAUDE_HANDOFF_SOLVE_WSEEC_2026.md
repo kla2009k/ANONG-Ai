@@ -1,5 +1,21 @@
 # Claude Handoff: CerviCo-Pilot for Samsung Solve for Tomorrow 2026 + WSEEC
 
+## Whole-site CRIC evidence consistency audit — 2026-07-22
+
+- Updated Overview, About, Model Card, Demo Mode, Settings, Navbar, and Case
+  Gallery so they distinguish the deployed Herlev upload baseline from the
+  separate CRIC four-grade research candidate.
+- The repeated public CRIC wording retains all required qualifiers: `91.7%`
+  selective accuracy, `94.1%` coverage, `88.8%` full-cohort accuracy, and
+  research/not-deployed status.
+- The Model Card additionally exposes SCC recall `50.3%` and the selective
+  accuracy CI `89.54-93.46%`.
+- The Analyze route intentionally continues to describe the Herlev upload
+  checkpoint. The CRIC checkpoint has not replaced live uploaded-image
+  inference.
+- Updated the public dataset/model card, claims ledger, and deployment
+  checklist mirrors. Added a regression test covering cross-route CRIC wording.
+
 ## Genuine 90%+ selective CRIC result — 2026-07-22
 
 - Downloaded and verified all 395 CRIC parent microscope images containing a

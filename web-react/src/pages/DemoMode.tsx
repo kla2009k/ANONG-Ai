@@ -6,8 +6,8 @@ const STEPS = [
     n: "1",
     title: "Start with current truth",
     path: "/",
-    action: "Open the dashboard and state that grade/triage evidence is Herlev and KOIL morphology evidence is separately SIPaKMeD.",
-    proof: "Point to the measured metrics, zero Thai validation datasets, and the HPV boundary.",
+    action: "Open the dashboard and separate the Herlev upload baseline, SIPaKMeD KOIL endpoint, and CRIC four-grade research candidate.",
+    proof: "State the complete CRIC claim: 91.7% selective accuracy at 94.1% coverage, 88.8% full-cohort accuracy, and no molecular HPV endpoint.",
   },
   {
     n: "2",
@@ -55,8 +55,8 @@ const STEPS = [
     n: "8",
     title: "Review measured performance",
     path: "/performance",
-    action: "Show endpoint-specific metrics, error analysis, and the status of current HPV handling.",
-    proof: "The page separates measured model results from capabilities that still require paired clinical data.",
+    action: "Show endpoint-specific metrics, CRIC confidence intervals, class recall, error analysis, and current HPV handling.",
+    proof: "The page separates the deployed baseline from CRIC research and capabilities that still require paired clinical data.",
   },
 ];
 

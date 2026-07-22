@@ -216,7 +216,7 @@ export default function CaseGallery() {
             <b className="text-ink">Attribution:</b> {cric?.attribution || "Rezende et al., CRIC Cervix Cell Classification (2020)"}. Licensed under{" "}
             <a className="text-teal underline" href={cric?.license_url || "https://creativecommons.org/licenses/by/4.0/"} target="_blank" rel="noreferrer">CC BY 4.0</a>.{" "}
             <a className="text-teal underline" href={cric?.dataset_url || "https://figshare.com/collections/CRIC_Cervix_Cell_Classification/4960286"} target="_blank" rel="noreferrer">Official Figshare collection</a>.
-            This atlas is external reference material, not an external-validation result and not evidence of HPV infection.
+            These crops come from the same CRIC development source used by the four-grade research evaluation. The atlas is for visual inspection, not an independent external-validation result and not evidence of HPV infection.
           </div>
 
           <div className="mt-2 rounded-lg border border-line bg-surface p-4 text-xs leading-5 text-mut">

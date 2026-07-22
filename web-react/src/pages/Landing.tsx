@@ -3,9 +3,10 @@ import { Reveal } from "@/components/Reveal";
 import { METRICS } from "@/lib/data";
 
 const READINESS = [
-  ["Models", "Done", "Separate EfficientNet-B0 grade and KOIL endpoints"],
+  ["Upload models", "Done", "Separate Herlev grade and SIPaKMeD KOIL endpoints"],
   ["Binary safety", "Strong P1", `${METRICS.triage.cv.sensitivity} sensitivity`],
-  ["4-class grading", "Partial", `${METRICS.fiveClass.acc} accuracy on Herlev`],
+  ["Deployed 4-class grade", "Baseline", `${METRICS.fiveClass.acc} accuracy on Herlev 5-fold CV`],
+  ["CRIC 4-class research", "Candidate", "91.7% selective at 94.1% coverage; 88.8% full cohort"],
   ["KOIL morphology", "Internally validated", `${METRICS.koil.sensitivity} sensitivity on SIPaKMeD`],
   ["Calibration", "P1 improved", "Temperature scaling on Herlev only"],
 ];
@@ -41,11 +42,11 @@ export default function Landing() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-mono text-xs uppercase tracking-[.2em] text-teal">Current evidence</div>
-                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Dual-endpoint research prototype</h2>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Multi-dataset research prototype</h2>
                 </div>
-                <span className="rounded-full border border-teal px-3 py-1 text-xs text-teal">Herlev + SIPaKMeD</span>
+                <span className="rounded-full border border-teal px-3 py-1 text-xs text-teal">Herlev + SIPaKMeD + CRIC</span>
               </div>
-              <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3">
+              <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-line p-3">
                   <div className="whitespace-nowrap font-mono text-lg font-semibold text-teal sm:text-xl">{METRICS.koil.total.toLocaleString()}</div>
                   <div className="text-xs text-mut">real KOIL-task cells</div>
@@ -59,12 +60,12 @@ export default function Landing() {
                   <div className="text-xs text-mut">KOIL locked AUROC</div>
                 </div>
                 <div className="rounded-lg border border-line p-3">
-                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-scc sm:text-xl">Not yet</div>
-                  <div className="text-xs text-mut">Thai clinical validation</div>
+                  <div className="whitespace-nowrap font-mono text-lg font-semibold text-scc sm:text-xl">91.7%</div>
+                  <div className="text-xs text-mut">CRIC selective accuracy</div>
                 </div>
               </div>
               <div className="mt-4 rounded-lg border border-dashed border-line p-3 text-xs leading-5 text-mut">
-                The 4,049 SIPaKMeD cells and 917 Herlev images belong to different endpoints and are not combined into one training count. The image output is HPV-associated cytomorphology risk, not an HPV DNA/RNA result.
+                The 917 Herlev images, 4,049 SIPaKMeD cells, and 10,003 CRIC cells belong to separate development datasets and are not one patient cohort. The CRIC result is 91.7% selective accuracy at 94.1% coverage; full-cohort accuracy is 88.8%. It is not the deployed upload checkpoint or an HPV DNA/RNA result.
               </div>
             </Reveal>
           </div>

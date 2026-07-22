@@ -67,8 +67,8 @@ export function Navbar() {
         </Link>
         <NavList loc={loc} dark={dark} setDark={setDark} profile={profile} />
         <div className="butter-panel mt-auto rounded-lg border p-3 text-[11px] leading-5 text-mut">
-          <div className="font-semibold text-ink">Phase 1.7 · evidence workflow</div>
-          <div className="mt-1">Herlev grade + SIPaKMeD KOIL morphology; not HPV DNA/RNA detection.</div>
+          <div className="font-semibold text-ink">Phase 1.8 · evidence workflow</div>
+          <div className="mt-1">Herlev upload baseline + SIPaKMeD KOIL + CRIC grade research; not HPV DNA/RNA detection.</div>
         </div>
       </aside>
     </>

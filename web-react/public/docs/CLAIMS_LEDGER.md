@@ -2,7 +2,7 @@
 
 Purpose: one source of truth for what CerviCo-Pilot can and cannot claim.
 
-Last updated: 2026-07-06
+Last updated: 2026-07-22
 
 Read with:
 
@@ -22,7 +22,7 @@ they cannot create new model-performance claims.
 | Claim | Status | Evidence | Safe Wording |
 | --- | --- | --- | --- |
 | The system is a cervical cytology screening assistant | Supported | Web/API demo + model card | "screening assistance" |
-| It outputs a Bethesda-style 5-class grade | Supported with limitations | `models/test_metrics.json` | "Bethesda-style grading support" |
+| It outputs a four-class grade plus an independent KOIL endpoint | Supported with limitations | Herlev grade checkpoint + SIPaKMeD KOIL checkpoint | "four-grade screening support with separate KOIL morphology" |
 | It has strong binary normal/abnormal triage sensitivity on Herlev held-out/CV | Supported | `models/triage_metrics.json`, `models/cv_results.json` | "safety triage layer" |
 | It can show model attention using Grad-CAM | Supported as XAI demo | web/server XAI path | "Grad-CAM heatmap shows regions the model emphasized" |
 | It estimates uncertainty | Supported as prototype | MC Dropout flow | "uncertainty-aware; flags cases for review" |
@@ -84,6 +84,9 @@ Approved metrics:
 | Held-out binary AUROC | 0.964 | `models/triage_metrics.json` | "strong binary discrimination" |
 | 5-fold binary sensitivity | 0.9867 +/- 0.0086 | `models/cv_results.json` | "high screening sensitivity across folds" |
 | 5-fold binary AUROC | 0.9435 +/- 0.0448 | `models/cv_results.json` | "robust triage AUROC across folds" |
+| CRIC selective four-grade accuracy | 0.9166 at 0.9408 coverage | `web-react/public/evidence/cric_grade_5fold_summary.json` | "91.7% selective accuracy at 94.1% coverage on CRIC conventional Pap-smear cells" |
+| CRIC full-cohort four-grade accuracy | 0.8883 | `web-react/public/evidence/cric_grade_5fold_summary.json` | "88.8% full-cohort accuracy on CRIC" |
+| CRIC SCC recall | 0.5031 | `web-react/public/evidence/cric_grade_5fold_summary.json` | "SCC recall remains insufficient for autonomous grading" |
 
 Do not headline:
 
@@ -107,12 +110,12 @@ Safe Thai:
 > ระบบประเมินความเสี่ยงที่สัมพันธ์กับ HPV จากลักษณะทางเซลล์วิทยา ไม่ใช่การ
 > ตรวจหาเชื้อ HPV DNA/RNA โดยตรง
 
-## 5-Class vs Binary Wording
+## Four-Grade, KOIL, and Binary Wording
 
 Safe:
 
-> The 5-class Bethesda-style grade is the primary product output. The binary
-> normal/abnormal view is a safety layer used to reduce missed abnormal cases.
+> The four-grade output contains NILM, LSIL, HSIL, and SCC. KOIL morphology is
+> an independent endpoint. The binary normal/abnormal view is a safety layer.
 
 Unsafe:
 
@@ -120,7 +123,7 @@ Unsafe:
 
 Unsafe:
 
-> The 5-class model is ready for diagnosis.
+> The four-grade model is ready for diagnosis.
 
 ## Claim Review Checklist
 

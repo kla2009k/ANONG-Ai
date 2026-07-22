@@ -52,6 +52,32 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertAlmostEqual(evidence["selective_coverage"], 0.940817754673598)
         self.assertLess(evidence["pooled_accuracy"], 0.90)
 
+    def test_cric_evidence_is_consistent_across_public_routes(self):
+        files = {
+            name: (ROOT / "web-react" / "src" / path).read_text(encoding="utf-8")
+            for name, path in {
+                "overview": "pages/Landing.tsx",
+                "about": "pages/About.tsx",
+                "model": "pages/ModelCard.tsx",
+                "demo": "pages/DemoMode.tsx",
+                "settings": "pages/Settings.tsx",
+                "navigation": "components/Navbar.tsx",
+            }.items()
+        }
+        for name, source in files.items():
+            with self.subTest(route=name):
+                self.assertIn("CRIC", source)
+        for name in ("overview", "about", "model", "demo"):
+            with self.subTest(claim=name):
+                self.assertIn("91.7%", files[name])
+                self.assertIn("94.1%", files[name])
+        self.assertIn("88.8%", files["overview"])
+        self.assertIn("88.8%", files["about"])
+        self.assertIn("88.8%", files["model"])
+        self.assertIn("88.8%", files["demo"])
+        self.assertIn("not deployed", files["model"])
+        self.assertIn("not the deployed upload checkpoint", files["overview"])
+
     def test_dataset_registry_separates_public_images_from_paired_hpv_cohorts(self):
         registry = json.loads((ROOT / "web-react" / "public" / "evidence" / "dataset_registry.json").read_text(encoding="utf-8"))
         records = {record["id"]: record for record in registry["records"]}

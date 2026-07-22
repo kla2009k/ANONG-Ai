@@ -22,15 +22,15 @@ export const CLASSES: ClassInfo[] = [
     desc: "Independent koilocytotic-morphology endpoint; not an HPV infection test.", triage: "Expert morphology review and separate HPV testing when clinically indicated." },
 ];
 
-export const VERSION = { name: "Phase 1.6 dual endpoint", date: "2026-07", model: "EfficientNet-B0 x2" };
+export const VERSION = { name: "Phase 1.8 evidence package", date: "2026-07-22", model: "EfficientNet-B0 endpoints" };
 
 export const MODEL_CARD = {
   name: "CerviCo-Pilot — Cervical Cytology Screening Model",
   intendedUse: "Assist medical personnel in screening Pap/ThinPrep-style cervical cytology images to support triage and referral prioritization.",
   users: "Clinicians, pathologists, and cytotechnologists",
   decisionPoint: "Pre-screen triage before confirmatory colposcopy or HPV testing",
-  data: "Herlev: 917 images for grade/triage; SIPaKMeD: 4,049 cells from 966 clusters for KOIL training/locked testing; CCCID v2: 20 preselected LBC KOIL positives for a limited external challenge; no Thai-domain validation",
-  training: "Separate EfficientNet-B0 models: four-class grade display from the historical Herlev checkpoint and source-cluster-disjoint SIPaKMeD KOIL training",
+  data: "Deployed baseline: 917 Herlev grade/triage images. KOIL endpoint: 4,049 SIPaKMeD cells from 966 source clusters plus a 20-positive CCCID LBC challenge. Separate CRIC research: 10,003 cells from 395 parent images for parent-image-disjoint four-grade evaluation. These are not one combined cohort.",
+  training: "The upload workflow retains separate Herlev grade and SIPaKMeD KOIL EfficientNet-B0 checkpoints. A separate CRIC four-grade candidate was evaluated across five parent-image-disjoint folds and is not deployed.",
   doNotUse: [
     "Final diagnosis without qualified clinician review",
     "Replacement for a clinician, pathologist, or cytotechnologist",
@@ -42,6 +42,7 @@ export const MODEL_CARD = {
     "Moderate specificity (about 0.70) may cause over-referral",
     "Post-hoc temperature scaling was evaluated on Herlev only; external Thai calibration is still required",
     "The small public dataset creates domain-shift risk for Thai clinical images",
+    "CRIC selective grade accuracy is 91.7% at 94.1% coverage, but full-cohort accuracy is 88.8% and SCC recall is 50.3%",
   ],
 };
 export const CLASS_KEYS = CLASSES.map((c) => c.key);
