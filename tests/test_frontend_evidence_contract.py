@@ -15,6 +15,13 @@ class FrontendEvidenceContractTests(unittest.TestCase):
         self.assertEqual(payload["per_class_recall"]["SCC"], 0.0)
         self.assertIn("not Thai ThinPrep", payload["claim_boundary"])
 
+    def test_performance_presentation_summary_separates_results_from_targets(self):
+        source = (ROOT / "web-react/src/pages/Performance.tsx").read_text(encoding="utf-8")
+        self.assertIn("Presentation summary · measured results", source)
+        self.assertIn("Next validation target · not achieved", source)
+        self.assertIn("91.7% selective accuracy at 94.1% coverage", source)
+        self.assertNotIn("92.8% overall accuracy", source)
+
     def test_overview_hides_requested_readiness_rows(self):
         source = (ROOT / "web-react" / "src" / "pages" / "Landing.tsx").read_text(encoding="utf-8")
         self.assertNotIn('["Thai ThinPrep", "Missing"', source)

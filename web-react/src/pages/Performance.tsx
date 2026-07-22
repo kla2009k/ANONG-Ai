@@ -56,6 +56,18 @@ export default function Performance() {
         <MetricCard label="SCC high-grade capture" value="96.3%" detail="155 of 161 SCC cells were classified as HSIL or SCC." accent="var(--scc)" />
       </div>
       <p className="mt-3 text-xs leading-5 text-mut">The latest CRIC research model achieved 91.7% selective four-grade accuracy at 94.1% coverage, not accuracy on every cell. Full-cohort accuracy was 88.8%.</p>
+      <div className="mt-5 grid gap-4 md:grid-cols-[1.45fr_1fr]">
+        <div className="rounded-lg border border-teal/40 bg-surface p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-teal">Presentation summary · measured results</div>
+          <p className="mt-3 text-sm leading-6 text-ink">ANONG AI achieved <b>91.7% selective accuracy at 94.1% coverage</b>, with <b>90.6% high-grade capture</b> and <b>96.3% SCC-to-high-grade capture</b>. The independent KOIL model achieved <b>96.2% sensitivity</b>, <b>97.6% specificity</b>, and <b>0.991 AUROC</b>.</p>
+          <p className="mt-2 text-xs leading-5 text-mut">These endpoints describe different evaluated tasks and are not combined into one accuracy claim.</p>
+        </div>
+        <div className="rounded-lg border border-line bg-[var(--blush-soft)] p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-hsil">Next validation target · not achieved</div>
+          <div className="mt-3 font-mono text-2xl font-semibold text-ink">≥90% recall</div>
+          <p className="mt-2 text-xs leading-5 text-mut">Target for every exact grade after LBC/ThinPrep adaptation, expert review, and external validation.</p>
+        </div>
+      </div>
     </Reveal>
 
     <Reveal as="section" className="mt-9" aria-labelledby="scc-explained">
